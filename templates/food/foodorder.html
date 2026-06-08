@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>确认订单 · Life Master</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/1.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a; /* 后备色 */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .order-card {
+            max-width: 550px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .card-header {
+            background: #2d3e2b;
+            padding: 1.8rem 2rem;
+            color: white;
+        }
+
+        .card-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header h2::before {
+            content: "📝";
+            font-size: 1.8rem;
+        }
+
+        .food-name {
+            background: rgba(255, 255, 255, 0.15);
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2d3e2b;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: #fefefe;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #ffb347;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: #ffb347;
+            color: #2d3e2b;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn-primary:hover {
+            background: #ff9f1c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(255, 159, 28, 0.25);
+        }
+
+        .btn-secondary {
+            background: #eef2f0;
+            color: #2d3e2b;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8e4;
+            transform: translateY(-2px);
+        }
+
+        hr {
+            margin: 1rem 0 0.5rem;
+            border: none;
+            height: 1px;
+            background: #edf2f7;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem;
+            }
+            .card-body {
+                padding: 1.5rem;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="order-card">
+    <div class="card-header">
+        <h2>确认下单</h2>
+        <div class="food-name">🍽️ {{ food.name }}</div>
+    </div>
+    <div class="card-body">
+        <form action="/foodorder/?userid={{ user_id }}&foodid={{ food.id }}" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="num">📦 数量</label>
+                <input type="number" id="num" name="num" required min="1" placeholder="请输入份数">
+            </div>
+            <div class="form-group">
+                <label for="address">📍 地址</label>
+                <input type="text" id="address" name="address" required placeholder="请输入配送地址">
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">✅ 提交订单</button>
+                <a href="/fooddetails/?userid={{ user_id }}&foodid={{ food.id }}" class="btn btn-secondary">🔙 我再想想</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

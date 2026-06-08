@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单状态指示灯 - 四节点灯组</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: url('../static/images/background/2.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a; /* 后备色 */
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* 主卡片 */
+        .status-dashboard {
+            max-width: 680px;
+            width: 100%;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 56px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.6);
+            padding: 32px 28px 40px;
+            transition: all 0.2s ease;
+        }
+
+        .title-section {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .title-section h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin: 0 0 6px 0;
+            background: linear-gradient(135deg, #1F2B3C, #2C3E50);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .sub {
+            color: #5a6e7c;
+            font-size: 0.85rem;
+            border-top: 1px solid #dce5ec;
+            display: inline-block;
+            padding-top: 8px;
+        }
+
+        /* 状态展示区 */
+        .status-display {
+            background: #ffffffcc;
+            border-radius: 64px;
+            padding: 24px 20px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+        }
+
+        /* 状态文字行 — 最前面输出状态字样 */
+        .state-text-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+            background: #eef3fc;
+            padding: 12px 20px;
+            border-radius: 100px;
+        }
+        .state-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: #1f4e6e;
+            background: #fff;
+            padding: 5px 16px;
+            border-radius: 50px;
+            box-shadow: inset 0 0 0 1px #c7ddec;
+        }
+        .state-value {
+            font-size: 2.3rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #1f5e7e, #0f3b4f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .state-badge {
+            background: #2c7da0;
+            padding: 5px 18px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* 四个节点灯容器 */
+        .lights-container {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: wrap;
+            margin: 18px 0 10px;
+        }
+        .light-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .bulb {
+            width: 70px;
+            height: 70px;
+            background: #d9e2ec;
+            border-radius: 50%;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05), 0 6px 12px rgba(0,0,0,0.1);
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a627a;
+            font-size: 1.8rem;
+            font-weight: 500;
+            cursor: default;
+            border: 1px solid rgba(255,255,240,0.6);
+        }
+        /* 点亮效果 */
+        .bulb.lit {
+            background: radial-gradient(circle at 30% 30%, #f9e45b, #f5b81b);
+            box-shadow: 0 0 16px 4px rgba(245, 184, 27, 0.6), inset 0 1px 2px rgba(255,255,200,0.8);
+            color: #fff3cf;
+            text-shadow: 0 1px 2px #b45f06;
+        }
+        .bulb:not(.lit) {
+            background: #cbdae6;
+            color: #74879b;
+        }
+        .node-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #eef2f5;
+            padding: 4px 12px;
+            border-radius: 30px;
+            color: #2c3e44;
+        }
+
+        .info-note {
+            text-align: center;
+            font-size: 0.75rem;
+            margin-top: 24px;
+            color: #5c7a8c;
+            background: #eef3fa;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 6px 18px;
+            border-radius: 50px;
+        }
+
+        /* 返回按钮样式 – 优雅融合美食调性 */
+        .back-nav-wrapper {
+            text-align: center;
+            margin: 12px 28px 20px 28px;
+        }
+
+        .return-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #fae5cf;
+            color: #b45f2b;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 10px 28px;
+            border-radius: 48px;
+            transition: all 0.2s;
+            border: 1px solid #ffd7aa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            backdrop-filter: blur(2px);
+        }
+
+        .return-btn:hover {
+            background: #f7dbbc;
+            color: #c25d1c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(226, 122, 32, 0.12);
+            border-color: #f7bc7a;
+        }
+
+        .return-btn:active {
+            transform: translateY(1px);
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #7a8e9b;
+            margin-top: 28px;
+        }
+
+        @media (max-width: 550px) {
+            .bulb {
+                width: 55px;
+                height: 55px;
+                font-size: 1.4rem;
+            }
+            .lights-container {
+                gap: 16px;
+            }
+            .state-value {
+                font-size: 1.8rem;
+            }
+            .status-dashboard {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="status-dashboard">
+    <div class="title-section">
+        <h1>📡 订单状态指示</h1>
+    </div>
+
+    <!-- 状态展示核心区：最前面输出状态字样 + 四个节点灯 -->
+    <div class="status-display">
+        <div class="state-text-row">
+            <span class="state-label">📌 当前状态</span>
+            <span class="state-value" id="stateLetter">状态A</span>
+            <span class="state-badge" id="stateDesc">⚪ 无灯点亮</span>
+        </div>
+
+        <div class="lights-container" id="lightsGroup">
+            <div class="light-node" data-index="0">
+                <div class="bulb" id="bulb0">💡</div>
+                <div class="node-label" id="node1">节点 ①</div>
+            </div>
+            <div class="light-node" data-index="1">
+                <div class="bulb" id="bulb1">💡</div>
+                <div class="node-label" id="node2">节点 ②</div>
+            </div>
+            <div class="light-node" data-index="2">
+                <div class="bulb" id="bulb2">💡</div>
+                <div class="node-label" id="node3">节点 ③</div>
+            </div>
+            <div class="light-node" data-index="3">
+                <div class="bulb" id="bulb3">💡</div>
+                <div class="node-label" id="node4">节点 ④</div>
+            </div>
+        </div>
+        <div class="info-note">
+            ✨ 温馨提示：消息传递可能有延迟，可以刷新页面查看最新状态哦~
+        </div>
+    </div>
+
+    <div class="back-nav-wrapper">
+        <a href="/space/" class="return-btn">
+            🍽️ 返回个人空间 · 继续美味之旅
+        </a>
+    </div>
+
+    <footer>
+        ⚡ Food Master————美食派送 守护到胃
+    </footer>
+</div>
+
+<script>
+    // 获取灯泡元素
+    const bulbs = [
+        document.getElementById('bulb0'),
+        document.getElementById('bulb1'),
+        document.getElementById('bulb2'),
+        document.getElementById('bulb3')
+    ];
+    const stateLetterSpan = document.getElementById('stateLetter');
+    const stateDescSpan = document.getElementById('stateDesc');
+    const bnode1 = document.getElementById('node1'); 
+    const bnode2 = document.getElementById('node2'); 
+    const bnode3 = document.getElementById('node3');
+    const bnode4 = document.getElementById('node4');
+
+    /**
+     * 核心函数：根据传入的 pos 值更新灯组和状态文字
+     * 外部直接调用此函数，传入 orders.pos 数值即可
+     * @param {number} pos 订单状态码 (整数)
+     */
+    function setOrderStatus(pos) {
+        // 确保 pos 为整数
+        let intPos = pos;
+        if (isNaN(intPos)) intPos = 0;
+
+        let litCount = 0;
+        let stateCode = '';
+        let stateDesc = '';
+
+        if (intPos === 0) {
+            litCount = 0;
+            stateCode = '待接单';
+            stateDesc = '等待骑手接单';
+            node1 = '❔ 待接单';
+            node2 = '❔ 未知';
+            node3 = '❔ 未知';
+            node4 = '❔ 未知';
+        } else if (intPos === 1) {
+            litCount = 1;
+            stateCode = '骑手已接单';
+            stateDesc = '等待商家出餐';
+            node1 = '✅ 骑手' + {{ orders.rider.id }} + '号已接单';
+            node2 = '❔ 未知';
+            node3 = '❔ 未知';
+            node4 = '❔ 未知';
+        } else if (intPos === 2) {
+            litCount = 2;
+            stateCode = '商家已出餐';
+            stateDesc = '等待骑手取餐派送';
+            node1 = '✅ 骑手' + {{ orders.rider.id }} + '号已接单';
+            node2 = '✅ 商家已出餐';
+            node3 = '❔ 骑手尚未取餐';
+            node4 = '❔ 未知';
+        } else if (intPos === 3) {
+            litCount = 3;
+            stateCode = '骑手配送中';
+            stateDesc = '顾客等待外卖';
+            node1 = '✅ 骑手' + {{ orders.rider.id }} + '号已接单';
+            node2 = '✅ 商家已出餐';
+            node3 = '✅ 骑手' + {{ orders.rider.id }} + '号已取餐';
+            node4 = '❔ 正在配送';
+        } else {  // intPos >= 4
+            litCount = 4;
+            stateCode = '顾客已取餐';
+            stateDesc = '快去评价吧~';
+            node1 = '✅骑手' + {{ orders.rider.id }} + '号已接单';
+            node2 = '✅ 商家已出餐';
+            node3 = '✅ 骑手' + {{ orders.rider.id }} + '号已取餐';
+            node4 = '✅ 顾客已取餐';
+        }
+
+        litCount = Math.min(4, Math.max(0, litCount));
+
+        // 点亮/熄灭灯泡
+        for (let i = 0; i < bulbs.length; i++) {
+            if (i < litCount) {
+                bulbs[i].classList.add('lit');
+            } else {
+                bulbs[i].classList.remove('lit');
+            }
+        }
+
+        // 更新状态文字
+        stateLetterSpan.innerText = stateCode;
+        stateDescSpan.innerText = stateDesc;
+        bnode1.innerText = node1;
+        bnode2.innerText = node2;
+        bnode3.innerText = node3;
+        bnode4.innerText = node4;
+    }
+
+    setOrderStatus({{ orders.pos }})
+
+</script>
+
+<!-- 
+    使用说明：
+    1. 将此文件集成到您的 Django 模板中。
+    2. 确保每个订单有自己的状态展示区域（如果需要同时展示多个订单，请为每个订单生成独立的容器并调用对应的 setOrderStatus 实例）。
+    3. 调用全局函数 setOrderStatus(pos)，传入 orders.pos 的值。
+    4. 灯组和状态字母会立即更新。
+-->
+</body>
+</html>

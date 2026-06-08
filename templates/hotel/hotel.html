@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒店列表 · Life Master</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&h=1080&fit=crop&q=85') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a; /* 后备色 */
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* header 使用 flex 布局，让标题和按钮在同一行 */
+        .header {
+            background: #2d3e2b;
+            padding: 1.5rem 2rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header h2::before {
+            content: "🏨";
+            font-size: 1.8rem;
+        }
+
+        /* 个人中心按钮样式 */
+        .user-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .user-btn:hover {
+            background: #ffb347;
+            color: #2d3e2b;
+            border-color: #ffb347;
+            transform: translateY(-2px);
+        }
+
+        .search-bar {
+            padding: 1.2rem 1rem 0.5rem 1rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 0.75rem;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 220px;
+            border: 1px solid #d7dde6;
+            border-radius: 12px;
+            padding: 0.7rem 0.9rem;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #ffb347;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.18);
+        }
+
+        .search-btn,
+        .clear-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 0.7rem 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .search-btn {
+            background: #2d3e2b;
+            color: white;
+        }
+
+        .clear-btn {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .search-summary {
+            width: 100%;
+            color: #64748b;
+            font-size: 0.88rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 0 1rem 1.5rem 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        th {
+            background-color: #f5f3ef;
+            color: #2d3e2b;
+            font-weight: 600;
+            padding: 1rem 0.8rem;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 0.9rem 0.8rem;
+            border-bottom: 1px solid #edf2f7;
+            color: #1f2937;
+        }
+
+        tr:hover td {
+            background-color: #fef9e6;
+            transition: 0.1s;
+        }
+
+        td:nth-child(2) {
+            font-weight: 600;
+            color: #e67e22;
+        }
+
+        .detail-btn {
+            background: #ffb347;
+            color: #2d3e2b;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+        }
+
+        .detail-btn:hover {
+            background: #ff9f1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .empty-row td {
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+            th, td {
+                padding: 0.6rem 0.4rem;
+                font-size: 0.85rem;
+            }
+            .header h2 {
+                font-size: 1.4rem;
+            }
+            .user-btn {
+                font-size: 0.85rem;
+                padding: 0.4rem 1rem;
+            }
+            .detail-btn {
+                padding: 0.2rem 0.8rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        #plus-button {
+            width: 60px;
+            height: 60px;
+            background: #ffb347;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #2d3e2b;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: fixed;
+            bottom: calc(2rem + 80px);
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        #plus-button:hover {
+            transform: scale(1.1);
+            background: #ff9f1c;
+        }
+
+        /* AI Chat Widget */
+        #ai-chat-widget {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        #ai-chat-icon {
+            background: #ffb347;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #ai-chat-icon:hover {
+            transform: scale(1.1);
+        }
+
+        #ai-chat-box {
+            position: absolute;
+            bottom: 75px;
+            right: 0;
+            width: 320px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            overflow: hidden;
+            border: 1px solid #edf2f7;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #ai-chat-header {
+            background: #2d3e2b;
+            color: white;
+            padding: 1rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #ai-chat-close {
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.8;
+            user-select: none;
+        }
+
+        #ai-chat-close:hover {
+            opacity: 1;
+        }
+
+        #ai-chat-messages {
+            height: 350px;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f8f9fc;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-msg {
+            max-width: 85%;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: #ffb347;
+            color: #2d3e2b;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg-ai {
+            align-self: flex-start;
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        #ai-chat-input {
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #edf2f7;
+            display: flex;
+            gap: 8px;
+        }
+
+        #ai-chat-input input {
+            flex: 1;
+            padding: 0.6rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        #ai-chat-input input:focus {
+            border-color: #ffb347;
+        }
+
+        #ai-chat-input button {
+            background: #2d3e2b;
+            color: white;
+            border: none;
+            padding: 0 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        #ai-chat-input button:hover {
+            background: #3a5038;
+        }
+
+        .hot-label {
+            background-color: #0a58ca;  /* 蓝色背景 */
+            color: white;               /* 白色文字 */
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .emphasize {
+            font-weight: bold;          /* 加粗 */
+            color: #e67e22;            /* 醒目的红色 */
+            background-color: #fff3f0; /* 浅红色背景，突出但不刺眼 */
+            padding: 0 4px;            /* 左右留一点内边距 */
+            border-radius: 6px;        /* 圆角，更柔和 */
+            font-size: 1.05em;         /* 稍微放大，增加强调感 */
+            transition: all 0.2s ease; /* 平滑过渡（可选） */
+        }
+
+/* 鼠标悬停时可以略微加深颜色（可选，提升交互感） */
+        .emphasize:hover {
+            background-color: #ffe0db;
+            color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>酒店民宿</h2>
+        <a href="/food" class="user-btn">🍜 美食中心</a>
+        <a href="/blog" class="user-btn">📝 博客中心</a>
+        <a href="/play" class="user-btn">🎮 娱乐中心</a>
+        <a href="/space" class="user-btn">👤 个人中心</a>
+    </div>
+    <div class="search-bar">
+        <form class="search-form" action="/hotel/" method="get">
+            <input class="search-input" type="search" name="q" value="{{ keyword }}" placeholder="搜索酒店名、地址或简介">
+            <button class="search-btn" type="submit">搜索</button>
+            {% if keyword %}
+            <a class="clear-btn" href="/hotel/">清空</a>
+            <div class="search-summary">正在搜索：{{ keyword }}，共 {{ hotels|length }} 条结果</div>
+            {% endif %}
+        </form>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>酒店名</th>
+                    <th>地址</th>
+                    <th>价格</th>
+                    <th>评分</th>
+                    <th>详情一览</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hotel in hotels %}
+                <tr>
+                    <td>{{ hotel.name }}</td>
+                    <td>{{ hotel.addr }}</td>
+                    <td>钟点房<span class="emphasize">{{ hotel.price_clock }}</span>起 日租<span class="emphasize">{{ hotel.price_day }}</span>起</td>
+                    <td>
+                        {% if hotel.ratenum == 0 %}
+                            ✨ 暂无评分
+                        {% else %}
+                            {% if hotel.rating >= 4.8 and hotel.ratenum >= 4 %}
+                                <span class="rating">⭐ {{ hotel.rating }} <span class="hot-label">好评如潮</span></span>
+                            {% else %}
+                                <span class="rating">⭐ {{ hotel.rating }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/hoteldetails/?userid={{ user_id }}&hotelid={{ hotel.id }}" class="detail-btn">让我看看</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="empty-row">
+                    <td colspan="6">✨ 暂无酒店数据</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if is_merchant %}
+<div id="plus-button" onclick="location.href='/hotelsend/'" title="添加酒店">➕</div>
+{% endif %}
+
+<!-- AI Chat Widget -->
+<div id="ai-chat-widget">
+    <div id="ai-chat-icon" onclick="toggleChat()">🤖</div>
+    <div id="ai-chat-box" style="display:none;">
+        <div id="ai-chat-header">智能生活助手 <span id="ai-chat-close" onclick="toggleChat()">✖</span></div>
+        <div id="ai-chat-messages">
+            <div class="chat-msg msg-ai">您好！我是您的智能生活助手，有什么我可以帮您的吗？</div>
+        </div>
+        <div id="ai-chat-input">
+            <input type="text" id="ai-msg" placeholder="输入你的问题..." onkeypress="if(event.keyCode==13) sendMsg()">
+            <button onclick="sendMsg()">发送</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleChat() {
+    var box = document.getElementById('ai-chat-box');
+    var icon = document.getElementById('ai-chat-icon');
+    if (box.style.display === 'none') {
+        box.style.display = 'flex';
+        icon.style.display = 'none';
+        document.getElementById('ai-msg').focus();
+    } else {
+        box.style.display = 'none';
+        icon.style.display = 'flex';
+    }
+}
+
+function appendMsg(text, sender) {
+    var msgs = document.getElementById('ai-chat-messages');
+    var div = document.createElement('div');
+    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
+    div.innerText = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function sendMsg() {
+    var input = document.getElementById('ai-msg');
+    var text = input.value.trim();
+    if (!text) return;
+    
+    appendMsg(text, 'user');
+    input.value = '';
+    
+    // 加载动画
+    var loadingId = 'loading-' + Date.now();
+    var msgs = document.getElementById('ai-chat-messages');
+    var div = document.createElement('div');
+    div.id = loadingId;
+    div.className = 'chat-msg msg-ai';
+    div.innerText = '正在思考中... 🤔';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    var formData = new FormData();
+    formData.append('user_input', text);
+    
+    fetch('/ai-chat/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById(loadingId).remove();
+        if (data.reply) {
+            appendMsg(data.reply, 'ai');
+        } else if (data.error) {
+            appendMsg(data.error, 'ai');
+        }
+    })
+    .catch(error => {
+        document.getElementById(loadingId).remove();
+        appendMsg('连接失败了，请检查网络或稍后再试。', 'ai');
+    });
+}
+</script>
+
+</body>
+</html>

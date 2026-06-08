@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理中心 · Life Master</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, "Microsoft YaHei", system-ui, sans-serif;
+            color: #202520;
+            background: #f4f6f3;
+            letter-spacing: 0;
+        }
+        button, input, select { font: inherit; }
+        .shell {
+            display: grid;
+            grid-template-columns: 232px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 24px 16px;
+            background: #1f2c25;
+            color: #fff;
+        }
+        .brand {
+            padding: 0 10px 22px;
+            border-bottom: 1px solid rgba(255,255,255,.14);
+        }
+        .brand strong { display: block; font-size: 20px; }
+        .brand span { display: block; margin-top: 5px; color: #b9c7be; font-size: 12px; }
+        .nav { display: grid; gap: 6px; margin-top: 22px; }
+        .nav a {
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            padding: 0 12px;
+            border-radius: 6px;
+            color: #dce6df;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .nav a:hover, .nav a.active { color: #fff; background: #34483c; }
+        .logout {
+            position: absolute;
+            right: 16px;
+            bottom: 22px;
+            left: 16px;
+        }
+        .logout button {
+            width: 100%;
+            min-height: 40px;
+            border: 1px solid #607268;
+            border-radius: 6px;
+            color: #fff;
+            background: transparent;
+            cursor: pointer;
+        }
+        main { min-width: 0; padding: 26px 30px 48px; }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+        h1 { margin: 0; font-size: 25px; font-weight: 700; }
+        .topbar p { margin: 5px 0 0; color: #69736c; font-size: 13px; }
+        .search { display: flex; gap: 8px; }
+        .search input {
+            width: 260px;
+            min-height: 40px;
+            padding: 0 12px;
+            border: 1px solid #cdd4cf;
+            border-radius: 6px;
+            background: #fff;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 0 12px;
+            border: 0;
+            border-radius: 5px;
+            color: #fff;
+            background: #2e6845;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn:hover { background: #245638; }
+        .btn.secondary { color: #2d382f; background: #e3e8e4; }
+        .btn.danger { background: #a53e36; }
+        .btn.small { min-height: 30px; padding: 0 9px; font-size: 12px; }
+        .messages { display: grid; gap: 8px; margin-bottom: 18px; }
+        .message { padding: 11px 13px; border-left: 4px solid #3a8055; background: #e8f3eb; font-size: 13px; }
+        .message.error { border-color: #b34b42; background: #f8e9e7; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(150px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .stat {
+            min-width: 0;
+            padding: 17px;
+            border: 1px solid #dce2dd;
+            border-radius: 7px;
+            background: #fff;
+        }
+        .stat span { color: #6c776f; font-size: 12px; }
+        .stat strong { display: block; margin-top: 8px; font-size: 25px; }
+        .panel {
+            margin-bottom: 18px;
+            border: 1px solid #dce2dd;
+            border-radius: 7px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 52px;
+            padding: 0 16px;
+            border-bottom: 1px solid #e5e9e6;
+        }
+        .panel-header h2 { margin: 0; font-size: 15px; }
+        .panel-header span { color: #737d76; font-size: 12px; }
+        .table-wrap { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td {
+            padding: 11px 13px;
+            border-bottom: 1px solid #edf0ee;
+            text-align: left;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        th { color: #5f6962; background: #f8faf8; font-size: 12px; font-weight: 600; }
+        tbody tr:hover { background: #fafcf9; }
+        tbody tr:last-child td { border-bottom: 0; }
+        .muted { color: #7a847d; }
+        .badge {
+            display: inline-block;
+            padding: 4px 7px;
+            border-radius: 4px;
+            color: #27573b;
+            background: #e4f1e8;
+            font-size: 11px;
+        }
+        .badge.off { color: #833a34; background: #f5e5e3; }
+        .badge.pending { color: #74541d; background: #f6edda; }
+        .inline-form { display: inline-flex; align-items: center; gap: 6px; }
+        select {
+            min-height: 30px;
+            padding: 0 25px 0 8px;
+            border: 1px solid #cfd6d1;
+            border-radius: 5px;
+            color: #263029;
+            background: #fff;
+        }
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .content-list {
+            border: 1px solid #dce2dd;
+            border-radius: 7px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .content-list h2 { margin: 0; padding: 15px; border-bottom: 1px solid #e5e9e6; font-size: 15px; }
+        .content-item { padding: 13px 15px; border-bottom: 1px solid #edf0ee; }
+        .content-item:last-child { border-bottom: 0; }
+        .content-item strong { display: block; font-size: 13px; }
+        .content-item span { display: block; margin-top: 5px; color: #717b74; font-size: 12px; }
+        .empty { padding: 28px; color: #7c867f; text-align: center; }
+        @media (max-width: 1000px) {
+            .stats { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+            .content-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 720px) {
+            .shell { display: block; }
+            .sidebar { position: static; width: 100%; height: auto; padding: 15px; }
+            .brand { padding-bottom: 13px; }
+            .nav { grid-template-columns: repeat(3, 1fr); margin-top: 13px; }
+            .nav a { justify-content: center; padding: 0 5px; }
+            .logout { position: static; margin-top: 12px; }
+            main { padding: 20px 14px 36px; }
+            .topbar { align-items: stretch; flex-direction: column; }
+            .search input { width: 100%; }
+            .search { width: 100%; }
+            .search input { flex: 1; min-width: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <strong>Life Master</strong>
+            <span>管理中心 · {{ admin_user.username }}</span>
+        </div>
+        <nav class="nav" aria-label="管理导航">
+            <a href="/manage/?section=overview" class="{% if section == 'overview' %}active{% endif %}">总览</a>
+            <a href="/manage/?section=users" class="{% if section == 'users' %}active{% endif %}">用户管理</a>
+            <a href="/manage/?section=orders" class="{% if section == 'orders' %}active{% endif %}">订单管理</a>
+            <a href="/manage/?section=content" class="{% if section == 'content' %}active{% endif %}">业务内容</a>
+            <a href="/manage/?section=blogs" class="{% if section == 'blogs' %}active{% endif %}">社区审核</a>
+        </nav>
+        <form class="logout" action="/manage/logout/" method="post">
+            {% csrf_token %}
+            <button type="submit">退出管理端</button>
+        </form>
+    </aside>
+
+    <main>
+        <header class="topbar">
+            <div>
+                <h1>
+                    {% if section == 'users' %}用户管理
+                    {% elif section == 'orders' %}订单管理
+                    {% elif section == 'content' %}业务内容
+                    {% elif section == 'blogs' %}社区审核
+                    {% else %}运营总览{% endif %}
+                </h1>
+                <p>管理员操作会立即作用于当前业务数据。</p>
+            </div>
+            {% if section == 'users' or section == 'orders' or section == 'blogs' %}
+            <form class="search" action="/manage/" method="get">
+                <input type="hidden" name="section" value="{{ section }}">
+                <input type="search" name="q" value="{{ keyword }}" placeholder="搜索用户名、商品或内容">
+                <button class="btn" type="submit">搜索</button>
+            </form>
+            {% endif %}
+        </header>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if section == 'overview' %}
+        <section class="stats">
+            <div class="stat"><span>有效用户</span><strong>{{ stats.active_users }}</strong></div>
+            <div class="stat"><span>外卖订单</span><strong>{{ stats.orders }}</strong></div>
+            <div class="stat"><span>处理中订单</span><strong>{{ stats.pending_orders }}</strong></div>
+            <div class="stat"><span>外卖成交额</span><strong>¥{{ stats.revenue|floatformat:2 }}</strong></div>
+            <div class="stat"><span>菜品 / 酒店 / 娱乐</span><strong>{{ stats.foods }} / {{ stats.hotels }} / {{ stats.plays }}</strong></div>
+            <div class="stat"><span>酒店订单</span><strong>{{ stats.hotel_orders }}</strong></div>
+            <div class="stat"><span>娱乐订单</span><strong>{{ stats.play_orders }}</strong></div>
+            <div class="stat"><span>公开博客</span><strong>{{ stats.blogs }}</strong></div>
+        </section>
+        <section class="panel">
+            <div class="panel-header"><h2>最近外卖订单</h2><a class="btn secondary small" href="/manage/?section=orders">查看全部</a></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>订单</th><th>顾客</th><th>菜品</th><th>金额</th><th>骑手</th><th>状态</th><th>时间</th></tr></thead>
+                    <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.user.username }}</td>
+                        <td>{{ order.food.name }} × {{ order.num }}</td>
+                        <td>¥{{ order.cost|floatformat:2 }}</td>
+                        <td>{{ order.rider.username|default:"未分配" }}</td>
+                        <td>
+                            {% if order.pos == 0 %}待接单{% elif order.pos == 1 %}骑手已接单{% elif order.pos == 2 %}商家已出餐{% elif order.pos == 3 %}配送中{% elif order.pos == 4 %}已送达{% else %}已评价{% endif %}
+                        </td>
+                        <td>{{ order.time|date:"m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}<tr><td colspan="7" class="empty">暂无订单</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {% elif section == 'users' %}
+        <section class="panel">
+            <div class="panel-header"><h2>平台用户</h2><span>{{ users|length }} 条结果</span></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>ID</th><th>用户名</th><th>手机号</th><th>角色</th><th>状态</th><th>修改角色</th><th>账号操作</th></tr></thead>
+                    <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>#{{ user.id }}</td>
+                        <td>{{ user.username }}{% if user.id == admin_user.id %}（当前）{% endif %}</td>
+                        <td>{{ user.phone|default:"未填写" }}</td>
+                        <td>{{ user.get_usertype_display }}</td>
+                        <td><span class="badge {% if user.isDelete %}off{% endif %}">{% if user.isDelete %}已停用{% else %}正常{% endif %}</span></td>
+                        <td>
+                            <form class="inline-form" action="/manage/users/action/" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="hidden" name="action" value="change_role">
+                                <select name="role" aria-label="用户角色">
+                                    <option value="0" {% if user.usertype == 0 %}selected{% endif %}>普通用户</option>
+                                    <option value="1" {% if user.usertype == 1 %}selected{% endif %}>骑手</option>
+                                    <option value="2" {% if user.usertype == 2 %}selected{% endif %}>商家</option>
+                                    <option value="3" {% if user.usertype == 3 %}selected{% endif %}>管理员</option>
+                                </select>
+                                <button class="btn small" type="submit">保存</button>
+                            </form>
+                        </td>
+                        <td>
+                            <form action="/manage/users/action/" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <input type="hidden" name="action" value="toggle_active">
+                                <button class="btn small {% if not user.isDelete %}danger{% endif %}" type="submit" {% if user.id == admin_user.id %}disabled{% endif %}>
+                                    {% if user.isDelete %}恢复账号{% else %}停用账号{% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}<tr><td colspan="7" class="empty">没有匹配用户</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {% elif section == 'orders' %}
+        <section class="panel">
+            <div class="panel-header"><h2>外卖订单</h2><span>管理员只能将未完成订单标记为已送达，不能代替用户评价</span></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>订单</th><th>顾客</th><th>菜品</th><th>金额</th><th>地址</th><th>骑手</th><th>当前状态</th><th>更新状态</th></tr></thead>
+                    <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.user.username }}</td>
+                        <td>{{ order.food.name }} × {{ order.num }}</td>
+                        <td>¥{{ order.cost|floatformat:2 }}</td>
+                        <td>{{ order.address }}</td>
+                        <td>{{ order.rider.username|default:"未分配" }}</td>
+                        <td>
+                            <span class="badge {% if order.pos < 4 %}pending{% endif %}">
+                                {% if order.pos == 0 %}待接单{% elif order.pos == 1 %}骑手已接单{% elif order.pos == 2 %}商家已出餐{% elif order.pos == 3 %}配送中{% elif order.pos == 4 %}已送达{% else %}已评价{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if order.pos == 5 %}
+                            <span class="muted">用户已评价，已锁定</span>
+                            {% elif order.pos == 4 %}
+                            <span class="muted">等待用户评价</span>
+                            {% else %}
+                            <form class="inline-form" action="/manage/orders/action/" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                <input type="hidden" name="action" value="complete">
+                                <button class="btn small" type="submit">标记已送达</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}<tr><td colspan="8" class="empty">没有匹配订单</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {% elif section == 'content' %}
+        <div class="content-grid">
+            <section class="content-list">
+                <h2>菜品（{{ stats.foods }}）</h2>
+                {% for food in foods %}
+                <div class="content-item"><strong>#{{ food.id }} {{ food.name }} · ¥{{ food.price }}</strong><span>商家：{{ food.merchant.username|default:food.providor }} · 评分 {{ food.rating }}</span></div>
+                {% empty %}<div class="empty">暂无菜品</div>{% endfor %}
+            </section>
+            <section class="content-list">
+                <h2>酒店（{{ stats.hotels }}）</h2>
+                {% for hotel in hotels %}
+                <div class="content-item"><strong>#{{ hotel.id }} {{ hotel.name }}</strong><span>{{ hotel.addr }} · 商家：{{ hotel.merchant.username|default:"未关联" }}</span></div>
+                {% empty %}<div class="empty">暂无酒店</div>{% endfor %}
+            </section>
+            <section class="content-list">
+                <h2>娱乐（{{ stats.plays }}）</h2>
+                {% for play in plays %}
+                <div class="content-item"><strong>#{{ play.id }} {{ play.name }} · ¥{{ play.price }}</strong><span>{{ play.addr }} · 商家：{{ play.merchant.username|default:"未关联" }}</span></div>
+                {% empty %}<div class="empty">暂无娱乐场所</div>{% endfor %}
+            </section>
+        </div>
+
+        {% elif section == 'blogs' %}
+        <section class="panel">
+            <div class="panel-header"><h2>博客审核</h2><span>隐藏后用户端不再展示</span></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>ID</th><th>标题</th><th>作者</th><th>发布时间</th><th>评论数</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody>
+                    {% for blog in blogs %}
+                    <tr>
+                        <td>#{{ blog.id }}</td>
+                        <td>{{ blog.title|truncatechars:34 }}</td>
+                        <td>{{ blog.authorid.username }}</td>
+                        <td>{{ blog.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ blog.comment_count }}</td>
+                        <td><span class="badge {% if blog.isdeleted %}off{% endif %}">{% if blog.isdeleted %}已隐藏{% else %}公开{% endif %}</span></td>
+                        <td>
+                            <form action="/manage/blogs/action/" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="item_type" value="blog">
+                                <input type="hidden" name="item_id" value="{{ blog.id }}">
+                                <button class="btn small {% if not blog.isdeleted %}danger{% endif %}" type="submit">{% if blog.isdeleted %}恢复{% else %}隐藏{% endif %}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}<tr><td colspan="7" class="empty">没有匹配博客</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="panel">
+            <div class="panel-header"><h2>最新评论</h2><span>最多展示 100 条</span></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>ID</th><th>博客</th><th>用户 ID</th><th>内容</th><th>时间</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody>
+                    {% for comment in comments %}
+                    <tr>
+                        <td>#{{ comment.id }}</td>
+                        <td>#{{ comment.blogid_id }}</td>
+                        <td>#{{ comment.userid }}</td>
+                        <td>{{ comment.content|truncatechars:46 }}</td>
+                        <td>{{ comment.created_at|date:"m-d H:i" }}</td>
+                        <td><span class="badge {% if comment.isdeleted %}off{% endif %}">{% if comment.isdeleted %}已隐藏{% else %}公开{% endif %}</span></td>
+                        <td>
+                            <form action="/manage/blogs/action/" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="item_type" value="comment">
+                                <input type="hidden" name="item_id" value="{{ comment.id }}">
+                                <button class="btn small {% if not comment.isdeleted %}danger{% endif %}" type="submit">{% if comment.isdeleted %}恢复{% else %}隐藏{% endif %}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}<tr><td colspan="7" class="empty">暂无评论</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+    </main>
+</div>
+</body>
+</html>

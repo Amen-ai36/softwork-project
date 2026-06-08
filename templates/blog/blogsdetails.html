@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客详情</title>
+    <style>
+        /* ... 原有样式保持不变 ... */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/3.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a; /* 后备色 */
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .header {
+            background: #2d3e2b;
+            padding: 1.5rem 2rem;
+            color: white;
+        }
+
+        .header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header h2::before {
+            content: "📖";
+            font-size: 1.8rem;
+        }
+
+        .content-card {
+            padding: 2rem;
+        }
+
+        .blog-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3e2b;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative; /* 新增：为删除按钮定位做准备 */
+        }
+
+        .blog-title::before {
+            content: "📌";
+            font-size: 1.8rem;
+        }
+
+        /* 新增：博客删除按钮样式 */
+        .delete-blog-btn {
+            position: absolute;
+            top: 10px; 
+            right: 10px;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            background: #e74c3c;
+            color: white;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+
+        .delete-blog-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .blog-meta {
+            display: flex;
+            gap: 1.5rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .blog-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .meta-author::before {
+            content: "✍️ ";
+        }
+
+        .meta-date::before {
+            content: "🕒 ";
+        }
+
+        .blog-content {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #1f2937;
+            background: #fef9e6;
+            padding: 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .blog-content::before {
+            content: "📄 ";
+            font-size: 1.2rem;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 0.75rem;
+            color: #e67e22;
+        }
+
+        /* 评论列表样式 */
+        .comments-section {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .comments-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3e2b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .comments-section h3::before {
+            content: "💬";
+        }
+
+        .comment-item {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            border: 1px solid #edf2f7;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: 0.2s;
+            position: relative; /* 新增：为评论删除按钮定位 */
+        }
+
+        .comment-item:hover {
+            border-color: #ffb347;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: #2d3e2b;
+        }
+
+        .comment-date {
+            color: #6c757d;
+            font-size: 0.75rem;
+        }
+
+        /* 新增：评论删除按钮样式 */
+        .delete-comment-btn {
+            display: inline-block; 
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            background: #f1ecec;
+            color: #6c757d;
+            font-size: 0.75rem;
+            transition: 0.2s;
+            margin-left: 0.5rem;
+        }
+
+        .delete-comment-btn:hover {
+            background: #3b3938;
+            color: white;
+        }
+
+        .comment-content {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #1f2937;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .empty-comments {
+            text-align: center;
+            padding: 1.5rem;
+            background: #faf9f7;
+            border-radius: 20px;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        /* 评论框样式 */
+        .comment-section {
+            margin-top: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .comment-section h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3e2b;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .comment-section h4::before {
+            content: "💬";
+        }
+
+        .comment-textarea {
+            width: 100%;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1.2rem;
+            padding: 0.9rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            transition: 0.2s;
+        }
+
+        .comment-textarea:focus {
+            border-color: #ffb347;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
+        }
+
+        .comment-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+
+        .comment-buttons button {
+            padding: 0.5rem 1.2rem;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-cancel {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-cancel:hover {
+            background: #dee2e6;
+        }
+
+        .btn-send {
+            background: #ffb347;
+            color: #2d3e2b;
+        }
+
+        .btn-send:hover {
+            background: #ff9f1c;
+            transform: translateY(-2px);
+        }
+
+        /* 成功/错误提示 */
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3e2b;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.8rem;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-back {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-back:hover {
+            background: #dee2e6;
+            transform: translateY(-2px);
+        }
+
+        .btn-comment {
+            background: #ffb347;
+            color: #2d3e2b;
+        }
+
+        .btn-comment:hover {
+            background: #ff9f1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+            .blog-title {
+                font-size: 1.5rem;
+            }
+            .content-card {
+                padding: 1.5rem;
+            }
+            .delete-blog-btn {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>博客 · 详情</h2>
+    </div>
+    <div class="content-card">
+        <!-- 博客标题（新增：作者可见的删除按钮） -->
+        <div class="blog-title">
+            {{ blog.title }}
+            {% if blog.authorid.id|stringformat:"s" == user_id|stringformat:"s" %}
+                <button class="delete-blog-btn" data-blog-id="{{ blog.id }}" style="display:block !important">🗑️ 删除博客</button>
+            {% endif %}
+        </div>
+
+        <!-- 博客元数据：作者 + 创建时间 -->
+        <div class="blog-meta">
+            <span class="meta-author">作者：{{ author_name }}</span>
+            <span class="meta-date">发布于：{{ blog.created_at|date:"Y-m-d H:i:s" }}</span>
+        </div>
+
+        <!-- 博客正文内容 -->
+        <div class="blog-content">
+            {{ blog.content|linebreaksbr }}
+        </div>
+
+        <!-- 评论区：显示所有评论（新增：评论作者可见的删除按钮） -->
+        <div class="comments-section">
+            <h3>网友评论</h3>
+            {% if comments %}
+                {% for comment in comments %}
+                <div class="comment-item" data-comment-id="{{ comment.id }}">
+                    <div class="comment-header">
+                        <span class="comment-author">{{ comment.username }}</span>
+                        <div>
+                            {% if comment.userid|stringformat:"s" == user_id|stringformat:"s" %}
+                                <button class="delete-comment-btn" data-comment-id="{{ comment.id }}">删除</button>
+                            {% endif %}
+                            <span class="comment-date">{{ comment.created_at|date:"Y-m-d H:i:s" }}</span>
+                        </div>
+                    </div>
+                    <div class="comment-content">{{ comment.content|linebreaksbr }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-comments">📭 暂无评论，快来抢沙发吧～</div>
+            {% endif %}
+        </div>
+
+        <!-- 评论输入区域（默认隐藏） -->
+        <div id="commentBox" class="comment-section" style="display: none;">
+            <h4>发表你的想法</h4>
+            <textarea id="commentContent" class="comment-textarea" rows="4" placeholder="这里需要一条查重率为0%的评论"></textarea>
+            <div class="comment-buttons">
+                <button id="cancelCommentBtn" class="btn-cancel">取消</button>
+                <button id="sendCommentBtn" class="btn-send">发送</button>
+            </div>
+        </div>
+
+        <!-- 按钮区域 -->
+        <div class="action-buttons">
+            <a href="/blog" class="btn btn-back">← 返回博客空间</a>
+            <button id="showCommentBtn" class="btn btn-comment">💬 我有话要说</button>
+        </div>
+    </div>
+</div>
+    
+<!-- 简单提示浮层 -->
+<div id="toastMsg" class="toast-msg"></div>
+
+<script>
+    // 获取元素
+    const USER_ID = {{ user_id }};
+    const showCommentBtn = document.getElementById('showCommentBtn');
+    const commentBox = document.getElementById('commentBox');
+    const commentContent = document.getElementById('commentContent');
+    const cancelCommentBtn = document.getElementById('cancelCommentBtn');
+    const sendCommentBtn = document.getElementById('sendCommentBtn');
+    const toastMsg = document.getElementById('toastMsg');
+    // 新增：获取删除按钮元素
+    const deleteBlogBtns = document.querySelectorAll('.delete-blog-btn');
+    const deleteCommentBtns = document.querySelectorAll('.delete-comment-btn');
+
+    // 显示提示消息
+    function showMessage(text, isError = false) {
+        toastMsg.textContent = text;
+        toastMsg.style.backgroundColor = isError ? '#c0392b' : '#2d3e2b';
+        toastMsg.style.opacity = '1';
+        setTimeout(() => {
+            toastMsg.style.opacity = '0';
+        }, 2500);
+    }
+
+    // 显示/隐藏评论框 (显示时自动聚焦)
+    showCommentBtn.addEventListener('click', () => {
+        if (commentBox.style.display === 'none') {
+            commentBox.style.display = 'block';
+            commentContent.focus();
+        } else {
+            commentBox.style.display = 'none';
+            commentContent.value = '';
+        }
+    });
+
+    // 取消按钮：清空文本并隐藏评论框
+    cancelCommentBtn.addEventListener('click', () => {
+        commentContent.value = '';
+        commentBox.style.display = 'none';
+    });
+
+    // 发送按钮：获取内容，通过 AJAX 提交评论
+    sendCommentBtn.addEventListener('click', async () => {
+        const content = commentContent.value.trim();
+        if (!content) {
+            showMessage('评论内容不能为空', true);
+            return;
+        }
+        if (content.length > 500) {
+            showMessage('评论内容不能超过500字', true);
+            return;
+        }
+
+        // 获取博客 ID（从模板变量中获取）
+        const blogId = {{ blog.id }};
+
+        // 发送 POST 请求到后端接口（请根据实际后端路径修改）
+        try {
+            const response = await fetch('/blogcomment/?userid={{ user_id }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    blog_id: blogId,
+                    content: content
+                })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                showMessage('评论发布成功！');
+                // 清空并隐藏评论框
+                commentContent.value = '';
+                commentBox.style.display = 'none';
+                window.location.reload();
+            } else {
+                showMessage(result.error || '发布失败，请稍后重试', true);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage('网络错误，请检查连接', true);
+        }
+    });
+
+    // 新增：删除博客逻辑
+    deleteBlogBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('确定要删除这篇博客吗？删除后无法恢复！')) {
+                return;
+            }
+            const blogId = btn.dataset.blogId;
+            try {
+                const response = await fetch(`/blog/delete/?blogid=${blogId}&userid={{ user_id }}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                if (response.ok) {
+                    showMessage('博客删除成功！');
+                    // 跳转到博客列表页
+                    setTimeout(() => {
+                        window.location.href = '/blog';
+                    }, 1500);
+                } else {
+                    const result = await response.json();
+                    showMessage(result.error || '博客删除失败，请稍后重试', true);
+                }
+            } catch (error) {
+                console.error('Delete blog error:', error);
+                showMessage('网络错误，删除失败', true);
+            }
+        });
+    });
+
+    // 新增：删除评论逻辑
+    deleteCommentBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('确定要删除这条评论吗？删除后无法恢复！')) {
+                return;
+            }
+            const commentId = btn.dataset.commentId;
+            try {
+                const response = await fetch(`/blogcomment/delete/?commentid=${commentId}&userid={{ user_id }}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                if (response.ok) {
+                    showMessage('评论删除成功！');
+                    // 移除当前评论DOM元素
+                    const commentItem = btn.closest('.comment-item');
+                    commentItem.remove();
+                    // 检查是否还有评论，若无则显示空评论提示
+                    const commentList = document.querySelectorAll('.comment-item');
+                    if (commentList.length === 0) {
+                        document.querySelector('.comments-section').innerHTML = `
+                            <h3>💬 网友评论</h3>
+                            <div class="empty-comments">📭 暂无评论，快来抢沙发吧～</div>
+                        `;
+                    }
+                } else {
+                    const result = await response.json();
+                    showMessage(result.error || '评论删除失败，请稍后重试', true);
+                }
+            } catch (error) {
+                console.error('Delete comment error:', error);
+                showMessage('网络错误，删除失败', true);
+            }
+        });
+    });
+
+    // 辅助函数：获取 Cookie 中的 csrftoken
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+</body>
+</html>

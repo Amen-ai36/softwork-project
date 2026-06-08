@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>确认订房 · Life Master</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/1.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .order-card {
+            max-width: 550px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: #2d3e2b;
+            padding: 1.8rem 2rem;
+            color: white;
+        }
+
+        .card-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-header h2::before {
+            content: "🏨";
+            font-size: 1.8rem;
+        }
+
+        .hotel-name {
+            background: rgba(255, 255, 255, 0.15);
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2d3e2b;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: #fefefe;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #ffb347;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
+        }
+
+        .hint {
+            margin-top: 0.4rem;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: #ffb347;
+            color: #2d3e2b;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn-primary:hover {
+            background: #ff9f1c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(255, 159, 28, 0.25);
+        }
+
+        .btn-secondary {
+            background: #eef2f0;
+            color: #2d3e2b;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8e4;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem;
+            }
+            .card-body {
+                padding: 1.5rem;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="order-card">
+    <div class="card-header">
+        <h2>确认订房</h2>
+        <div class="hotel-name">🏨 {{ hotel.name }}</div>
+    </div>
+    <div class="card-body">
+        <form action="/hotelorder/?userid={{ user_id }}&hotelid={{ hotel.id }}" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="checkin_time">📅 预约入住时间</label>
+                <input type="datetime-local" id="checkin_time" name="checkin_time" required>
+            </div>
+            <div class="form-group">
+                <label for="duration">⏱️ 入住时间长度</label>
+                <input type="number" id="duration" name="duration" required min="1" placeholder="钟点房填小时数，日租房填天数">
+                <p class="hint">钟点房按小时计算，日租房按天数计算</p>
+            </div>
+            <div class="form-group">
+                <label for="room_type">🛏️ 房型</label>
+                <select id="room_type" name="room_type" required>
+                    <option value="" disabled selected>请选择房型</option>
+                    {% if hotel.price_clock %}
+                    <option value="single_clock">单人间钟点房 · ¥{{ hotel.price_clock }}/小时</option>
+                    {% endif %}
+                    {% if hotel.price_day %}
+                    <option value="single_day">单人间日租 · ¥{{ hotel.price_day }}/天</option>
+                    {% endif %}
+                    {% if hotel.price_double_clock %}
+                    <option value="double_clock">双人间钟点房 · ¥{{ hotel.price_double_clock }}/小时</option>
+                    {% endif %}
+                    {% if hotel.price_double_day %}
+                    <option value="double_day">双人间日租 · ¥{{ hotel.price_double_day }}/天</option>
+                    {% endif %}
+                    {% if hotel.price_special %}
+                    <option value="special_day">特色房日租 · ¥{{ hotel.price_special }}/天</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">✅ 提交订单</button>
+                <a href="/hoteldetails/?hotelid={{ hotel.id }}" class="btn btn-secondary">🔙 我再想想</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

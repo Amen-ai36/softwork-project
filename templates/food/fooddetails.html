@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>美食详情 · 风味食录 | Life Master</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/1.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a; /* 深邃底色 */
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;      /* 略微增加容器宽度，让大图更舒展 */
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            backdrop-filter: blur(0px);
+            transition: all 0.2s;
+        }
+
+        .header {
+            background: #2d3e2b;
+            padding: 1.5rem 2rem;
+            color: white;
+            border-bottom: 1px solid #4a6741;
+        }
+
+        .header h2 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .header h2::before {
+            content: "🍲";
+            font-size: 2rem;
+        }
+
+        .content {
+            padding: 2rem 2rem 2.2rem;
+        }
+
+        /* 美食卡片 - 图片区域显著放大，视觉重心提升 */
+        .food-card {
+            background: #fef9e6;
+            border-radius: 28px;
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: center;    /* 垂直居中对齐，大图更协调 */
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.03);
+        }
+
+        /* 图片外层容器 - 给足空间 */
+        .food-img {
+            flex-shrink: 0;
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 0.6rem;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+            transition: transform 0.25s ease, box-shadow 0.3s;
+        }
+
+        .food-img:hover {
+            transform: scale(1.01);
+            box-shadow: 0 18px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        /* ★★★ 核心改动：图片显示窗口大幅增大 ★★★ */
+        .food-img img {
+            display: block;
+            width: auto;
+            max-width: 360px;       /* 从原本200px → 360px，窗口增大80% 视觉饱满 */
+            height: auto;
+            max-height: 320px;
+            object-fit: cover;      /* 保持比例且填充区域，避免变形 */
+            border-radius: 24px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 右侧美食信息区，增加可读性 */
+        .food-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .food-info p {
+            margin-bottom: 0.85rem;
+            font-size: 1.05rem;
+            color: #2c3e2b;
+            line-height: 1.4;
+        }
+
+        .food-info strong {
+            font-weight: 700;
+            color: #3b5c38;
+            display: inline-block;
+            width: 100px;
+            letter-spacing: 0.3px;
+        }
+
+        .rating {
+            color: #e67e22;
+            font-weight: 700;
+            background: #fff0e0;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            display: inline-block;
+        }
+
+        .stats-card {
+            background: #f0f4ef;
+            border-radius: 24px;
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+            align-items: baseline;
+            border-left: 5px solid #ffb347;
+        }
+
+        .stats-card p {
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
+
+        .stats-card span {
+            font-weight: 800;
+            color: #e67e22;
+            font-size: 1.35rem;
+            margin-left: 0.5rem;
+            background: #fff4e6;
+            padding: 0 0.4rem;
+            border-radius: 24px;
+        }
+
+        .orders-section {
+            margin-top: 1rem;
+        }
+
+        .orders-section h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3e2b;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .orders-section h3::before {
+            content: "📋";
+            font-size: 1.6rem;
+        }
+
+        /* 横向滚动容器 - 丝滑体验 */
+        .horizontal-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            padding-bottom: 12px;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .cards-grid {
+            display: inline-flex;
+            gap: 1.4rem;
+            white-space: normal;
+        }
+
+        /* 订单卡片 - 精致现代 */
+        .order-card {
+            flex-shrink: 0;
+            width: 340px;           /* 稍加宽卡片容纳更多文字 */
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #edf2f0;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.04);
+            transition: all 0.25s;
+            overflow: hidden;
+            white-space: normal;
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 18px 28px -10px rgba(0, 0, 0, 0.15);
+            border-color: #ffb347;
+        }
+
+        .card-header {
+            background: #fef9e6;
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid #ffebc2;
+            font-weight: 600;
+            color: #2d3e2b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .order-id {
+            background: #ffb34720;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #b45f06;
+            font-family: monospace;
+        }
+
+        .food-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1rem 1.2rem 1.2rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px dashed #f0ede8;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: #5a6e57;
+        }
+
+        .detail-value {
+            color: #2c3e2b;
+            font-weight: 500;
+        }
+
+        .score-good {
+            color: #e67e22;
+            font-weight: 700;
+        }
+
+        .comment {
+            margin-top: 0.8rem;
+            background: #faf8f3;
+            padding: 0.7rem;
+            border-radius: 18px;
+            font-size: 0.85rem;
+            color: #4a5b48;
+            font-style: normal;
+            border-left: 3px solid #ffb347;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 2.5rem;
+            color: #9aaeb7;
+            font-style: italic;
+            background: #faf9f7;
+            border-radius: 28px;
+            font-size: 1rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1.2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #2d3e2b;
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 2rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            transition: 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .btn-primary {
+            background: #ffb347;
+            color: #2d3e2b;
+            box-shadow: 0 6px 14px rgba(255, 180, 71, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: #ffa01e;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 160, 30, 0.35);
+        }
+
+        .btn-secondary:hover {
+            background: #1f2e1d;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        hr {
+            margin: 1.8rem 0 0.8rem;
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, #e2e8f0, #ffd89a, #e2e8f0);
+        }
+
+        /* 自定义滚动条亮眼 */
+        .horizontal-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-track {
+            background: #e9ece8;
+            border-radius: 12px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb {
+            background: #ffb347;
+            border-radius: 12px;
+        }
+        .horizontal-scroll::-webkit-scrollbar-thumb:hover {
+            background: #e67e22;
+        }
+
+        /* 响应式优化：平板 & 手机端保持图片较大但适配良好 */
+        @media (max-width: 900px) {
+            .food-img img {
+                max-width: 300px;   /* 平板依然显著大于原200px，视觉舒适 */
+                max-height: 280px;
+            }
+            .food-card {
+                gap: 1.5rem;
+                padding: 1.4rem;
+            }
+            .order-card {
+                width: 310px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .content {
+                padding: 1.2rem;
+            }
+            .food-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .food-img img {
+                max-width: 280px;   /* 移动端也比原版200px大，视觉提升明显 */
+                max-height: 260px;
+            }
+            .food-info p strong {
+                width: auto;
+                display: inline-block;
+                margin-right: 0.6rem;
+            }
+            .food-info {
+                text-align: left;
+                width: 100%;
+            }
+            .stats-card {
+                justify-content: center;
+                text-align: center;
+                gap: 1rem;
+            }
+            .order-card {
+                width: 280px;
+            }
+            .button-group {
+                justify-content: center;
+            }
+            .header h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* 针对超宽屏仍然舒服，图片最大宽度略微限制但保持大气 */
+        @media (min-width: 1600px) {
+            .container {
+                max-width: 1350px;
+            }
+            .food-img img {
+                max-width: 420px;
+                max-height: 360px;
+            }
+        }
+
+        /* 保留整洁辅助样式 */
+        .food-info .rating {
+            background: #fae6d2;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>美食档案 · {{ food.name }}</h2>
+    </div>
+    <div class="content">
+        {% load static %}
+
+        <!-- 美食主卡片：图片区域显著增大，视觉冲击更足 -->
+        <div class="food-card">
+            <div class="food-img">
+                {# 移除内联width限制，完全由css控制大窗口显示 #}
+                <img src="{% static food.image %}" alt="{{ food.name }}" loading="lazy">
+            </div>
+            <div class="food-info">
+                <p><strong>🍳 提供商：</strong>{{ food.providor }}</p>
+                <p><strong>💰 价格：</strong>¥{{ food.price }}</p>
+                <p><strong>📈 下单数：</strong>{{ food.saleperson }}</p>
+                <p><strong>📦 售出数：</strong>{{ food.sale }}</p>
+                <p><strong>⭐ 评分：</strong>
+                    {% if food.ratenum == 0 %}
+                        <span class="rating">✨ 暂无评分</span>
+                    {% else %}
+                        <span class="rating">{{ food.rating }} / 5.0</span>
+                    {% endif %}
+                </p>
+                <p><strong>📖 简介：</strong>{{ food.inf }}</p>
+            </div>
+        </div>
+
+        <!-- 用户个人统计卡片 -->
+        <div class="stats-card">
+            <p>🍽️ 您点过 <span>{{ order_times }}</span> 次</p>
+            <p>🥘 共点 <span>{{ total_copies }}</span> 份</p>
+        </div>
+
+        <!-- 全网订单记录 - 横向滚动精致卡片 -->
+        <div class="orders-section">
+            <h3>全网食评实录</h3>
+            {% if records %}
+                <div class="horizontal-scroll">
+                    <div class="cards-grid">
+                        {% for order in records %}
+                        <div class="order-card">
+                            <div class="card-header">
+                                <span class="food-name"> 🥢 {{ order.food.name }}</span>
+                                <span class="order-id">#{{ order.id }}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="detail-item">
+                                    <span class="detail-label">📦 数量</span>
+                                    <span class="detail-value">{{ order.num }} 份</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">⏰ 下单时间</span>
+                                    <span class="detail-value">{{ order.time|date:"Y-m-d H:i:s" }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">🍲 食物评分</span>
+                                    <span class="detail-value {% if order.scoretofood > 0 %}score-good{% endif %}">
+                                        {% if order.scoretofood == 0.0 %}
+                                            暂未评分
+                                        {% else %}
+                                            {{ order.scoretofood }} 🌟
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">🚚 配送评分</span>
+                                    <span class="detail-value {% if order.scoretodeliver > 0 %}score-good{% endif %}">
+                                        {% if order.scoretodeliver == 0.0 %}
+                                            暂未评分
+                                        {% else %}
+                                            {{ order.scoretodeliver }} 🌟
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% if order.comment %}
+                                <div class="comment">
+                                    💬 “{{ order.comment }}”
+                                </div>
+                                {% else %}
+                                <div class="comment" style="color:#a1b0a4;">
+                                    暂未留下文字评价
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有人点评这道美味，快成为全网第一条点评吧！～</div>
+            {% endif %}
+        </div>
+
+        <hr>
+        <div class="button-group">
+            <a href="/food/" class="btn btn-secondary">🍜 返回美食列表</a>
+            <a href="/foodorder/?userid={{ user_id }}&foodid={{ food.id }}" class="btn btn-primary">🛒 下单 · 赏味</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

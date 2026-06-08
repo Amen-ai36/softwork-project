@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 · Life Master</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/2.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a; /* 后备色 */
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2d3e2b;
+            padding: 1.5rem 2rem;
+            color: white;
+        }
+
+        .header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header h2::before {
+            content: "👤";
+            font-size: 1.8rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .info-card {
+            background: #fef9e6;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .info-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3e2b;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #ffb347;
+            display: inline-block;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            width: 90px;
+            font-weight: 600;
+            color: #3b5c38;
+        }
+
+        .form-group span, .form-group input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.6rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            background: white;
+            transition: 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #ffb347;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
+        }
+
+        .btn-submit {
+            background: #ffb347;
+            color: #2d3e2b;
+            border: none;
+            padding: 0.7rem 1.8rem;
+            border-radius: 2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background: #ff9f1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 159, 28, 0.3);
+        }
+
+        .orders-section, .blogs-section, .hotel-orders-section, .merchant-foods-section, .merchant-hotels-section,
+        .play-orders-section, .merchant-plays-section, .rider-active-section, .rider-done-section,
+        .merchant-current-orders-section, .merchant-done-orders-section {
+            margin-top: 2rem;
+        }
+
+        .orders-section h3, .blogs-section h3, .hotel-orders-section h3,
+        .merchant-foods-section h3, .merchant-hotels-section h3,
+        .play-orders-section h3, .merchant-plays-section h3,
+        .rider-active-section h3, .rider-done-section h3,
+        .merchant-current-orders-section h3, .merchant-done-orders-section h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3e2b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .orders-section h3::before {
+            content: "📋";
+        }
+
+        .blogs-section h3::before {
+            content: "📝";
+        }
+
+        .hotel-orders-section h3::before {
+            content: "🏨";
+        }
+
+        .play-orders-section h3::before {
+            content: "🎮";
+        }
+
+        .merchant-foods-section h3::before {
+            content: "🍜";
+        }
+
+        .merchant-hotels-section h3::before {
+            content: "🏨";
+        }
+
+        .merchant-plays-section h3::before {
+            content: "🎮";
+        }
+        .rider-active-section h3::before {
+            content: "🛵";
+        }
+        .rider-done-section h3::before {
+            content: "✅";
+        }
+        .merchant-current-orders-section h3::before {
+            content: "📋";
+        }
+        .merchant-done-orders-section h3::before {
+            content: "✅";
+        }
+
+        /* 公共表格容器：水平滚动 + 垂直滚动 */
+        .table-wrapper {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 400px;      /* 固定高度，超出滚动 */
+            border-radius: 20px;
+            border: 1px solid #edf2f7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f5f3ef;
+            color: #2d3e2b;
+            font-weight: 600;
+            padding: 0.9rem 0.8rem;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
+            position: sticky;
+            top: 0;                /* 表头粘性滚动（可选） */
+            background-color: #f5f3ef;
+            z-index: 1;
+        }
+
+        td {
+            padding: 0.8rem 0.8rem;
+            border-bottom: 1px solid #edf2f7;
+            color: #1f2937;
+        }
+
+        tr:hover td {
+            background-color: #fef9e6;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+            font-style: italic;
+            background: #faf9f7;
+            border-radius: 20px;
+        }
+
+        .btn-status, .btn-evaluate, .btn-view-blog {
+            background: #2d3e2b;
+            color: white;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-status:hover, .btn-evaluate:hover, .btn-view-blog:hover {
+            background: #1f2e1d;
+            transform: translateY(-2px);
+        }
+        .btn-disabled {
+            background: #cbd5e0;
+            color: #4a5568;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: not-allowed;
+        }
+
+        .back-btn {
+            display: inline-block;
+            background: #2d3e2b;
+            color: white;
+            text-decoration: none;
+            padding: 0.7rem 1.8rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            transition: 0.2s;
+            margin-top: 1.5rem;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .back-btn:hover {
+            background: #1f2e1d;
+            transform: translateY(-2px);
+        }
+
+        hr {
+            margin: 2rem 0 0.5rem;
+            border: none;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            .content {
+                padding: 1.2rem;
+            }
+            .form-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .form-group label {
+                width: auto;
+            }
+            .form-group span, .form-group input {
+                width: 100%;
+            }
+            th, td {
+                padding: 0.5rem 0.4rem;
+                font-size: 0.8rem;
+            }
+            .table-wrapper {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>个人中心</h2>
+    </div>
+    <div class="content">
+        <!-- 个人信息修改表单 -->
+        <div class="info-card">
+            <h3>📝 编辑资料</h3>
+            <form action="/space/" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>用户名：</label>
+                    <span>{{ user.username }}</span>
+                </div>
+                <div class="form-group">
+                    <label for="phone">手机号：</label>
+                    <input type="text" id="phone" name="phone" value="{{ user.phone }}">
+                </div>
+                <div class="form-group">
+                    <label for="word">个性签名：</label>
+                    <input type="text" id="word" name="word" value="{{ user.word }}">
+                </div>
+                <button type="submit" class="btn-submit">💾 提交（修改/新增）</button>
+            </form>
+        </div>
+
+        {% if is_rider %}
+        <!-- 骑手：已接订单栏 -->
+        <div class="rider-active-section">
+            <h3>已接订单</h3>
+            {% if rider_active_orders %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>美食名称</th>
+                                <th>顾客</th>
+                                <th>数量</th>
+                                <th>总价</th>
+                                <th>配送地址</th>
+                                <th>下单时间</th>
+                                <th>当前状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in rider_active_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.food.name }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>{{ order.num }} 份</td>
+                                <td>¥{{ order.cost }}</td>
+                                <td>{{ order.address }}</td>
+                                <td>{{ order.time|date:"m-d H:i" }}</td>
+                                <td>
+                                    {% if order.pos == 1 %}⏳ 待商家出餐
+                                    {% elif order.pos == 2 %}🍳 已出餐 · 待取餐
+                                    {% elif order.pos == 3 %}🍳 已取餐 · 配送中
+                                    {% elif order.pos == 4 %}📦 已送达 · 待评价
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order.pos == 2 %}
+                                        <a href="/rider_get/?orderid={{ order.id }}" class="btn-evaluate">✅ 已取餐</a>
+                                    {% elif order.pos == 3 %}
+                                        <a href="/rider_deliver/?orderid={{ order.id }}" class="btn-evaluate">✅ 已送达</a>
+                                    {% else %}
+                                        <button type="button" class="btn-disabled" disabled>🚫 暂无操作</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 暂无已接订单，去订单中心看看吧～</div>
+            {% endif %}
+        </div>
+
+        <!-- 骑手：已完成订单栏 -->
+        <div class="rider-done-section">
+            <h3>已完成订单</h3>
+            {% if rider_done_orders %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>美食名称</th>
+                                <th>顾客</th>
+                                <th>数量</th>
+                                <th>总价</th>
+                                <th>配送地址</th>
+                                <th>下单时间</th>
+                                <th>顾客评价</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in rider_done_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.food.name }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>{{ order.num }} 份</td>
+                                <td>¥{{ order.cost }}</td>
+                                <td>{{ order.address }}</td>
+                                <td>{{ order.time|date:"m-d H:i" }}</td>
+                                <td>
+                                    {% if order.scoretofood > 0 %}
+                                        ⭐{{ order.scoretofood }} (食物) ⭐{{ order.scoretodeliver }} (配送)
+                                    {% else %}
+                                        暂未评价
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 暂无已完成订单</div>
+            {% endif %}
+        </div>
+
+        {% elif is_merchant %}
+        <!-- 商家：已创建的食物 -->
+        <div class="merchant-foods-section">
+            <h3>已创建的食物</h3>
+            {% if merchant_foods %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>食物ID</th>
+                                <th>美食名称</th>
+                                <th>数量</th>
+                                <th>总价</th>
+                                <th>地址</th>
+                                <th>时间</th>
+                                <th>食物评分</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in merchant_foods %}
+                            <tr>
+                                <td>{{ item.food.id }}</td>
+                                <td>{{ item.food.name }}</td>
+                                <td>{{ item.total_num }}</td>
+                                <td>{{ item.total_cost }}</td>
+                                <td>{{ item.address }}</td>
+                                <td>{% if item.latest_time %}{{ item.latest_time|date:"Y-m-d H:i" }}{% else %}暂无订单{% endif %}</td>
+                                <td>{% if item.avg_score %}{{ item.avg_score|floatformat:1 }}{% else %}暂未评分{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有创建美食，去美食中心点击 ➕ 添加吧～</div>
+            {% endif %}
+        </div>
+
+        <!-- 商家：已开放的酒店 -->
+        <div class="merchant-hotels-section">
+            <h3>已开放的酒店</h3>
+            {% if merchant_hotels %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>酒店ID</th>
+                                <th>酒店名称</th>
+                                <th>地址</th>
+                                <th>评价</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hotel in merchant_hotels %}
+                            <tr>
+                                <td>{{ hotel.id }}</td>
+                                <td>{{ hotel.name }}</td>
+                                <td>{{ hotel.addr }}</td>
+                                <td>{% if hotel.ratenum == 0 %}暂未评价{% else %}{{ hotel.rating }}{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有开放酒店，去酒店民宿点击 ➕ 添加吧～</div>
+            {% endif %}
+        </div>
+
+        <!-- 商家：已开放的娱乐场所 -->
+        <div class="merchant-plays-section">
+            <h3>已开放的娱乐场所</h3>
+            {% if merchant_plays %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>场所ID</th>
+                                <th>场所名称</th>
+                                <th>地址</th>
+                                <th>开始营业</th>
+                                <th>运营时间</th>
+                                <th>评分</th>
+                                <th>简介</th>
+                                <th>详情</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for play in merchant_plays %}
+                            <tr>
+                                <td>{{ play.id }}</td>
+                                <td>{{ play.name }}</td>
+                                <td>{{ play.addr }}</td>
+                                <td>{{ play.start_time }}</td>
+                                <td>{{ play.open_time }}</td>
+                                <td>{% if play.ratenum == 0 %}暂未评价{% else %}{{ play.rating }}{% endif %}</td>
+                                <td>{{ play.inf|truncatechars:30 }}</td>
+                                <td>
+                                    <button type="button" class="btn-status"
+                                        onclick="location.href='/playdetails/?playid={{ play.id }}'">
+                                        🔍 查看详情
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有开放娱乐场所，去娱乐中心点击 ➕ 添加吧～</div>
+            {% endif %}
+        </div>
+
+        <!-- 商家：当前订单（骑手已接单，待出餐） -->
+        <div class="merchant-current-orders-section">
+            <h3>当前订单</h3>
+            {% if merchant_current_orders %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>美食名称</th>
+                                <th>顾客</th>
+                                <th>骑手</th>
+                                <th>数量</th>
+                                <th>总价</th>
+                                <th>配送地址</th>
+                                <th>下单时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in merchant_current_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.food.name }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>{{ order.rider.username|default:"未知" }}</td>
+                                <td>{{ order.num }} 份</td>
+                                <td>¥{{ order.cost }}</td>
+                                <td>{{ order.address }}</td>
+                                <td>{{ order.time|date:"m-d H:i" }}</td>
+                                
+                                <td>
+                                    {% if order.pos == 1 %}
+                                        <a href="/merchant_prepare/?orderid={{ order.id }}" class="btn-evaluate">🍳 完成备餐</a>
+                                    {% else %}
+                                        <button type="button" class="btn-disabled" disabled>🚫 暂无操作</button>
+                                    {% endif %}
+                                    
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 暂无待处理的订单</div>
+            {% endif %}
+        </div>
+
+        <!-- 商家：已完成订单（已出餐/已送达/已评价） -->
+        <div class="merchant-done-orders-section">
+            <h3>已完成订单</h3>
+            {% if merchant_done_orders %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>美食名称</th>
+                                <th>顾客</th>
+                                <th>骑手</th>
+                                <th>数量</th>
+                                <th>总价</th>
+                                <th>状态</th>
+                                <th>顾客评价</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in merchant_done_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.food.name }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>{{ order.rider.username|default:"未知" }}</td>
+                                <td>{{ order.num }} 份</td>
+                                <td>¥{{ order.cost }}</td>
+                                <td>
+                                    {% if order.pos == 2 %}🍳 已出餐
+                                    {% elif order.pos == 4 %}📦 已送达
+                                    {% elif order.pos == 5 %}✅ 已评价
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order.scoretofood > 0 %}
+                                        ⭐{{ order.scoretofood }} (食物) ⭐{{ order.scoretodeliver }} (配送)
+                                    {% else %}
+                                        暂未评价
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 暂无已完成的订单</div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- 订单记录（可滚动表格） -->
+        <div class="orders-section">
+            <h3>我的订单记录</h3>
+            {% if orders %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>美食名称</th>
+                                <th>数量</th>
+                                <th>总价</th>
+                                <th>地址</th>
+                                <th>时间</th>
+                                <th>食物评分</th>
+                                <th>配送评分</th>
+                                <th>评价</th>
+                                <th>查看状态</th>
+                                <th>评价操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.food.name }}</td>
+                                <td>{{ order.num }}</td>
+                                <td>{{ order.cost }}</td>
+                                <td>{{ order.address }}</td>
+                                <td>{{ order.time|date:"Y-m-d H:i" }}</td>
+                                <td>{% if order.scoretofood == 0.0 %}暂未评分{% else %}{{ order.scoretofood }}{% endif %}</td>
+                                <td>{% if order.scoretodeliver == 0.0 %}暂未评分{% else %}{{ order.scoretodeliver }}{% endif %}</td>
+                                <td>{{ order.comment }}</td>
+                                <td>
+                                    <button type="button" class="btn-status" 
+                                        onclick="location.href='/orderpos/?orderid={{ order.id }}'">
+                                        📋 查看状态
+                                    </button>
+                                </td>
+                                <td>
+                                    {% if order.pos == 4 %}
+                                        <button type="button" class="btn-evaluate"
+                                            onclick="location.href='/ordercomment/?orderid={{ order.id }}'">
+                                            ✍️ 去评价
+                                        </button>
+                                    {% elif order.pos == 5 %}
+                                        <button type="button" class="btn-disabled" disabled>
+                                            ✅ 已评价
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn-disabled" disabled>
+                                            🚫 不可评价
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有订单记录哦～ 快去点餐吧！</div>
+            {% endif %}
+        </div>
+
+        <!-- 订房记录（可滚动表格） -->
+        <div class="hotel-orders-section">
+            <h3>我的订房记录</h3>
+            {% if hotel_orders %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>预定时间</th>
+                                <th>预计入住时间</th>
+                                <th>入住评价</th>
+                                <th>查看状态</th>
+                                <th>评价操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in hotel_orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.time|date:"Y-m-d H:i" }}</td>
+                                <td>{{ order.checkin_time|date:"Y-m-d H:i" }}</td>
+                                <td>{% if order.score == 0.0 %}暂未评价{% else %}{{ order.score }}{% endif %}</td>
+                                <td>
+                                    <button type="button" class="btn-status"
+                                        onclick="location.href='/hotelorderpos/?orderid={{ order.id }}'">
+                                        📋 查看状态
+                                    </button>
+                                </td>
+                                <td>
+                                    {% if order.pos == 4 %}
+                                        <button type="button" class="btn-evaluate"
+                                            onclick="location.href='/hotelorderpos/?orderid={{ order.id }}'">
+                                            ✍️ 去评价
+                                        </button>
+                                    {% elif order.pos == 5 %}
+                                        <button type="button" class="btn-disabled" disabled>
+                                            ✅ 已评价
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn-disabled" disabled>
+                                            🚫 不可评价
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有订房记录哦～ 快去预订酒店吧！</div>
+            {% endif %}
+        </div>
+
+        <!-- 购票记录（可滚动表格） -->
+        <div class="play-orders-section">
+            <h3>我的购票记录</h3>
+            {% if play_orders %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>订单ID</th>
+                                <th>场所名称</th>
+                                <th>地址</th>
+                                <th>预定游玩</th>
+                                <th>票数</th>
+                                <th>总价</th>
+                                <th>评分</th>
+                                <th>评价</th>
+                                <th>查看状态</th>
+                                <th>评价操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in play_orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.play.name }}</td>
+                                <td>{{ order.play.addr }}</td>
+                                <td>{{ order.visit_time|date:"Y-m-d H:i" }}</td>
+                                <td>{{ order.num }}</td>
+                                <td>{{ order.cost }}</td>
+                                <td>{% if order.score == 0.0 %}暂未评分{% else %}{{ order.score }}{% endif %}</td>
+                                <td>{{ order.comment }}</td>
+                                <td>
+                                    <button type="button" class="btn-status"
+                                        onclick="location.href='/playorderpos/?orderid={{ order.id }}'">
+                                        📋 查看状态
+                                    </button>
+                                </td>
+                                <td>
+                                    {% if order.pos == 4 %}
+                                        <button type="button" class="btn-evaluate"
+                                            onclick="location.href='/playorderpos/?orderid={{ order.id }}'">
+                                            ✍️ 去评价
+                                        </button>
+                                    {% elif order.pos == 5 %}
+                                        <button type="button" class="btn-disabled" disabled>
+                                            ✅ 已评价
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn-disabled" disabled>
+                                            🚫 不可评价
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有购票记录哦～ 快去娱乐中心看看吧！</div>
+            {% endif %}
+        </div>
+
+        <!-- 博客记录（可滚动表格） -->
+        <div class="blogs-section">
+            <h3>我的博客记录</h3>
+            {% if blogs %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>博客标题</th>
+                                <th>发布时间</th>
+                                <th>内容摘要</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for blog in blogs %}
+                            <tr>
+                                <td>{{ blog.title }}</td>
+                                <td>{{ blog.created_at|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ blog.content|truncatechars:50 }}</td>
+                                <td>
+                                    <button type="button" class="btn-view-blog" 
+                                        onclick="location.href='/blogsdetails/?blogid={{ blog.id }}&userid={{ user.id }}'">
+                                        🔍 查看详情
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有发布过博客，去写一篇吧～</div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <hr>
+        {% if is_rider %}
+        <a href="/rider/" class="back-btn">🛵 返回订单列表</a>
+        {% else %}
+        <a href="/food/" class="back-btn">🍜 返回美食列表</a>
+        {% endif %}
+        <a href="/index/" class="back-btn">↪️ 退出登录</a>
+    </div>
+</div>
+</body>
+</html>

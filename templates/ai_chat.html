@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 美食助手</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+        button { padding: 8px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #reply { margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; white-space: pre-wrap; }
+        .loading { color: gray; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🍜 AI 美食助手</h1>
+    <textarea id="userInput" placeholder="请输入您的问题，例如：鱼香肉丝怎么做？"></textarea>
+    <button id="sendBtn">提问</button>
+
+    <div id="reply"></div>
+
+    <script>
+        const sendBtn = document.getElementById('sendBtn');
+        const userInput = document.getElementById('userInput');
+        const replyDiv = document.getElementById('reply');
+
+        sendBtn.addEventListener('click', async () => {
+            const input = userInput.value.trim();
+            if (!input) {
+                replyDiv.innerHTML = '<p class="error">请输入内容</p>';
+                return;
+            }
+
+            replyDiv.innerHTML = '<p class="loading">AI 正在思考中...</p>';
+            try {
+                const formData = new FormData();
+                formData.append('user_input', input);
+                const response = await fetch('', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    replyDiv.innerHTML = `<p><strong>AI 回复：</strong></p><p>${data.reply.replace(/\n/g, '<br>')}</p>`;
+                } else {
+                    replyDiv.innerHTML = `<p class="error">错误：${data.error}</p>`;
+                }
+            } catch (err) {
+                replyDiv.innerHTML = '<p class="error">网络错误，请稍后重试</p>';
+            }
+        });
+    </script>
+</body>
+</html>

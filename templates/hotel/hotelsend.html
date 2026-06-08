@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加酒店 · Life Master</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/3.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .order-card {
+            max-width: 700px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        .card-header {
+            background: #2d3e2b;
+            padding: 1.8rem 2rem;
+            color: white;
+        }
+        .card-header h2 { font-size: 1.8rem; font-weight: 600; }
+        .card-header p { margin-top: 0.5rem; opacity: 0.85; font-size: 0.9rem; }
+        .card-body { padding: 2rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: #2d3e2b; }
+        input, textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus {
+            border-color: #ffb347;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
+        }
+        .price-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+        .hint { font-size: 0.8rem; color: #7f8c8d; margin-top: 0.4rem; }
+        .button-group { display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+        .btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary { background: #ffb347; color: #2d3e2b; }
+        .btn-secondary { background: #eef2f0; color: #2d3e2b; }
+        @media (max-width: 600px) {
+            .price-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="order-card">
+    <div class="card-header">
+        <h2>🏨 添加酒店</h2>
+        <p>商家专属 · 开放新民宿</p>
+    </div>
+    <div class="card-body">
+        <form action="/hotelsend/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="name">酒店名称</label>
+                <input type="text" id="name" name="name" required maxlength="20">
+            </div>
+            <div class="form-group">
+                <label for="addr">地址</label>
+                <input type="text" id="addr" name="addr" required maxlength="100">
+            </div>
+            <div class="form-group">
+                <label for="image">场所图片</label>
+                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/jpg" required>
+                <p class="hint">支持 JPG/PNG 格式，建议尺寸 800x600，文件不超过 2MB</p>
+            </div>
+            <div class="form-group">
+                <label>房型价格（可选填）</label>
+                <div class="price-grid">
+                    <input type="number" name="price_clock" min="0" step="0.1" placeholder="单人间钟点房">
+                    <input type="number" name="price_day" min="0" step="0.1" placeholder="单人间日租">
+                    <input type="number" name="price_double_clock" min="0" step="0.1" placeholder="双人间钟点房">
+                    <input type="number" name="price_double_day" min="0" step="0.1" placeholder="双人间日租">
+                    <input type="number" name="price_special" min="0" step="0.1" placeholder="特色房日租">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inf">简介</label>
+                <textarea id="inf" name="inf" rows="4" maxlength="200"></textarea>
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">✅ 确认添加</button>
+                <a href="/hotel/" class="btn btn-secondary">🔙 返回酒店民宿</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "C:\\Users\\ASUS\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+    "terminal.integrated.env.windows": {
+        "PATH": "C:\\Users\\ASUS\\AppData\\Local\\Programs\\Python\\Python310;C:\\Users\\ASUS\\AppData\\Local\\Programs\\Python\\Python310\\Scripts;${env:PATH}"
+    },
+    "specstory.cloudSync.enabled": "always"
+}
