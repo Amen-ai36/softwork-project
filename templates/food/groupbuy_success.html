@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>团购券生成成功 · Life Master</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/1.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .success-card {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        .card-header {
+            background: #2d3e2b;
+            padding: 1.8rem 2rem;
+            color: white;
+        }
+        .card-header h2 { font-size: 1.8rem; font-weight: 600; }
+        .card-body { padding: 2rem; }
+        .code-box {
+            background: #fef9e6;
+            border-radius: 28px;
+            padding: 1.4rem;
+            text-align: center;
+            border: 2px dashed #ffb347;
+            margin-bottom: 1.4rem;
+        }
+        .code-label { color: #5a6e57; font-weight: 600; }
+        .code {
+            display: block;
+            margin-top: 0.6rem;
+            font-size: 2.2rem;
+            letter-spacing: 0.2rem;
+            font-weight: 800;
+            color: #e67e22;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px dashed #edf2f0;
+            color: #2d3e2b;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+        .btn-primary { background: #ffb347; color: #2d3e2b; }
+        .btn-secondary { background: #eef2f0; color: #2d3e2b; }
+    </style>
+</head>
+<body>
+<div class="success-card">
+    <div class="card-header">
+        <h2>团购券生成成功</h2>
+    </div>
+    <div class="card-body">
+        <div class="code-box">
+            <span class="code-label">到店核销码</span>
+            <span class="code">{{ coupon.code }}</span>
+        </div>
+        <div class="detail-row"><span>团购商品</span><strong>{{ coupon.food.name }}</strong></div>
+        <div class="detail-row"><span>数量</span><strong>{{ coupon.num }}</strong></div>
+        <div class="detail-row"><span>金额</span><strong>¥{{ coupon.cost }}</strong></div>
+        <div class="detail-row"><span>状态</span><strong>待使用</strong></div>
+        <div class="button-group">
+            <a href="/space/" class="btn btn-primary">查看我的团购券</a>
+            <a href="/fooddetails/?foodid={{ coupon.food.id }}" class="btn btn-secondary">返回美食详情</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

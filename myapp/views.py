@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.db.models import Q
+from django.utils import timezone
 import os
 import uuid
 import time
@@ -75,6 +76,12 @@ def is_merchant(user):
 
 def is_rider(user):
     return user is not None and user.usertype == 1
+
+def make_group_buy_code():
+    while True:
+        code = uuid.uuid4().hex[:10].upper()
+        if not GroupBuyCoupon.objects.filter(code=code).exists():
+            return code
 
 def index(request):
     return render(request, 'index.html')
@@ -312,10 +319,16 @@ def space(request):
         context['merchant_done_orders'] = Order.objects.filter(
             food__merchant=user, pos__in=[2, 4, 5]
         ).select_related('food', 'user', 'rider').order_by('-time')
+        context['merchant_group_coupons'] = GroupBuyCoupon.objects.filter(
+            food__merchant=user
+        ).select_related('food', 'user').order_by('-time')
     else:
         context['orders'] = Order.objects.filter(user=user)
         context['hotel_orders'] = HotelOrder.objects.filter(user=user)
         context['play_orders'] = PlayOrder.objects.filter(user=user)
+        context['group_coupons'] = GroupBuyCoupon.objects.filter(
+            user=user
+        ).select_related('food').order_by('-time')
         context['blogs'] = Blog.objects.filter(authorid=user, isdeleted=False)
 
     return render(request, 'space.html', context)
@@ -379,6 +392,71 @@ def foodorder(request):
         
     food = Food.objects.get(id=food_id)
     return render(request, 'food/foodorder.html', {'food': food, 'user_id': user_id})
+
+def groupbuyorder(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('/index/')
+
+    food_id = request.GET.get('foodid')
+    if not food_id:
+        return HttpResponse("参数错误！")
+
+    food = Food.objects.filter(id=food_id).first()
+    if not food:
+        return HttpResponse("食物不存在！")
+
+    if request.method == 'POST':
+        num = request.POST.get('num')
+        if not num:
+            return HttpResponse("请填写团购数量！")
+        try:
+            num = int(num)
+            if num <= 0:
+                return HttpResponse("团购数量必须大于0！")
+        except (TypeError, ValueError):
+            return HttpResponse("团购数量必须是正整数！")
+
+        coupon = GroupBuyCoupon.objects.create(
+            user_id=user_id,
+            food=food,
+            num=num,
+            cost=round(food.price * num, 2),
+            code=make_group_buy_code(),
+            status=0,
+        )
+        food.saleperson += 1
+        food.sale += num
+        food.save(update_fields=['saleperson', 'sale'])
+        return render(request, 'food/groupbuy_success.html', {'coupon': coupon, 'user_id': user_id})
+
+    return render(request, 'food/groupbuy_order.html', {'food': food, 'user_id': user_id})
+
+def groupbuy_redeem(request):
+    user = get_login_user(request)
+    if not user:
+        return redirect('/index/')
+    if not is_merchant(user):
+        return HttpResponse("只有商家可以核销团购券！")
+    if request.method != 'POST':
+        return redirect('/space/')
+
+    code = request.POST.get('code', '').strip().upper()
+    if not code:
+        return HttpResponse("请输入核销码！")
+
+    coupon = GroupBuyCoupon.objects.filter(code=code, food__merchant=user).select_related('food', 'user').first()
+    if not coupon:
+        return HttpResponse('<script>alert("核销码不存在或不属于您的商品");history.back();</script>')
+    if coupon.status == 1:
+        return HttpResponse('<script>alert("该团购券已核销");history.back();</script>')
+    if coupon.status == 2:
+        return HttpResponse('<script>alert("该团购券已取消");history.back();</script>')
+
+    coupon.status = 1
+    coupon.used_at = timezone.now()
+    coupon.save(update_fields=['status', 'used_at'])
+    return redirect('/space/')
 
 def orderpos(request):
     if not request.session.get('user_id'):

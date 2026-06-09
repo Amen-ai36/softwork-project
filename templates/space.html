@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: url('../static/images/background/2.png') no-repeat center center fixed;
+            background: url('../static/images/background/2-nowatermark.png') no-repeat center center fixed;
             background-size: cover;
             background-color: #1a2a1a; /* 后备色 */
             min-height: 100vh;
@@ -132,13 +132,14 @@
             box-shadow: 0 4px 12px rgba(255, 159, 28, 0.3);
         }
 
-        .orders-section, .blogs-section, .hotel-orders-section, .merchant-foods-section, .merchant-hotels-section,
+        .orders-section, .blogs-section, .hotel-orders-section, .groupbuy-section, .merchant-groupbuy-section, .merchant-foods-section, .merchant-hotels-section,
         .play-orders-section, .merchant-plays-section, .rider-active-section, .rider-done-section,
         .merchant-current-orders-section, .merchant-done-orders-section {
             margin-top: 2rem;
         }
 
         .orders-section h3, .blogs-section h3, .hotel-orders-section h3,
+        .groupbuy-section h3, .merchant-groupbuy-section h3,
         .merchant-foods-section h3, .merchant-hotels-section h3,
         .play-orders-section h3, .merchant-plays-section h3,
         .rider-active-section h3, .rider-done-section h3,
@@ -162,6 +163,10 @@
 
         .hotel-orders-section h3::before {
             content: "🏨";
+        }
+
+        .groupbuy-section h3::before, .merchant-groupbuy-section h3::before {
+            content: "🎟️";
         }
 
         .play-orders-section h3::before {
@@ -261,6 +266,33 @@
             border-radius: 20px;
             font-size: 0.85rem;
             cursor: not-allowed;
+        }
+
+        .redeem-form {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            background: #fef9e6;
+            border-radius: 20px;
+            padding: 1rem;
+            border-left: 5px solid #ffb347;
+        }
+
+        .redeem-form input {
+            flex: 1;
+            min-width: 220px;
+            padding: 0.7rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        .redeem-form input:focus {
+            border-color: #ffb347;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
         }
 
         .back-btn {
@@ -656,6 +688,54 @@
                 <div class="empty-msg">📭 暂无已完成的订单</div>
             {% endif %}
         </div>
+
+        <div class="merchant-groupbuy-section">
+            <h3>团购券核销</h3>
+            <form class="redeem-form" action="/groupbuy/redeem/" method="post">
+                {% csrf_token %}
+                <input type="text" name="code" placeholder="输入顾客出示的核销码" required>
+                <button type="submit" class="btn-submit">核销团购券</button>
+            </form>
+            {% if merchant_group_coupons %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>券ID</th>
+                                <th>美食名称</th>
+                                <th>顾客</th>
+                                <th>数量</th>
+                                <th>金额</th>
+                                <th>核销码</th>
+                                <th>状态</th>
+                                <th>购买时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for coupon in merchant_group_coupons %}
+                            <tr>
+                                <td>#{{ coupon.id }}</td>
+                                <td>{{ coupon.food.name }}</td>
+                                <td>{{ coupon.user.username }}</td>
+                                <td>{{ coupon.num }}</td>
+                                <td>¥{{ coupon.cost }}</td>
+                                <td>{{ coupon.code }}</td>
+                                <td>
+                                    {% if coupon.status == 0 %}待使用
+                                    {% elif coupon.status == 1 %}已使用
+                                    {% else %}已取消
+                                    {% endif %}
+                                </td>
+                                <td>{{ coupon.time|date:"m-d H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 暂无团购券</div>
+            {% endif %}
+        </div>
         {% else %}
         <!-- 订单记录（可滚动表格） -->
         <div class="orders-section">
@@ -837,6 +917,47 @@
                 </div>
             {% else %}
                 <div class="empty-msg">📭 还没有购票记录哦～ 快去娱乐中心看看吧！</div>
+            {% endif %}
+        </div>
+
+        <div class="groupbuy-section">
+            <h3>我的团购券</h3>
+            {% if group_coupons %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>券ID</th>
+                                <th>美食名称</th>
+                                <th>数量</th>
+                                <th>金额</th>
+                                <th>核销码</th>
+                                <th>状态</th>
+                                <th>购买时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for coupon in group_coupons %}
+                            <tr>
+                                <td>#{{ coupon.id }}</td>
+                                <td>{{ coupon.food.name }}</td>
+                                <td>{{ coupon.num }}</td>
+                                <td>¥{{ coupon.cost }}</td>
+                                <td>{{ coupon.code }}</td>
+                                <td>
+                                    {% if coupon.status == 0 %}待使用
+                                    {% elif coupon.status == 1 %}已使用
+                                    {% else %}已取消
+                                    {% endif %}
+                                </td>
+                                <td>{{ coupon.time|date:"m-d H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 还没有团购券，去美食详情页看看吧！</div>
             {% endif %}
         </div>
 

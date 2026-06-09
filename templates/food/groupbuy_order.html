@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>到店团购 · Life Master</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: url('../static/images/background/1.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #1a2a1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .coupon-card {
+            position: relative;
+            z-index: 1;
+            max-width: 560px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        .card-header {
+            background: #2d3e2b;
+            padding: 1.8rem 2rem;
+            color: white;
+        }
+        .card-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        .food-name {
+            background: rgba(255, 255, 255, 0.15);
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .card-body { padding: 2rem; }
+        .deal-box {
+            background: #fef9e6;
+            border-radius: 24px;
+            padding: 1.2rem;
+            border-left: 5px solid #ffb347;
+            margin-bottom: 1.4rem;
+        }
+        .deal-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.55rem 0;
+            border-bottom: 1px dashed #f0dfbf;
+            color: #2d3e2b;
+        }
+        .deal-row:last-child { border-bottom: none; }
+        .price { color: #e67e22; font-size: 1.3rem; font-weight: 800; }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2d3e2b;
+        }
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            outline: none;
+        }
+        input:focus {
+            border-color: #ffb347;
+            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary { background: #ffb347; color: #2d3e2b; }
+        .btn-secondary { background: #eef2f0; color: #2d3e2b; }
+        .note {
+            margin-top: 1rem;
+            color: #5a6e57;
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+<div class="coupon-card">
+    <div class="card-header">
+        <h2>到店团购下单</h2>
+        <div class="food-name">🍽️ {{ food.name }}</div>
+    </div>
+    <div class="card-body">
+        <div class="deal-box">
+            <div class="deal-row">
+                <span>团购商品</span>
+                <strong>{{ food.name }}</strong>
+            </div>
+            <div class="deal-row">
+                <span>门店/商家</span>
+                <strong>{{ food.providor }}</strong>
+            </div>
+            <div class="deal-row">
+                <span>单价</span>
+                <strong class="price">¥{{ food.price }}</strong>
+            </div>
+        </div>
+        <form action="/groupbuyorder/?foodid={{ food.id }}" method="post">
+            {% csrf_token %}
+            <label for="num">🎟️ 团购数量</label>
+            <input type="number" id="num" name="num" min="1" value="1" required>
+            <p class="note">提交后会生成到店核销码。请到店后把核销码给商家，商家核销后团购券状态会变为已使用。</p>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">生成团购券</button>
+                <a href="/fooddetails/?foodid={{ food.id }}" class="btn btn-secondary">返回详情</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

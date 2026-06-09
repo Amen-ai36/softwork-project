@@ -14,7 +14,7 @@ from django.utils import timezone
 
 django.setup()
 
-from myapp.models import Blog, Comment, Food, Hotel, HotelOrder, Order, Play, PlayOrder, User
+from myapp.models import Blog, Comment, Food, GroupBuyCoupon, Hotel, HotelOrder, Order, Play, PlayOrder, User
 
 
 class ProjectWorkflowTest(TestCase):
@@ -97,6 +97,7 @@ class ProjectWorkflowTest(TestCase):
             "/food/": "food",
             "/fooddetails/": "fooddetails",
             "/foodorder/": "foodorder",
+            "/groupbuyorder/": "groupbuyorder",
             "/hotel/": "hotel",
             "/hotelorder/": "hotelorder",
             "/play/": "play",
@@ -297,6 +298,71 @@ class ProjectWorkflowTest(TestCase):
         response = merchant_client.get("/space/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.food.name)
+
+    def test_group_buy_coupon_create_display_and_redeem_flow(self):
+        user_client = self.login_as(self.user)
+        merchant_client = self.login_as(self.merchant)
+
+        response = user_client.get(f"/groupbuyorder/?foodid={self.food.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "到店团购下单")
+        self.assertContains(response, self.food.name)
+
+        response = user_client.post(f"/groupbuyorder/?foodid={self.food.id}", {"num": "2"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "团购券生成成功")
+
+        coupon = GroupBuyCoupon.objects.get(user=self.user, food=self.food)
+        self.assertEqual(coupon.num, 2)
+        self.assertEqual(coupon.cost, 37.0)
+        self.assertEqual(coupon.status, 0)
+        self.assertTrue(coupon.code)
+
+        response = user_client.get("/space/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "我的团购券")
+        self.assertContains(response, coupon.code)
+        self.assertContains(response, "待使用")
+
+        response = merchant_client.get("/space/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "团购券核销")
+        self.assertContains(response, coupon.code)
+        self.assertContains(response, self.user.username)
+
+        response = merchant_client.post("/groupbuy/redeem/", {"code": coupon.code.lower()})
+        self.assertEqual(response.status_code, 302)
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.status, 1)
+        self.assertIsNotNone(coupon.used_at)
+
+        response = user_client.get("/space/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "已使用")
+
+        other_merchant = User.objects.create(
+            username="coupon_seller2",
+            password="abc12345",
+            phone="13800000009",
+            usertype=2,
+        )
+        other_food = Food.objects.create(
+            name="其他商家的菜",
+            price=12,
+            image="images/food/1.jpg",
+            providor="其他商家",
+            inf="其他菜品",
+            merchant=other_merchant,
+        )
+        other_coupon = GroupBuyCoupon.objects.create(
+            user=self.user,
+            food=other_food,
+            num=1,
+            cost=12,
+            code="OTHER12345",
+        )
+        response = merchant_client.post("/groupbuy/redeem/", {"code": other_coupon.code})
+        self.assertContains(response, "核销码不存在或不属于您的商品", status_code=200)
 
     def test_hotel_booking_and_review_flow(self):
         client = self.login_as(self.user)

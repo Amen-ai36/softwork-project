@@ -330,6 +330,17 @@
             box-shadow: 0 10px 20px rgba(255, 160, 30, 0.35);
         }
 
+        .btn-groupbuy {
+            background: #fef9e6;
+            color: #b45f06;
+            border: 1px solid #ffd7aa;
+        }
+
+        .btn-groupbuy:hover {
+            background: #fae5cf;
+            transform: translateY(-2px);
+        }
+
         .btn-secondary:hover {
             background: #1f2e1d;
             transform: translateY(-2px);
@@ -533,6 +544,7 @@
         <div class="button-group">
             <a href="/food/" class="btn btn-secondary">🍜 返回美食列表</a>
             <a href="/foodorder/?userid={{ user_id }}&foodid={{ food.id }}" class="btn btn-primary">🛒 下单 · 赏味</a>
+            <a href="/groupbuyorder/?foodid={{ food.id }}" class="btn btn-groupbuy">🎟️ 到店团购</a>
         </div>
     </div>
 </div>

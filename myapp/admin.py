@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Blog, Comment, Food, Hotel, HotelOrder, Order, Play, PlayOrder, User
+from .models import Blog, Comment, Food, GroupBuyCoupon, Hotel, HotelOrder, Order, Play, PlayOrder, User
 
 
 @admin.register(User)
@@ -21,6 +21,13 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'food', 'rider', 'num', 'cost', 'pos', 'time')
     list_filter = ('pos',)
     search_fields = ('user__username', 'food__name', 'address')
+
+
+@admin.register(GroupBuyCoupon)
+class GroupBuyCouponAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'food', 'num', 'cost', 'code', 'status', 'time', 'used_at')
+    list_filter = ('status',)
+    search_fields = ('user__username', 'food__name', 'code')
 
 
 @admin.register(Hotel)

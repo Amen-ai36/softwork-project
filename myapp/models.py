@@ -66,6 +66,16 @@ class Order(models.Model):
         ]
     ) # 配送评分，0.0-5.0之间，保留1位小数
 
+class GroupBuyCoupon(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE) # 团购券所属用户
+    food = models.ForeignKey(Food, on_delete=models.CASCADE) # 团购对应美食
+    num = models.IntegerField() # 购买数量
+    cost = models.FloatField(default=0.0) # 团购总价
+    code = models.CharField(max_length=20, unique=True) # 到店核销码
+    status = models.IntegerField(default=0) # 0-待使用，1-已使用，2-已取消
+    time = models.DateTimeField(auto_now_add=True) # 购买时间
+    used_at = models.DateTimeField(null=True, blank=True) # 核销时间
+
 class Blog(models.Model):
     title = models.CharField(max_length=40) # 博客标题
     content = models.TextField() # 博客内容
