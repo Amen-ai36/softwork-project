@@ -254,13 +254,17 @@
         {% if section == 'overview' %}
         <section class="stats">
             <div class="stat"><span>有效用户</span><strong>{{ stats.active_users }}</strong></div>
+            <div class="stat"><span>公开博客</span><strong>{{ stats.blogs }}</strong></div>
+            <div class="stat"><span>公开评论总数</span><strong>{{ stats.total_comments }}</strong></div>
             <div class="stat"><span>外卖订单</span><strong>{{ stats.orders }}</strong></div>
             <div class="stat"><span>处理中订单</span><strong>{{ stats.pending_orders }}</strong></div>
             <div class="stat"><span>外卖成交额</span><strong>¥{{ stats.revenue|floatformat:2 }}</strong></div>
             <div class="stat"><span>菜品 / 酒店 / 娱乐</span><strong>{{ stats.foods }} / {{ stats.hotels }} / {{ stats.plays }}</strong></div>
             <div class="stat"><span>酒店订单</span><strong>{{ stats.hotel_orders }}</strong></div>
+            <div class="stat"><span>酒店成交额</span><strong>¥{{ stats.hotel_revenue|floatformat:2 }}</strong></div>
             <div class="stat"><span>娱乐订单</span><strong>{{ stats.play_orders }}</strong></div>
-            <div class="stat"><span>公开博客</span><strong>{{ stats.blogs }}</strong></div>
+            <div class="stat"><span>娱乐成交额</span><strong>¥{{ stats.play_revenue|floatformat:2 }}</strong></div>
+            <div class="stat"><span>总成交额</span><strong>¥{{ stats.total_revenue|floatformat:2 }}</strong></div>
         </section>
         <section class="panel">
             <div class="panel-header"><h2>最近外卖订单</h2><a class="btn secondary small" href="/manage/?section=orders">查看全部</a></div>

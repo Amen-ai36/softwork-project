@@ -172,3 +172,11 @@ class PlayOrder(models.Model):
         ]
     ) # 评分，0.0-5.0之间，保留1位小数
     pos = models.IntegerField(default=4) # 4-可评价，5-已评价
+
+class Temp(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE) # 订单所属用户
+    food = models.ForeignKey(Food, on_delete=models.CASCADE) # 订单所属食物
+    num = models.IntegerField() # 订单中食物的数量
+    cost = models.FloatField(default=0.0) # 订单单价
+    address = models.CharField(max_length=100, default="") # 订单配送地址
+    pos = models.IntegerField(default=0) # 0-待定，1-已删除，2-已提交

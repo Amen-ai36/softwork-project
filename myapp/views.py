@@ -9,30 +9,101 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.db.models import Q
 from django.utils import timezone
 import os
 import uuid
 import time
+from django.db.models import Sum, Max, Avg, Q
+from django.core.cache import cache
+import hashlib
 
-def ai_chat_view(request):
-    """
-    显示 AI 对话页面并处理 AJAX 请求
-    """
-    if request.method == "POST":
-        user_input = request.POST.get("user_input", "").strip()
-        if not user_input:
-            return JsonResponse({"error": "输入不能为空"}, status=400)
-        
-        # 获取所有菜品信息
+# 全局信息的缓存 key
+CACHE_KEY_GLOBAL_INFO = "global_platform_info"
+# 缓存时间（秒），可根据数据更新频率调整，例如 1 小时
+CACHE_TIMEOUT = 3600
+
+def update_cart_item(request, tempid):
+    """更新购物车中的数量或地址"""
+    if request.method == 'POST':
+        try:
+            user_id = request.session.get('user_id')
+            if not user_id:
+                return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
+            user = User.objects.get(id=user_id)
+            data = json.loads(request.body)
+            new_num = data.get('num')
+            new_address = data.get('address')
+            cart_item = Temp.objects.get(id=tempid, user=user)
+            if new_num is not None:
+                cart_item.num = int(new_num)
+                cart_item.cost = cart_item.food.price * cart_item.num
+            if new_address:
+                cart_item.address = new_address
+            cart_item.save()
+            return JsonResponse({'status': 'ok', 'num': cart_item.num, 'address': cart_item.address, 'cost': cart_item.cost})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'msg': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'msg': '仅支持POST'}, status=405)
+
+def delete_cart_item(request, tempid):
+    """删除购物车记录"""
+    if request.method == 'POST':
+        try:
+            user_id = request.session.get('user_id')
+            if not user_id:
+                return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
+            user = User.objects.get(id=user_id)
+            cart_item = Temp.objects.get(id=tempid, user=user)
+            cart_item.delete()
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'msg': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'msg': '仅支持POST'}, status=405)
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+
+@require_POST
+def clear_cart(request):
+    """清空购物车：将当前用户所有购物车记录迁移到 CartHistory，然后删除"""
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
+    
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'msg': '用户不存在'}, status=401)
+
+    # 获取当前用户所有购物车项
+    cart_items = Temp.objects.filter(user=user, pos=0)
+    if not cart_items.exists():
+        return JsonResponse({'status': 'ok', 'msg': '购物车已是空的'})
+
+    # 批量创建历史记录
+    for item in cart_items:
+        Order.objects.create(
+                user=user,
+                food=item.food,
+                num=item.num,
+                address=item.address,
+                cost=item.cost*item.num,
+                pos=0
+            )
+
+    # 删除原购物车记录
+    cart_items.delete()
+
+    return JsonResponse({'status': 'ok', 'msg': '购物车已清空'})
+
+def get_global_info():
+    """从缓存获取全局菜品/酒店/娱乐信息，若失效则重新生成"""
+    global_info = cache.get(CACHE_KEY_GLOBAL_INFO)
+    if global_info is None:
+        # 生成全局信息字符串（这部分只在缓存过期时执行一次）
         foods = Food.objects.all()
-        
-        # 构建菜品信息文本（可根据需要调整字段）
         foods_info = "【以下是当前平台菜品清单】\n"
         for idx, food in enumerate(foods, 1):
-            # 展示关键字段：名称、价格、简介（可自行增删）
             foods_info += f"{idx}. {food.name} | 价格: ¥{food.price} | 简介: {food.inf}\n"
-            # 可选：如果希望包含评分和售出份数，可以取消注释下面一行
             foods_info += f"| 评分: {food.rating if food.ratenum > 0 else '暂无'} | 售出: {food.sale}份 | 下单人数: {food.saleperson}人\n"
         
         hotels = Hotel.objects.all()
@@ -40,29 +111,55 @@ def ai_chat_view(request):
         for idx, hotel in enumerate(hotels, 1):
             hotels_info += f"{idx}. {hotel.name} | 价格: 单人间钟点房¥{hotel.price_clock}，日租¥{hotel.price_day}，双人间稍贵 | 简介: {hotel.inf}\n"
             hotels_info += f"地址: {hotel.addr} | 评分: {hotel.rating if hotel.ratenum > 0 else '暂无'} | 订单数: {hotel.orders}单\n"
-
+        
         plays = Play.objects.all()
         plays_info = "【以下是当前平台娱乐清单】\n"
         for idx, play in enumerate(plays, 1):
             plays_info += f"{idx}. {play.name} | 价格: ¥{play.price} | 简介: {play.inf}\n"
             plays_info += f"地址: {play.addr} | 评分: {play.rating if play.ratenum > 0 else '暂无'} | 订单数: {play.orders}单\n"
+        
+        global_info = {
+            "foods_info": foods_info,
+            "hotels_info": hotels_info,
+            "plays_info": plays_info,
+        }
+        cache.set(CACHE_KEY_GLOBAL_INFO, global_info, CACHE_TIMEOUT)
+    return global_info
 
-        # 构建完整的系统提示（包含动态菜品信息）
+def ai_chat_view(request):
+    if request.method == "POST":
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('/index/')
+        
+        user = User.objects.filter(id=user_id).first()
+        user_input = request.POST.get("user_input", "").strip()
+        if not user_input:
+            return JsonResponse({"error": "输入不能为空"}, status=400)
+        
+        # 构建用户动态信息（无法缓存，因为每个用户不同）
+        user_info = f"【以下是当前用户状态】\n用户ID: {user.id}, 简介: {user.word}\n该用户订单记录如下：\n"
+        orders = Order.objects.filter(user=user)
+        for idx, order in enumerate(orders, 1):
+            user_info += f"{idx}. {order.food.name} | 该用户评分: {order.scoretofood} | 该用户评价: {order.comment}\n"
+        
+        # 从缓存获取全局信息
+        global_info = get_global_info()
+        
+        # 构建系统提示（使用缓存的全局信息）
         system_prompt = f"""你是这个平台的助手，擅长回答关于美食、娱乐和住宿规划的问题。
-        {foods_info}；{hotels_info}；{plays_info}
-        你可以根据用户的提问，从这份菜品清单、酒店清单和娱乐清单中推荐相关商品服务，或者解答用户的疑问。
+        {user_info}; {global_info['foods_info']}; {global_info['hotels_info']}; {global_info['plays_info']}
+        你可以根据用户的提问和用户的背景信息，从菜品清单、酒店清单和娱乐清单中推荐相关商品服务，或者解答用户的疑问。
+        如果用户的订单记录为空，请以“欢迎新用户！”开头回答，简要介绍该平台的服务，再回答用户的提问
         请尽量提供详细且有用的回答，帮助用户更好地了解和选择商品。"""
         
         reply = call_aliyun_llm(user_input, system_prompt=system_prompt)
-
         if reply is None:
             return JsonResponse({"error": "AI 服务暂时不可用，请稍后重试"}, status=500)
         return JsonResponse({"reply": reply})
-
-    # GET 请求返回页面
+    
     return render(request, "ai_chat.html")
 
-from django.db.models import Sum, Max, Avg, Q
 
 def get_login_user(request):
     user_id = request.session.get('user_id')
@@ -187,12 +284,15 @@ def food(request):
     user = User.objects.filter(id=user_id).first()
     keyword = request.GET.get('q', '').strip()
     foods = Food.objects.all()
+
     if keyword:
         foods = foods.filter(
-            Q(name__icontains=keyword)
+            Q(name__icontains=keyword) | Q(providor__icontains=keyword) | Q(inf__icontains=keyword)
         )
+    foods_json = list(foods.values('id', 'name', 'price', 'providor', 'sale', 'rating', 'ratenum'))
     return render(request, 'food/food.html', {
         'foods': foods,
+        'foods_json': foods_json,
         'user_id': user_id,
         'is_merchant': is_merchant(user),
         'keyword': keyword,
@@ -330,6 +430,7 @@ def space(request):
             user=user
         ).select_related('food').order_by('-time')
         context['blogs'] = Blog.objects.filter(authorid=user, isdeleted=False)
+        context['temps'] = Temp.objects.filter(user=user, pos=0)
 
     return render(request, 'space.html', context)
 
@@ -376,18 +477,31 @@ def foodorder(request):
     if request.method == 'POST':
         num = request.POST.get('num')
         address = request.POST.get('address')
+        cutlery = request.POST.get('cutlery')  # 是否需要餐具，前端传递 "on" 或 None
         
         if not num or not address:
             return HttpResponse("请填写完整的下单信息！")
             
-        Order.objects.create(
-            user_id=user_id,
-            food_id=food_id,
-            num=num,
-            address=address,
-            cost=Food.objects.get(id=food_id).price * int(num),
-            pos=0
-        )
+        if cutlery == "1":
+            Order.objects.create(
+                user_id=user_id,
+                food_id=food_id,
+                num=num,
+                address=address,
+                cost=Food.objects.get(id=food_id).price * int(num),
+                pos=0
+            )
+
+        else:
+            Temp.objects.create(
+                user_id=user_id,
+                food_id=food_id,
+                num=num,
+                address=address,
+                cost=Food.objects.get(id=food_id).price, # 这里是单价所以不要乘以数量!!!!
+                pos=0
+            )
+
         return redirect(f'/fooddetails/?userid={user_id}&foodid={food_id}')
         
     food = Food.objects.get(id=food_id)

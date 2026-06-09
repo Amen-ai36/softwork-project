@@ -161,6 +161,10 @@
             content: "📝";
         }
 
+        .temps-section h3::before {
+            content: "🛒";
+        }
+
         .hotel-orders-section h3::before {
             content: "🏨";
         }
@@ -996,6 +1000,44 @@
                 <div class="empty-msg">📭 还没有发布过博客，去写一篇吧～</div>
             {% endif %}
         </div>
+
+        <div class="blogs-section" id="cart-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>我的购物车（目前仅支持外卖购物车）</h3>
+                {% if temps %}
+                    <button type="button" class="btn-submit" id="clearCartBtn" style="background-color: #dc3545;">🧹 清空购物车</button>
+                {% endif %}
+            </div>
+            {% if temps %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>美食名称</th>
+                                <th>下单数量</th>
+                                <th>地址</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                    <tbody>
+                    {% for temp in temps %}
+                    <tr id="cart-row-{{ temp.id }}">
+                        <td>{{ temp.food.name }}</td>
+                        <td class="cart-num" data-value="{{ temp.num }}">{{ temp.num }}</td>
+                        <td class="cart-addr" data-value="{{ temp.address }}">{{ temp.address }}</td>
+                        <td class="action-cell">
+                            <button type="button" class="btn-view-blog edit-btn" onclick="editItem({{ temp.id }}, this)">🔍 编辑</button>
+                            <button type="button" class="btn-view-blog delete-btn" onclick="deleteItem({{ temp.id }}, this)">🗑️ 删除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-msg">📭 购物车空空如也，赶紧添加购物车吧～</div>
+            {% endif %}
+        </div>
         {% endif %}
 
         <hr>
@@ -1007,5 +1049,189 @@
         <a href="/index/" class="back-btn">↪️ 退出登录</a>
     </div>
 </div>
+
+<script>
+// 获取 CSRF Token
+function getCSRFToken() {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfInput) {
+        return csrfInput.value;
+    }
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith('csrftoken=')) {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 显示临时消息（可选）
+function showMsg(msg, isErr = false) {
+    let div = document.getElementById('temp-msg');
+    if (!div) {
+        div = document.createElement('div');
+        div.id = 'temp-msg';
+        div.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:8px 20px; border-radius:30px; font-size:14px; z-index:9999; opacity:0; transition:0.2s; pointer-events:none;';
+        document.body.appendChild(div);
+    }
+    div.textContent = msg;
+    div.style.backgroundColor = isErr ? '#dc3545' : '#28a745';
+    div.style.opacity = '1';
+    setTimeout(() => div.style.opacity = '0', 2000);
+}
+
+// 删除功能
+function deleteItem(itemId, btn) {
+    if (!confirm('确定要删除该购物车项吗？')) return;
+    const row = btn.closest('tr');
+    fetch(`/cart/delete/${itemId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCSRFToken() }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            row.remove();
+            // 如果表格变空，刷新页面显示空状态（或动态生成空提示）
+            const tbody = document.querySelector('.blogs-section tbody');
+            if (tbody && tbody.children.length === 0) {
+                location.reload(); // 简单刷新，也可自行替换HTML
+            }
+            showMsg('删除成功');
+        } else {
+            showMsg('删除失败：' + (data.msg || '未知错误'), true);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showMsg('网络错误', true);
+    });
+}
+
+// 编辑功能（内联编辑）
+function editItem(itemId, btn) {
+    const row = btn.closest('tr');
+    const numTd = row.querySelector('.cart-num');
+    const addrTd = row.querySelector('.cart-addr');
+    const actionTd = row.querySelector('.action-cell');
+
+    // 如果已经在编辑状态，不做处理
+    if (numTd.querySelector('input')) return;
+
+    const oldNum = numTd.dataset.value;
+    const oldAddr = addrTd.dataset.value;
+
+    // 替换为输入框
+    numTd.innerHTML = `<input type="number" class="temp-num" value="${oldNum}" min="1" style="width:70px;">`;
+    addrTd.innerHTML = `<input type="text" class="temp-addr" value="${oldAddr}" style="width:200px;">`;
+
+    // 保存原按钮并替换为保存/取消
+    const editBtn = btn;
+    const deleteBtn = row.querySelector('.delete-btn');
+    editBtn.style.display = 'none';
+    deleteBtn.style.display = 'none';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '💾 保存';
+    saveBtn.className = 'btn-view-blog';
+    saveBtn.style.marginRight = '5px';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '❌ 取消';
+    cancelBtn.className = 'btn-view-blog';
+
+    actionTd.appendChild(saveBtn);
+    actionTd.appendChild(cancelBtn);
+
+    // 保存逻辑
+    saveBtn.onclick = () => {
+        const newNum = numTd.querySelector('.temp-num').value;
+        const newAddr = addrTd.querySelector('.temp-addr').value;
+        if (!newNum || parseInt(newNum) < 1) {
+            showMsg('数量至少为1', true);
+            return;
+        }
+        if (!newAddr.trim()) {
+            showMsg('地址不能为空', true);
+            return;
+        }
+
+        fetch(`/cart/update/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ num: newNum, address: newAddr })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                // 恢复显示模式
+                numTd.dataset.value = data.num;
+                numTd.innerHTML = data.num;
+                addrTd.dataset.value = data.address;
+                addrTd.innerHTML = data.address;
+                editBtn.style.display = 'inline-block';
+                deleteBtn.style.display = 'inline-block';
+                saveBtn.remove();
+                cancelBtn.remove();
+                showMsg('保存成功');
+            } else {
+                showMsg('保存失败：' + (data.msg || '未知错误'), true);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showMsg('网络错误', true);
+        });
+    };
+
+    // 取消逻辑
+    cancelBtn.onclick = () => {
+        numTd.innerHTML = oldNum;
+        addrTd.innerHTML = oldAddr;
+        editBtn.style.display = 'inline-block';
+        deleteBtn.style.display = 'inline-block';
+        saveBtn.remove();
+        cancelBtn.remove();
+    };
+}
+
+const clearCartBtn = document.getElementById('clearCartBtn');
+if (clearCartBtn) {
+    clearCartBtn.addEventListener('click', function() {
+        if (!confirm('⚠️ 清空购物车会将所有商品移至历史记录，确定要清空吗？')) return;
+        
+        fetch('/cart/clear/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                showMsg('购物车已清空');
+                const cartSection = document.getElementById('cart-section');
+                cartSection.innerHTML = `
+                    <h3>我的购物车（目前仅支持外卖购物车）</h3>
+                    <div class="empty-msg">📭 购物车空空如也，赶紧添加购物车吧～</div>
+                `;
+            } else {
+                showMsg('清空失败：' + (data.msg || '未知错误'), true);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showMsg('网络错误', true);
+        });
+    });
+}
+</script>
+
 </body>
 </html>

@@ -457,9 +457,7 @@
     <div id="ai-chat-icon" onclick="toggleChat()">🤖</div>
     <div id="ai-chat-box" style="display:none;">
         <div id="ai-chat-header">智能生活助手 <span id="ai-chat-close" onclick="toggleChat()">✖</span></div>
-        <div id="ai-chat-messages">
-            <div class="chat-msg msg-ai">您好！我是您的智能生活助手，有什么我可以帮您的吗？</div>
-        </div>
+        <div id="ai-chat-messages"></div>
         <div id="ai-chat-input">
             <input type="text" id="ai-msg" placeholder="输入你的问题..." onkeypress="if(event.keyCode==13) sendMsg()">
             <button onclick="sendMsg()">发送</button>
@@ -468,6 +466,60 @@
 </div>
 
 <script>
+// ---------- 聊天记录持久化 ----------
+const STORAGE_KEY = 'ai_chat_history';
+
+// 获取历史消息
+function loadHistory() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+}
+
+// 保存历史消息（每次更新后调用）
+function saveHistory(messages) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+}
+
+// 渲染历史消息到界面（清空现有内容后重新生成）
+function renderHistory() {
+    const container = document.getElementById('ai-chat-messages');
+    const history = loadHistory();
+    container.innerHTML = '';           // 清空现有内容
+    if (history.length === 0) {
+        // 如果没有历史，显示默认欢迎消息（同时保存，避免重复保存问题）
+        const defaultMsg = { text: '您好！我是您的智能生活助手，有什么我可以帮您的吗？', sender: 'ai' };
+        appendMsg(defaultMsg.text, defaultMsg.sender, false); // 第三个参数表示不重复保存
+        saveHistory([defaultMsg]);
+    } else {
+        // 逐条渲染历史消息（不会重复保存）
+        history.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = 'chat-msg ' + (msg.sender === 'user' ? 'msg-user' : 'msg-ai');
+            div.innerText = msg.text;
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+// 追加一条新消息（同时保存到 localStorage）
+// 参数 saveToHistory: 是否保存到 localStorage（防止重复保存）
+function appendMsg(text, sender, saveToHistory = true) {
+    const msgs = document.getElementById('ai-chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
+    div.innerText = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    if (saveToHistory) {
+        const history = loadHistory();
+        history.push({ text: text, sender: sender });
+        saveHistory(history);
+    }
+}
+
+// ---------- 原有功能保持不变 ----------
 function toggleChat() {
     var box = document.getElementById('ai-chat-box');
     var icon = document.getElementById('ai-chat-icon');
@@ -479,15 +531,6 @@ function toggleChat() {
         box.style.display = 'none';
         icon.style.display = 'flex';
     }
-}
-
-function appendMsg(text, sender) {
-    var msgs = document.getElementById('ai-chat-messages');
-    var div = document.createElement('div');
-    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
-    div.innerText = text;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
 }
 
 function getCookie(name) {
@@ -519,7 +562,7 @@ function sendMsg() {
     var div = document.createElement('div');
     div.id = loadingId;
     div.className = 'chat-msg msg-ai';
-    div.innerText = '正在思考中... 🤔';
+    div.innerText = '正在思考中... 🤔（AI回复时请不要刷新以免丢失记录）';
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
 
@@ -548,6 +591,10 @@ function sendMsg() {
     });
 }
 
+// ---------- 页面加载时恢复聊天记录 ----------
+window.addEventListener('DOMContentLoaded', () => {
+    renderHistory();
+});
 </script>
 
 </body>

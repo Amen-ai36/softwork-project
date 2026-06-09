@@ -390,6 +390,27 @@
             background: #3a5038;
         }
 
+        .sort-icons {
+            display: inline-flex;
+            flex-direction: column;      /* 垂直排列 */
+            align-items: center;
+            margin-left: 6px;
+            font-size: 0.7rem;          /* 适当缩小三角形 */
+            line-height: 1;
+            vertical-align: middle;
+        }
+
+        .sort-asc, .sort-desc {
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.1s;
+            user-select: none;
+        }
+
+        .sort-asc:hover, .sort-desc:hover {
+            color: #ffb347 !important;
+        }
+
         .hot-label {
             background-color: #0a58ca;  /* 蓝色背景 */
             color: white;               /* 白色文字 */
@@ -427,44 +448,149 @@
             <thead>
                 <tr>
                     <th>食物名称</th>
-                    <th>价格</th>
+                    <th>价格
+                        <span class="sort-icons" data-field="price" style="cursor:pointer;">
+                            <span class="sort-asc" data-order="asc">▲</span>
+                            <span class="sort-desc" data-order="desc">▼</span>
+                        </span>
+                    </th>
                     <th>提供商</th>
-                    <th>销量</th>
-                    <th>评分</th>
+                    <th>销量
+                        <span class="sort-icons" data-field="sale" style="cursor:pointer;">
+                            <span class="sort-asc" data-order="asc">▲</span>
+                            <span class="sort-desc" data-order="desc">▼</span>
+                        </span>
+                    </th>
+                    <th>评分
+                        <span class="sort-icons" data-field="rating" style="cursor:pointer;">
+                            <span class="sort-asc" data-order="asc">▲</span>
+                            <span class="sort-desc" data-order="desc">▼</span>
+                        </span>
+                    </th>
                     <th>详情一览</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for food in foods %}
-                <tr>
-                    <td>{{ food.name }}</td>
-                    <td>{{ food.price }}</td>
-                    <td>{{ food.providor }}</td>
-                    <td>{{ food.sale }}</td>
-                    <td>
-                        {% if food.ratenum == 0 %}
-                            ✨ 暂无评分
-                        {% else %}
-                            {% if food.rating >= 4.8 and food.ratenum >= 4 %}
-                                <span class="rating">⭐ {{ food.rating }} <span class="hot-label">好评如潮</span></span>
-                            {% else %}
-                                <span class="rating">⭐ {{ food.rating }}</span>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="/fooddetails/?userid={{ user_id }}&foodid={{ food.id }}" class="detail-btn">让我看看</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr class="empty-row">
-                    <td colspan="6">✨ 暂无美食数据，快去添加吧~</td>
-                </tr>
-                {% endfor %}
+            <tbody id="foodTableBody">
             </tbody>
         </table>
     </div>
 </div>
+
+{{ foods_json|json_script:"foods-data" }}
+
+<script>
+// 获取原始数据（后端已处理搜索过滤）
+const foodsData = JSON.parse(document.getElementById('foods-data').textContent);
+let currentFoods = [...foodsData];
+let currentSort = { field: null, order: null };
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('foodTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (data.length === 0) {
+        const row = tbody.insertRow();
+        row.innerHTML = '<td colspan="6">✨ 暂无美食数据，快去添加吧~</td>';
+        return;
+    }
+    data.forEach(food => {
+        const row = tbody.insertRow();
+        row.insertCell().innerText = food.name;
+        row.insertCell().innerText = food.price;
+        row.insertCell().innerText = food.providor;
+        row.insertCell().innerText = food.sale;
+        const ratingCell = row.insertCell();
+        if (food.ratenum === 0) {
+            ratingCell.innerText = '✨ 暂无评分';
+        } else {
+            const rating = parseFloat(food.rating);
+            if (rating >= 4.8 && food.ratenum >= 4) {
+                ratingCell.innerHTML = `<span class="rating">⭐ ${rating} <span class="hot-label">好评如潮</span></span>`;
+            } else {
+                ratingCell.innerHTML = `<span class="rating">⭐ ${rating}</span>`;
+            }
+        }
+        const detailCell = row.insertCell();
+        detailCell.innerHTML = `<a href="/fooddetails/?userid={{ user_id }}&foodid=${food.id}" class="detail-btn">让我看看</a>`;
+    });
+}
+
+// 排序函数
+function sortFoods(field, order) {
+    const sorted = [...currentFoods];
+    sorted.sort((a, b) => {
+        let valA, valB;
+        if (field === 'price') {
+            valA = parseFloat(a.price);
+            valB = parseFloat(b.price);
+        } else if (field === 'sale') {
+            valA = parseInt(a.sale);
+            valB = parseInt(b.sale);
+        } else if (field === 'rating') {
+            const aHasRating = a.ratenum > 0;
+            const bHasRating = b.ratenum > 0;
+            if (!aHasRating && !bHasRating) return 0;
+            if (!aHasRating) return 1;
+            if (!bHasRating) return -1;
+            valA = parseFloat(a.rating);
+            valB = parseFloat(b.rating);
+        } else {
+            return 0;
+        }
+        return order === 'asc' ? valA - valB : valB - valA;
+    });
+    currentSort = { field, order };
+    currentFoods = sorted;
+    renderTable(currentFoods);
+    updateSortIcons(field, order);
+}
+
+// 更新排序图标高亮
+function updateSortIcons(activeField, activeOrder) {
+    document.querySelectorAll('.sort-icons').forEach(container => {
+        const field = container.getAttribute('data-field');
+        const ascSpan = container.querySelector('.sort-asc');
+        const descSpan = container.querySelector('.sort-desc');
+        if (ascSpan) ascSpan.style.color = '#aaa';
+        if (descSpan) descSpan.style.color = '#aaa';
+        if (field === activeField) {
+            if (activeOrder === 'asc' && ascSpan) ascSpan.style.color = '#000';
+            if (activeOrder === 'desc' && descSpan) descSpan.style.color = '#000';
+        }
+    });
+}
+
+// 绑定点击事件
+function bindSortEvents() {
+    document.querySelectorAll('.sort-icons').forEach(container => {
+        const field = container.getAttribute('data-field');
+        const ascSpan = container.querySelector('.sort-asc');
+        const descSpan = container.querySelector('.sort-desc');
+        if (ascSpan) {
+            ascSpan.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sortFoods(field, 'asc');
+            });
+        }
+        if (descSpan) {
+            descSpan.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sortFoods(field, 'desc');
+            });
+        }
+    });
+}
+
+// 初始化
+function init() {
+    currentFoods = [...foodsData];
+    renderTable(currentFoods);
+    bindSortEvents();
+}
+
+init();
+</script>
 
 {% if is_merchant %}
 <div id="plus-button" onclick="location.href='/foodsend/'" title="添加美食">➕</div>
@@ -475,9 +601,7 @@
     <div id="ai-chat-icon" onclick="toggleChat()">🤖</div>
     <div id="ai-chat-box" style="display:none;">
         <div id="ai-chat-header">智能生活助手 <span id="ai-chat-close" onclick="toggleChat()">✖</span></div>
-        <div id="ai-chat-messages">
-            <div class="chat-msg msg-ai">您好！我是您的智能生活助手，有什么我可以帮您的吗？</div>
-        </div>
+        <div id="ai-chat-messages"></div>
         <div id="ai-chat-input">
             <input type="text" id="ai-msg" placeholder="输入你的问题..." onkeypress="if(event.keyCode==13) sendMsg()">
             <button onclick="sendMsg()">发送</button>
@@ -486,6 +610,60 @@
 </div>
 
 <script>
+// ---------- 聊天记录持久化 ----------
+const STORAGE_KEY = 'ai_chat_history';
+
+// 获取历史消息
+function loadHistory() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+}
+
+// 保存历史消息（每次更新后调用）
+function saveHistory(messages) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+}
+
+// 渲染历史消息到界面（清空现有内容后重新生成）
+function renderHistory() {
+    const container = document.getElementById('ai-chat-messages');
+    const history = loadHistory();
+    container.innerHTML = '';           // 清空现有内容
+    if (history.length === 0) {
+        // 如果没有历史，显示默认欢迎消息（同时保存，避免重复保存问题）
+        const defaultMsg = { text: '您好！我是您的智能生活助手，有什么我可以帮您的吗？', sender: 'ai' };
+        appendMsg(defaultMsg.text, defaultMsg.sender, false); // 第三个参数表示不重复保存
+        saveHistory([defaultMsg]);
+    } else {
+        // 逐条渲染历史消息（不会重复保存）
+        history.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = 'chat-msg ' + (msg.sender === 'user' ? 'msg-user' : 'msg-ai');
+            div.innerText = msg.text;
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
+// 追加一条新消息（同时保存到 localStorage）
+// 参数 saveToHistory: 是否保存到 localStorage（防止重复保存）
+function appendMsg(text, sender, saveToHistory = true) {
+    const msgs = document.getElementById('ai-chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
+    div.innerText = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+
+    if (saveToHistory) {
+        const history = loadHistory();
+        history.push({ text: text, sender: sender });
+        saveHistory(history);
+    }
+}
+
+// ---------- 原有功能保持不变 ----------
 function toggleChat() {
     var box = document.getElementById('ai-chat-box');
     var icon = document.getElementById('ai-chat-icon');
@@ -497,15 +675,6 @@ function toggleChat() {
         box.style.display = 'none';
         icon.style.display = 'flex';
     }
-}
-
-function appendMsg(text, sender) {
-    var msgs = document.getElementById('ai-chat-messages');
-    var div = document.createElement('div');
-    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
-    div.innerText = text;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
 }
 
 function getCookie(name) {
@@ -537,7 +706,7 @@ function sendMsg() {
     var div = document.createElement('div');
     div.id = loadingId;
     div.className = 'chat-msg msg-ai';
-    div.innerText = '正在思考中... 🤔';
+    div.innerText = '正在思考中... 🤔（AI回复时请不要刷新以免丢失记录）';
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
 
@@ -565,6 +734,11 @@ function sendMsg() {
         appendMsg('连接失败了，请检查网络或稍后再试。', 'ai');
     });
 }
+
+// ---------- 页面加载时恢复聊天记录 ----------
+window.addEventListener('DOMContentLoaded', () => {
+    renderHistory();
+});
 </script>
 
 </body>

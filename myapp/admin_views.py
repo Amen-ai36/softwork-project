@@ -35,6 +35,8 @@ def admin_dashboard(request):
         comment_count=Count('comment')
     ).order_by('-created_at')
 
+    total_comments = Comment.objects.filter(isdeleted=0).count()
+
     if keyword:
         users = users.filter(Q(username__icontains=keyword) | Q(phone__icontains=keyword))
         orders = orders.filter(
@@ -47,6 +49,9 @@ def admin_dashboard(request):
         )
 
     revenue = Order.objects.aggregate(total=Sum('cost'))['total'] or 0
+    hotel_revenue = HotelOrder.objects.aggregate(total=Sum('cost'))['total'] or 0
+    play_revenue = PlayOrder.objects.aggregate(total=Sum('cost'))['total'] or 0
+    total_revenue = revenue + hotel_revenue + play_revenue
     context = {
         'admin_user': request.app_admin,
         'section': section,
@@ -63,10 +68,14 @@ def admin_dashboard(request):
             'orders': Order.objects.count(),
             'pending_orders': Order.objects.filter(pos__lt=4).count(),
             'revenue': revenue,
+            'hotel_revenue': hotel_revenue,
+            'play_revenue': play_revenue,
+            'total_revenue': total_revenue,
             'foods': Food.objects.count(),
             'hotels': Hotel.objects.count(),
             'plays': Play.objects.count(),
             'blogs': Blog.objects.filter(isdeleted=False).count(),
+            'total_comments': total_comments,
             'hotel_orders': HotelOrder.objects.count(),
             'play_orders': PlayOrder.objects.count(),
         },

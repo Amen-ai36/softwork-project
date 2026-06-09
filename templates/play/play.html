@@ -39,7 +39,6 @@
             border-radius: 28px;
             box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            transition: all 0.2s;
         }
 
         .header {
@@ -56,7 +55,6 @@
         .header h2 {
             font-size: 1.8rem;
             font-weight: 600;
-            letter-spacing: -0.3px;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -120,8 +118,7 @@
             box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.18);
         }
 
-        .search-btn,
-        .clear-btn {
+        .search-btn, .clear-btn {
             border: none;
             border-radius: 12px;
             padding: 0.7rem 1rem;
@@ -158,7 +155,6 @@
             font-size: 0.95rem;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
 
         th {
@@ -178,12 +174,6 @@
 
         tr:hover td {
             background-color: #fef9e6;
-            transition: 0.1s;
-        }
-
-        td:nth-child(2) {
-            font-weight: 600;
-            color: #e67e22;
         }
 
         .detail-btn {
@@ -266,7 +256,7 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        
+
         #ai-chat-icon:hover {
             transform: scale(1.1);
         }
@@ -299,7 +289,6 @@
             cursor: pointer;
             font-size: 1.2rem;
             opacity: 0.8;
-            user-select: none;
         }
 
         #ai-chat-close:hover {
@@ -368,20 +357,10 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: 0.2s;
         }
 
         #ai-chat-input button:hover {
             background: #3a5038;
-        }
-
-        .emphasize {
-            font-weight: bold;
-            color: #e67e22;
-            background-color: #fff3f0;
-            padding: 0 4px;
-            border-radius: 6px;
-            font-size: 1.05em;
         }
 
         .hot-label {
@@ -394,6 +373,42 @@
             margin-left: 0.5rem;
             display: inline-block;
             vertical-align: middle;
+        }
+
+        .emphasize {
+            font-weight: bold;
+            color: #e67e22;
+            background-color: #fff3f0;
+            padding: 0 4px;
+            border-radius: 6px;
+            font-size: 1.05em;
+        }
+
+        .emphasize:hover {
+            background-color: #ffe0db;
+            color: #c9302c;
+        }
+
+        /* 排序图标垂直排列 */
+        .sort-icons {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin-left: 6px;
+            font-size: 0.7rem;
+            line-height: 1;
+            vertical-align: middle;
+        }
+
+        .sort-asc, .sort-desc {
+            cursor: pointer;
+            color: #aaa;
+            transition: color 0.1s;
+            user-select: none;
+        }
+
+        .sort-asc:hover, .sort-desc:hover {
+            color: #ffb347 !important;
         }
     </style>
 </head>
@@ -412,7 +427,7 @@
             <button class="search-btn" type="submit">搜索</button>
             {% if keyword %}
             <a class="clear-btn" href="/play/">清空</a>
-            <div class="search-summary">正在搜索：{{ keyword }}，共 {{ plays|length }} 条结果</div>
+            <div class="search-summary">正在搜索：{{ keyword }}，共 <span id="resultCount">{{ plays|length }}</span> 条结果</div>
             {% endif %}
         </form>
     </div>
@@ -422,45 +437,31 @@
                 <tr>
                     <th>场所名称</th>
                     <th>地址</th>
-                    <th>门票价格</th>
+                    <th>
+                        门票价格
+                        <span class="sort-icons" data-field="price">
+                            <span class="sort-asc" data-order="asc">▲</span>
+                            <span class="sort-desc" data-order="desc">▼</span>
+                        </span>
+                    </th>
                     <th>开始营业</th>
                     <th>运营时间</th>
-                    <th>评分</th>
+                    <th>
+                        评分
+                        <span class="sort-icons" data-field="rating">
+                            <span class="sort-asc" data-order="asc">▲</span>
+                            <span class="sort-desc" data-order="desc">▼</span>
+                        </span>
+                    </th>
                     <th>详情一览</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for play in plays %}
-                <tr>
-                    <td>{{ play.name }}</td>
-                    <td>{{ play.addr }}</td>
-                    <td>¥<span class="emphasize">{{ play.price }}</span></td>
-                    <td>{{ play.start_time }}</td>
-                    <td>{{ play.open_time }}</td>
-                    <td>
-                        {% if play.ratenum == 0 %}
-                            ✨ 暂无评分
-                        {% else %}
-                            {% if play.rating >= 4.8 and play.ratenum >= 4 %}
-                                <span class="rating">⭐ {{ play.rating }} <span class="hot-label">好评如潮</span></span>
-                            {% else %}
-                                <span class="rating">⭐ {{ play.rating }}</span>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="/playdetails/?userid={{ user_id }}&playid={{ play.id }}" class="detail-btn">让我看看</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr class="empty-row">
-                    <td colspan="7">✨ 暂无娱乐场所数据</td>
-                </tr>
-                {% endfor %}
-            </tbody>
+            <tbody id="playTableBody"></tbody>
         </table>
     </div>
 </div>
+
+{{ plays_json|json_script:"plays-data" }}
 
 {% if is_merchant %}
 <div id="plus-button" onclick="location.href='/playsend/'" title="添加娱乐场所">➕</div>
@@ -470,9 +471,7 @@
     <div id="ai-chat-icon" onclick="toggleChat()">🤖</div>
     <div id="ai-chat-box" style="display:none;">
         <div id="ai-chat-header">智能生活助手 <span id="ai-chat-close" onclick="toggleChat()">✖</span></div>
-        <div id="ai-chat-messages">
-            <div class="chat-msg msg-ai">您好！我是您的智能生活助手，有什么我可以帮您的吗？</div>
-        </div>
+        <div id="ai-chat-messages"></div>
         <div id="ai-chat-input">
             <input type="text" id="ai-msg" placeholder="输入你的问题..." onkeypress="if(event.keyCode==13) sendMsg()">
             <button onclick="sendMsg()">发送</button>
@@ -481,6 +480,171 @@
 </div>
 
 <script>
+// ---------- 娱乐排序逻辑 ----------
+let playsData = [];
+try {
+    const dataEl = document.getElementById('plays-data');
+    if (dataEl) {
+        playsData = JSON.parse(dataEl.textContent);
+    } else {
+        console.error('未找到 plays-data 元素');
+    }
+} catch(e) {
+    console.error('解析 plays_json 失败', e);
+}
+
+let currentPlays = [...playsData];
+let currentSort = { field: null, order: null };
+
+function renderPlayTable(data) {
+    const tbody = document.getElementById('playTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (data.length === 0) {
+        const row = tbody.insertRow();
+        row.innerHTML = '<td colspan="7">✨ 暂无娱乐场所数据</td>';
+        document.getElementById('resultCount') && (document.getElementById('resultCount').innerText = 0);
+        return;
+    }
+    data.forEach(play => {
+        const row = tbody.insertRow();
+        row.insertCell().innerText = play.name;
+        row.insertCell().innerText = play.addr;
+        row.insertCell().innerHTML = `¥<span class="emphasize">${play.price}</span>`;
+        row.insertCell().innerText = play.start_time;
+        row.insertCell().innerText = play.open_time;
+        const ratingCell = row.insertCell();
+        if (play.ratenum === 0) {
+            ratingCell.innerText = '✨ 暂无评分';
+        } else {
+            const rating = parseFloat(play.rating);
+            if (rating >= 4.8 && play.ratenum >= 4) {
+                ratingCell.innerHTML = `<span class="rating">⭐ ${rating} <span class="hot-label">好评如潮</span></span>`;
+            } else {
+                ratingCell.innerHTML = `<span class="rating">⭐ ${rating}</span>`;
+            }
+        }
+        const detailCell = row.insertCell();
+        detailCell.innerHTML = `<a href="/playdetails/?userid={{ user_id }}&playid=${play.id}" class="detail-btn">让我看看</a>`;
+    });
+    document.getElementById('resultCount') && (document.getElementById('resultCount').innerText = data.length);
+}
+
+function sortPlays(field, order) {
+    const sorted = [...currentPlays];
+    sorted.sort((a, b) => {
+        if (field === 'price') {
+            const valA = parseFloat(a.price);
+            const valB = parseFloat(b.price);
+            return order === 'asc' ? valA - valB : valB - valA;
+        } else if (field === 'rating') {
+            const aHas = a.ratenum > 0;
+            const bHas = b.ratenum > 0;
+            if (!aHas && !bHas) return 0;
+            if (!aHas) return 1;
+            if (!bHas) return -1;
+            const valA = parseFloat(a.rating);
+            const valB = parseFloat(b.rating);
+            return order === 'asc' ? valA - valB : valB - valA;
+        }
+        return 0;
+    });
+    currentSort = { field, order };
+    currentPlays = sorted;
+    renderPlayTable(currentPlays);
+    updateSortIcons(field, order);
+}
+
+function updateSortIcons(activeField, activeOrder) {
+    document.querySelectorAll('.sort-icons').forEach(container => {
+        const field = container.getAttribute('data-field');
+        const ascSpan = container.querySelector('.sort-asc');
+        const descSpan = container.querySelector('.sort-desc');
+        if (ascSpan) ascSpan.style.color = '#aaa';
+        if (descSpan) descSpan.style.color = '#aaa';
+        if (field === activeField) {
+            if (activeOrder === 'asc' && ascSpan) ascSpan.style.color = '#000';
+            if (activeOrder === 'desc' && descSpan) descSpan.style.color = '#000';
+        }
+    });
+}
+
+function bindPlaySortEvents() {
+    document.querySelectorAll('.sort-icons').forEach(container => {
+        const field = container.getAttribute('data-field');
+        const ascSpan = container.querySelector('.sort-asc');
+        const descSpan = container.querySelector('.sort-desc');
+        if (ascSpan) {
+            ascSpan.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sortPlays(field, 'asc');
+            });
+        }
+        if (descSpan) {
+            descSpan.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sortPlays(field, 'desc');
+            });
+        }
+    });
+}
+
+function initPlays() {
+    currentPlays = [...playsData];
+    renderPlayTable(currentPlays);
+    bindPlaySortEvents();
+}
+
+initPlays();
+
+// ---------- AI 聊天功能（保持不变）----------
+const STORAGE_KEY = 'ai_chat_history';
+
+function loadHistory() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+}
+
+function saveHistory(messages) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+}
+
+function createMessageDiv(text, sender) {
+    const div = document.createElement('div');
+    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
+    div.innerText = text;
+    return div;
+}
+
+function appendMsg(text, sender, saveToHistory = true) {
+    const container = document.getElementById('ai-chat-messages');
+    const div = createMessageDiv(text, sender);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    if (saveToHistory) {
+        const history = loadHistory();
+        history.push({ text, sender });
+        saveHistory(history);
+    }
+}
+
+function renderHistory() {
+    const container = document.getElementById('ai-chat-messages');
+    const history = loadHistory();
+    container.innerHTML = '';
+    if (history.length === 0) {
+        const defaultMsg = { text: '您好！我是您的智能生活助手，有什么我可以帮您的吗？', sender: 'ai' };
+        appendMsg(defaultMsg.text, defaultMsg.sender, false);
+        saveHistory([defaultMsg]);
+    } else {
+        history.forEach(msg => {
+            const div = createMessageDiv(msg.text, msg.sender);
+            container.appendChild(div);
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
 function toggleChat() {
     var box = document.getElementById('ai-chat-box');
     var icon = document.getElementById('ai-chat-icon');
@@ -492,15 +656,6 @@ function toggleChat() {
         box.style.display = 'none';
         icon.style.display = 'flex';
     }
-}
-
-function appendMsg(text, sender) {
-    var msgs = document.getElementById('ai-chat-messages');
-    var div = document.createElement('div');
-    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
-    div.innerText = text;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
 }
 
 function getCookie(name) {
@@ -522,45 +677,38 @@ function sendMsg() {
     var input = document.getElementById('ai-msg');
     var text = input.value.trim();
     if (!text) return;
-    
     appendMsg(text, 'user');
     input.value = '';
-    
-    // 加载动画
     var loadingId = 'loading-' + Date.now();
     var msgs = document.getElementById('ai-chat-messages');
     var div = document.createElement('div');
     div.id = loadingId;
     div.className = 'chat-msg msg-ai';
-    div.innerText = '正在思考中... 🤔';
+    div.innerText = '正在思考中... 🤔（AI回复时请不要刷新以免丢失记录）';
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
-
     var formData = new FormData();
     formData.append('user_input', text);
-    
     fetch('/ai-chat/', {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         document.getElementById(loadingId).remove();
-        if (data.reply) {
-            appendMsg(data.reply, 'ai');
-        } else if (data.error) {
-            appendMsg(data.error, 'ai');
-        }
+        if (data.reply) appendMsg(data.reply, 'ai');
+        else if (data.error) appendMsg('❌ ' + data.error, 'ai');
     })
     .catch(error => {
         document.getElementById(loadingId).remove();
-        appendMsg('连接失败了，请检查网络或稍后再试。', 'ai');
+        appendMsg('❌ 连接失败，请检查网络或稍后再试。', 'ai');
     });
 }
-</script>
 
+window.addEventListener('DOMContentLoaded', () => {
+    renderHistory();
+});
+</script>
 </body>
 </html>

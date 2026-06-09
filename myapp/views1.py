@@ -80,8 +80,12 @@ def hotel(request):
         hotels = hotels.filter(
             Q(name__icontains=keyword)
         )
+
+    hotels_json = list(hotels.values('id', 'name', 'addr', 'price_clock', 'price_day', 'rating', 'ratenum'))
+
     return render(request, 'hotel/hotel.html', {
         'hotels': hotels,
+        'hotels_json': hotels_json,
         'user_id': user_id,
         'is_merchant': is_merchant(user),
         'keyword': keyword,
@@ -345,8 +349,11 @@ def play(request):
         plays = plays.filter(
             Q(name__icontains=keyword)
         )
+
+    plays_json = list(plays.values('id', 'name', 'addr', 'price', 'start_time', 'open_time', 'rating', 'ratenum'))
     return render(request, 'play/play.html', {
         'plays': plays,
+        'plays_json': plays_json,
         'user_id': user_id,
         'is_merchant': is_merchant(user),
         'keyword': keyword,
