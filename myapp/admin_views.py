@@ -44,6 +44,8 @@ def admin_dashboard(request):
             | Q(food__name__icontains=keyword)
             | Q(address__icontains=keyword)
         )
+        if keyword in ('异常', 'abnormal', 'exception'):
+            orders = orders | Order.objects.select_related('user', 'food', 'rider').filter(is_abnormal=True)
         blogs = blogs.filter(
             Q(title__icontains=keyword) | Q(authorid__username__icontains=keyword)
         )
@@ -67,6 +69,7 @@ def admin_dashboard(request):
             'active_users': User.objects.filter(isDelete=False).count(),
             'orders': Order.objects.count(),
             'pending_orders': Order.objects.filter(pos__lt=4).count(),
+            'abnormal_orders': Order.objects.filter(is_abnormal=True).count(),
             'revenue': revenue,
             'hotel_revenue': hotel_revenue,
             'play_revenue': play_revenue,
@@ -126,9 +129,14 @@ def admin_order_action(request):
         messages.error(request, '订单不存在。')
         return redirect('/manage/?section=orders')
 
-    if order.pos == 5:
+    action = request.POST.get('action')
+    if action == 'toggle_abnormal':
+        order.is_abnormal = not order.is_abnormal
+        order.save(update_fields=['is_abnormal'])
+        messages.success(request, '订单异常标记已更新。')
+    elif order.pos == 5:
         messages.error(request, '已评价订单不能由管理员修改。')
-    elif request.POST.get('action') != 'complete':
+    elif action != 'complete':
         messages.error(request, '管理员只能将订单标记为已送达。')
     elif order.pos == 4:
         messages.info(request, '该订单已经是已送达状态。')

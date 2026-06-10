@@ -157,6 +157,7 @@
         }
         .badge.off { color: #833a34; background: #f5e5e3; }
         .badge.pending { color: #74541d; background: #f6edda; }
+        .badge.abnormal { color: #8a2f21; background: #fde4df; }
         .inline-form { display: inline-flex; align-items: center; gap: 6px; }
         select {
             min-height: 30px;
@@ -258,6 +259,7 @@
             <div class="stat"><span>公开评论总数</span><strong>{{ stats.total_comments }}</strong></div>
             <div class="stat"><span>外卖订单</span><strong>{{ stats.orders }}</strong></div>
             <div class="stat"><span>处理中订单</span><strong>{{ stats.pending_orders }}</strong></div>
+            <div class="stat"><span>异常订单</span><strong>{{ stats.abnormal_orders }}</strong></div>
             <div class="stat"><span>外卖成交额</span><strong>¥{{ stats.revenue|floatformat:2 }}</strong></div>
             <div class="stat"><span>菜品 / 酒店 / 娱乐</span><strong>{{ stats.foods }} / {{ stats.hotels }} / {{ stats.plays }}</strong></div>
             <div class="stat"><span>酒店订单</span><strong>{{ stats.hotel_orders }}</strong></div>
@@ -281,6 +283,7 @@
                         <td>{{ order.rider.username|default:"未分配" }}</td>
                         <td>
                             {% if order.pos == 0 %}待接单{% elif order.pos == 1 %}骑手已接单{% elif order.pos == 2 %}商家已出餐{% elif order.pos == 3 %}配送中{% elif order.pos == 4 %}已送达{% else %}已评价{% endif %}
+                            {% if order.is_abnormal %}<span class="badge abnormal">异常</span>{% endif %}
                         </td>
                         <td>{{ order.time|date:"m-d H:i" }}</td>
                     </tr>
@@ -340,7 +343,7 @@
             <div class="panel-header"><h2>外卖订单</h2><span>管理员只能将未完成订单标记为已送达，不能代替用户评价</span></div>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>订单</th><th>顾客</th><th>菜品</th><th>金额</th><th>地址</th><th>骑手</th><th>当前状态</th><th>更新状态</th></tr></thead>
+                    <thead><tr><th>订单</th><th>顾客</th><th>菜品</th><th>金额</th><th>地址</th><th>骑手</th><th>当前状态</th><th>异常标记</th><th>更新状态</th></tr></thead>
                     <tbody>
                     {% for order in orders %}
                     <tr>
@@ -354,6 +357,17 @@
                             <span class="badge {% if order.pos < 4 %}pending{% endif %}">
                                 {% if order.pos == 0 %}待接单{% elif order.pos == 1 %}骑手已接单{% elif order.pos == 2 %}商家已出餐{% elif order.pos == 3 %}配送中{% elif order.pos == 4 %}已送达{% else %}已评价{% endif %}
                             </span>
+                            {% if order.is_abnormal %}<span class="badge abnormal">异常</span>{% endif %}
+                        </td>
+                        <td>
+                            <form class="inline-form" action="/manage/orders/action/" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                <input type="hidden" name="action" value="toggle_abnormal">
+                                <button class="btn small {% if not order.is_abnormal %}danger{% endif %}" type="submit">
+                                    {% if order.is_abnormal %}取消异常{% else %}标记异常{% endif %}
+                                </button>
+                            </form>
                         </td>
                         <td>
                             {% if order.pos == 5 %}
@@ -370,7 +384,7 @@
                             {% endif %}
                         </td>
                     </tr>
-                    {% empty %}<tr><td colspan="8" class="empty">没有匹配订单</td></tr>{% endfor %}
+                    {% empty %}<tr><td colspan="9" class="empty">没有匹配订单</td></tr>{% endfor %}
                     </tbody>
                 </table>
             </div>

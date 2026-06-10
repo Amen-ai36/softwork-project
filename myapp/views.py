@@ -422,6 +422,23 @@ def space(request):
         context['merchant_group_coupons'] = GroupBuyCoupon.objects.filter(
             food__merchant=user
         ).select_related('food', 'user').order_by('-time')
+        food_revenue = Order.objects.filter(food__merchant=user).aggregate(total=Sum('cost'))['total'] or 0
+        hotel_revenue = HotelOrder.objects.filter(hotel__merchant=user).aggregate(total=Sum('cost'))['total'] or 0
+        play_revenue = PlayOrder.objects.filter(play__merchant=user).aggregate(total=Sum('cost'))['total'] or 0
+        groupbuy_revenue = GroupBuyCoupon.objects.filter(
+            food__merchant=user, status=1
+        ).aggregate(total=Sum('cost'))['total'] or 0
+        context['merchant_revenue'] = {
+            'food': food_revenue,
+            'hotel': hotel_revenue,
+            'play': play_revenue,
+            'groupbuy': groupbuy_revenue,
+            'total': food_revenue + hotel_revenue + play_revenue + groupbuy_revenue,
+            'food_orders': Order.objects.filter(food__merchant=user).count(),
+            'hotel_orders': HotelOrder.objects.filter(hotel__merchant=user).count(),
+            'play_orders': PlayOrder.objects.filter(play__merchant=user).count(),
+            'used_group_coupons': GroupBuyCoupon.objects.filter(food__merchant=user, status=1).count(),
+        }
     else:
         context['orders'] = Order.objects.filter(user=user)
         context['hotel_orders'] = HotelOrder.objects.filter(user=user)

@@ -47,6 +47,7 @@ class Order(models.Model):
     address = models.CharField(max_length=100, default="") # 订单配送地址
     comment = models.CharField(max_length=200, default="") # 订单评价
     pos = models.IntegerField(default=0) # 0-待分配骑手，1-骑手已分配 2-商家已出餐 3-骑手配送中 4-顾客已取餐 5-顾客已评价
+    is_abnormal = models.BooleanField(default=False) # 管理员标记的异常订单
     scoretofood = models.DecimalField(
         max_digits=2,          # 总位数：整数1位 + 小数1位 = 2位
         decimal_places=1,      # 小数位数：1位

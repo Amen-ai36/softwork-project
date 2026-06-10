@@ -482,6 +482,48 @@
         </div>
 
         {% elif is_merchant %}
+        <div class="merchant-revenue-section">
+            <h3>营业额概览</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>业务</th>
+                            <th>订单/核销数</th>
+                            <th>营业额</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>外卖订单</td>
+                            <td>{{ merchant_revenue.food_orders }}</td>
+                            <td>¥{{ merchant_revenue.food|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>酒店订单</td>
+                            <td>{{ merchant_revenue.hotel_orders }}</td>
+                            <td>¥{{ merchant_revenue.hotel|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>娱乐订单</td>
+                            <td>{{ merchant_revenue.play_orders }}</td>
+                            <td>¥{{ merchant_revenue.play|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>团购券核销</td>
+                            <td>{{ merchant_revenue.used_group_coupons }}</td>
+                            <td>¥{{ merchant_revenue.groupbuy|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>合计</strong></td>
+                            <td>-</td>
+                            <td><strong>¥{{ merchant_revenue.total|floatformat:2 }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- 商家：已创建的食物 -->
         <div class="merchant-foods-section">
             <h3>已创建的食物</h3>

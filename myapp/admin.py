@@ -18,8 +18,8 @@ class FoodAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'food', 'rider', 'num', 'cost', 'pos', 'time')
-    list_filter = ('pos',)
+    list_display = ('id', 'user', 'food', 'rider', 'num', 'cost', 'pos', 'is_abnormal', 'time')
+    list_filter = ('pos', 'is_abnormal')
     search_fields = ('user__username', 'food__name', 'address')
 
 
