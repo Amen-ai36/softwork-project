@@ -1113,7 +1113,7 @@
         {% else %}
         <a href="/food/" class="back-btn">🍜 返回美食列表</a>
         {% endif %}
-        <a href="/index/" class="back-btn">↪️ 退出登录</a>
+        <a href="/logout/" class="back-btn">↪️ 退出登录</a>
     </div>
 </div>
 
@@ -1298,6 +1298,15 @@ if (clearCartBtn) {
         });
     });
 }
+
+window.addEventListener('pageshow', function(event) {
+        // 如果页面是从 bfcache 恢复的（即用户按后退/前进按钮）
+        if (event.persisted) {
+            // 强制重新加载页面，此时会重新请求服务器，后端校验未登录就会重定向到 /index/
+            window.location.reload();
+        }
+});
+
 </script>
 
 </body>

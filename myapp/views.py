@@ -1,4 +1,3 @@
-from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from .models import *
@@ -16,6 +15,10 @@ import time
 from django.db.models import Sum, Max, Avg, Q
 from django.core.cache import cache
 import hashlib
+import re
+from django.shortcuts import render, redirect, HttpResponse
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 
 # 全局信息的缓存 key
 CACHE_KEY_GLOBAL_INFO = "global_platform_info"
@@ -59,6 +62,7 @@ def delete_cart_item(request, tempid):
         except Exception as e:
             return JsonResponse({'status': 'error', 'msg': str(e)}, status=400)
     return JsonResponse({'status': 'error', 'msg': '仅支持POST'}, status=405)
+
 @require_POST
 def clear_cart(request):
     """清空购物车：将当前用户所有购物车记录迁移到 CartHistory，然后删除"""
@@ -221,8 +225,15 @@ def login(request):
             return redirect('/food/')
     return render(request, 'login.html')
 
-import re
-from django.shortcuts import render, redirect, HttpResponse
+def logout_view(request):
+    logout(request)          # Django 内置的注销函数，会删除 session 中的用户信息
+    response = redirect('/index/')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    response['Clear-Site-Data'] = '"cache"'
+    
+    return response
 
 def register(request):
     """
