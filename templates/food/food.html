@@ -512,7 +512,11 @@ function renderTable(data) {
             }
         }
         const detailCell = row.insertCell();
-        detailCell.innerHTML = `<a href="/fooddetails/?userid={{ user_id }}&foodid=${food.id}" class="detail-btn">让我看看</a>`;
+        if (food.is_sold_out) {
+            detailCell.innerHTML = `<a href="/fooddetails/?userid={{ user_id }}&foodid=${food.id}" class="detail-btn">售罄 · 看看</a>`;
+        } else {
+            detailCell.innerHTML = `<a href="/fooddetails/?userid={{ user_id }}&foodid=${food.id}" class="detail-btn">让我看看</a>`;
+        }
     });
 }
 

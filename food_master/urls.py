@@ -26,6 +26,7 @@ urlpatterns = [
     path("account/register/", views.register),
     path("food/", views.food),
     path('foodsend/', views.foodsend, name='foodsend'),
+    path('merchant/food/action/', views.merchant_food_action, name='merchant_food_action'),
     path('space/', views.space, name='space'),
     path('fooddetails/', views.fooddetails, name='fooddetails'),
     path('foodorder/', views.foodorder, name='foodorder'),

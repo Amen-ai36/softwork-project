@@ -539,6 +539,8 @@
                                 <th>地址</th>
                                 <th>时间</th>
                                 <th>食物评分</th>
+                                <th>商品状态</th>
+                                <th>商品操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -551,6 +553,29 @@
                                 <td>{{ item.address }}</td>
                                 <td>{% if item.latest_time %}{{ item.latest_time|date:"Y-m-d H:i" }}{% else %}暂无订单{% endif %}</td>
                                 <td>{% if item.avg_score %}{{ item.avg_score|floatformat:1 }}{% else %}暂未评分{% endif %}</td>
+                                <td>
+                                    {% if item.food.is_off_shelf %}已下架
+                                    {% elif item.food.is_sold_out %}已售罄
+                                    {% else %}售卖中{% endif %}
+                                </td>
+                                <td>
+                                    <form action="/merchant/food/action/" method="post" style="display:inline-block; margin-right:6px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="food_id" value="{{ item.food.id }}">
+                                        <input type="hidden" name="action" value="toggle_sold_out">
+                                        <button type="submit" class="btn-status">
+                                            {% if item.food.is_sold_out %}恢复供应{% else %}标记售罄{% endif %}
+                                        </button>
+                                    </form>
+                                    <form action="/merchant/food/action/" method="post" style="display:inline-block;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="food_id" value="{{ item.food.id }}">
+                                        <input type="hidden" name="action" value="toggle_off_shelf">
+                                        <button type="submit" class="btn-status">
+                                            {% if item.food.is_off_shelf %}重新上架{% else %}下架商品{% endif %}
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

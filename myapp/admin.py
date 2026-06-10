@@ -12,7 +12,8 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Food)
 class FoodAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'price', 'providor', 'merchant', 'rating', 'sale')
+    list_display = ('id', 'name', 'price', 'providor', 'merchant', 'rating', 'sale', 'is_off_shelf', 'is_sold_out')
+    list_filter = ('is_off_shelf', 'is_sold_out')
     search_fields = ('name', 'providor')
 
 

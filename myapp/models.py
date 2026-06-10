@@ -36,6 +36,8 @@ class Food(models.Model):
     ) # 食物评分，0.0-5.0之间，保留1位小数
     inf = models.CharField(max_length=200, default="") # 食物简介
     merchant = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='foods') # 创建商家
+    is_off_shelf = models.BooleanField(default=False) # 商家是否下架
+    is_sold_out = models.BooleanField(default=False) # 商家是否标记售罄
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) # 订单所属用户
