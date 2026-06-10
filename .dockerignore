@@ -1,0 +1,17 @@
+.git
+.venv
+.env
+__pycache__/
+*.py[cod]
+node_modules/
+staticfiles/
+*.log
+*.zip
+selenium-received.png
+runserver.out.log
+runserver.err.log
+result.txt
+postman_test_script.txt
+test.js
+selenium-run.js
+db.sqlite3

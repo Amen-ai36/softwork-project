@@ -15,20 +15,48 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.lower() in ('1', 'true', 'yes', 'on')
+
+
+def env_list(name, default=''):
+    value = os.environ.get(name, default)
+    return [item.strip() for item in value.split(',') if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-h!l&rih3dym_y69@9%)35&)zbe8nkea8=1e-x(9$af=4*9*1$v'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-dev-only-change-me-before-deploying',
+)
 
 # 阿里云 LLM 配置
-ALIYUN_API_KEY = "sk-a88d9c2f3b8940499a1d76df1257d4a1"
-ALIYUN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+ALIYUN_API_KEY = os.environ.get('ALIYUN_API_KEY', '')
+ALIYUN_BASE_URL = os.environ.get(
+    'ALIYUN_BASE_URL',
+    'https://dashscope.aliyuncs.com/compatible-mode/v1',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', '*')
+CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', False)
+SESSION_COOKIE_SECURE = env_bool('DJANGO_SESSION_COOKIE_SECURE', False)
+CSRF_COOKIE_SECURE = env_bool('DJANGO_CSRF_COOKIE_SECURE', False)
+SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', False)
 
 
 # Application definition
@@ -82,7 +110,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('FOOD_DELIVER_DB_NAME', 'the_food_mas2'),
         'USER': os.environ.get('FOOD_DELIVER_DB_USER', 'root'),
-        'PASSWORD': os.environ.get('FOOD_DELIVER_DB_PASSWORD', 'Buaa362880!'),
+        'PASSWORD': os.environ.get('FOOD_DELIVER_DB_PASSWORD', 'changeme'),
         'HOST': os.environ.get('FOOD_DELIVER_DB_HOST', 'localhost'),
         'PORT': os.environ.get('FOOD_DELIVER_DB_PORT', '3306'),
     }
@@ -126,6 +154,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.environ.get('DJANGO_STATIC_ROOT', os.path.join(BASE_DIR, 'staticfiles'))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

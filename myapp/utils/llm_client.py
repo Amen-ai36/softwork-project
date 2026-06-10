@@ -12,7 +12,10 @@ def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024
     :return: 模型返回的文本内容，失败返回 None
     """
     # 从 settings 中获取配置（也可以在 settings.py 中定义）
-    api_key = getattr(settings, "ALIYUN_API_KEY", "sk-a88d9c2f3b8940499a1d76df1257d4a1")
+    api_key = getattr(settings, "ALIYUN_API_KEY", "")
+    if not api_key:
+        print("ALIYUN_API_KEY is not configured")
+        return None
     # 如果AI功能不能正常使用，可能是密钥额度已满，可以换用sk-5c33f5da98fa478ba85844f7e66521a9
     base_url = getattr(settings, "ALIYUN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
     url = f"{base_url}/chat/completions"
