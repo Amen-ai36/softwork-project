@@ -1,5 +1,4 @@
 import requests
-import json
 from django.conf import settings
 
 def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
@@ -14,10 +13,10 @@ def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024
     # 从 settings 中获取配置（也可以在 settings.py 中定义）
     api_key = getattr(settings, "ALIYUN_API_KEY", "")
     if not api_key:
-        print("ALIYUN_API_KEY is not configured")
+        print("ALIYUN_API_KEY/DASHSCOPE_API_KEY is not configured")
         return None
-    # 如果AI功能不能正常使用，可能是密钥额度已满，可以换用sk-5c33f5da98fa478ba85844f7e66521a9
     base_url = getattr(settings, "ALIYUN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    model = getattr(settings, "ALIYUN_MODEL", "qwen-plus")
     url = f"{base_url}/chat/completions"
 
     headers = {
@@ -36,6 +35,7 @@ def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024
         "temperature": temperature,
         "max_tokens": max_tokens
     }
+    data["model"] = model
 
     try:
         response = requests.post(url, headers=headers, json=data, timeout=30)

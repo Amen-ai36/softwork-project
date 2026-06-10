@@ -128,6 +128,7 @@ def get_global_info():
         cache.set(CACHE_KEY_GLOBAL_INFO, global_info, CACHE_TIMEOUT)
     return global_info
 
+@ensure_csrf_cookie
 def ai_chat_view(request):
     if request.method == "POST":
         user_id = request.session.get('user_id')
@@ -278,6 +279,7 @@ def register(request):
     # GET 请求：显示注册页面
     return render(request, 'register.html')
 
+@ensure_csrf_cookie
 def food(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -681,6 +683,7 @@ def ordercomment(request):
         
     return render(request, 'foodorder/ordercomment.html', {'orders': order})
 
+@ensure_csrf_cookie
 def blog(request):
     user_id = request.session.get('user_id')
     if not user_id:

@@ -45,11 +45,12 @@ SECRET_KEY = os.environ.get(
 )
 
 # 阿里云 LLM 配置
-ALIYUN_API_KEY = os.environ.get('ALIYUN_API_KEY', '')
+ALIYUN_API_KEY = first_env('ALIYUN_API_KEY', 'DASHSCOPE_API_KEY')
 ALIYUN_BASE_URL = os.environ.get(
     'ALIYUN_BASE_URL',
     'https://dashscope.aliyuncs.com/compatible-mode/v1',
 )
+ALIYUN_MODEL = os.environ.get('ALIYUN_MODEL', 'qwen-plus')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DJANGO_DEBUG', True)

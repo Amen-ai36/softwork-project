@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.utils.dateparse import parse_datetime
 from django.db.models import Avg, Count, Q
 from django.conf import settings
+from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import *
 from .views import is_merchant, is_rider, get_login_user
 import os
@@ -68,6 +69,7 @@ def save_hotel_review(order, score, comment):
     return None
 
 
+@ensure_csrf_cookie
 def hotel(request):
     user_id = request.session.get('user_id')
     if not user_id:
@@ -336,6 +338,7 @@ def save_play_review(order, score, comment):
     return None
 
 
+@ensure_csrf_cookie
 def play(request):
     """娱乐场所列表页"""
     user_id = request.session.get('user_id')
