@@ -27,6 +27,14 @@ def env_list(name, default=''):
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
+def first_env(*names, default=''):
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return default
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
@@ -47,7 +55,15 @@ ALIYUN_BASE_URL = os.environ.get(
 DEBUG = env_bool('DJANGO_DEBUG', True)
 
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', '*')
+railway_public_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+if railway_public_domain and '*' not in ALLOWED_HOSTS and railway_public_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(railway_public_domain)
+
 CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
+if railway_public_domain:
+    railway_origin = f'https://{railway_public_domain}'
+    if railway_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
@@ -73,6 +89,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -108,11 +125,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('FOOD_DELIVER_DB_NAME', 'the_food_mas2'),
-        'USER': os.environ.get('FOOD_DELIVER_DB_USER', 'root'),
-        'PASSWORD': os.environ.get('FOOD_DELIVER_DB_PASSWORD', 'changeme'),
-        'HOST': os.environ.get('FOOD_DELIVER_DB_HOST', 'localhost'),
-        'PORT': os.environ.get('FOOD_DELIVER_DB_PORT', '3306'),
+        'NAME': first_env('FOOD_DELIVER_DB_NAME', 'MYSQLDATABASE', default='the_food_mas2'),
+        'USER': first_env('FOOD_DELIVER_DB_USER', 'MYSQLUSER', default='root'),
+        'PASSWORD': first_env('FOOD_DELIVER_DB_PASSWORD', 'MYSQLPASSWORD', default='changeme'),
+        'HOST': first_env('FOOD_DELIVER_DB_HOST', 'MYSQLHOST', default='localhost'),
+        'PORT': first_env('FOOD_DELIVER_DB_PORT', 'MYSQLPORT', default='3306'),
     }
 }
 
@@ -155,6 +172,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.environ.get('DJANGO_STATIC_ROOT', os.path.join(BASE_DIR, 'staticfiles'))
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
