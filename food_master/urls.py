@@ -66,5 +66,6 @@ urlpatterns = [
     path('manage/orders/action/', admin_views.admin_order_action, name='app_admin_order_action'),
     path('manage/blogs/action/', admin_views.admin_blog_action, name='app_admin_blog_action'),
     path('manage/logout/', admin_views.admin_logout, name='app_admin_logout'),
+    path('logout/', views.logout_view, name='logout'),
     path('', include('myapp.urls')),
 ]
