@@ -39,3 +39,9 @@ ALIYUN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```text
 IMPORT_SQL_ON_START=false
 ```
+
+建议首次部署成功后，把 Web 服务变量改成：
+```text
+IMPORT_SQL_ON_START=false
+```
+后续重新部署只执行 Django 迁移，不再尝试导入 `data_hex2.sql`。
