@@ -194,6 +194,11 @@
         <p>开启美食、旅行与生活的精彩旅程</p>
     </div>
     <div class="card-body">
+        {% if error %}
+        <div style="background:#fee2e2;color:#b91c1c;padding:0.75rem 1rem;border-radius:0.75rem;margin-bottom:1rem;font-size:0.9rem;line-height:1.5;">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
         <form action="/account/register/" method="post">
             {% csrf_token %}
             <div class="form-group">

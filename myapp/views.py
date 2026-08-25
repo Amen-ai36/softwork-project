@@ -92,7 +92,7 @@ def clear_cart(request):
                 food=item.food,
                 num=item.num,
                 address=item.address,
-                cost=item.cost*item.num,
+                cost=item.food.price * item.num,  # 订单金额 = 单价 × 数量（避免重复累乘）
                 pos=0
             )
 

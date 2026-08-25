@@ -4,3 +4,5 @@ __pycache__/
 .env
 staticfiles/
 *.log
+test_*.sqlite3
+test_food_master.sqlite3

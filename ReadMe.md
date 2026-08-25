@@ -173,6 +173,25 @@ pos=0(待接单) ──骑手接单──▶ pos=1(骑手已接单) ──商家
 | 已送达 | 骑手 | 2→4 | `/rider_deliver/` |
 | 评价 | 用户 | 4→5 | `/ordercomment/` |
 
+## 自动化测试
+
+项目在 `test/` 目录下提供了完整的三层自动化测试：
+
+- **单元测试** `test/test_unit.py`：关键类、方法、业务规则与异常分支（价格/房型规则、评价校验、核销码唯一性、密码强度、模型校验、AI 客户端等），全部使用断言判断结果；
+- **集成 / API 测试** `test/test_integration_api.py`：模块间调用、数据库访问与对外接口，覆盖每个用例的主成功流程、备选流程和异常流程；
+- **端到端测试** `test/test_e2e.py`：从页面/接口入口走完完整业务流程，覆盖美食外卖、购物车、团购、酒店、娱乐、博客、后台管理、AI 助手等全部业务场景；
+- **数据库环境检查** `test/test_database_config.py`：校验配置与 `data_hex2.sql` 一致性，并在 MySQL 可达时检查核心表。
+
+一键运行并生成测试报告（总数 / 通过 / 失败 / 失败原因 / 运行环境）：
+
+```powershell
+python test/run_tests.py
+```
+
+- 默认使用 SQLite 内存测试库，无需配置数据库即可运行；设置 `FOOD_DELIVER_DB_PASSWORD` 后自动切换为 MySQL 验证；
+- 任一测试失败时 `run_tests.py` 返回非 0 退出码，`.github/workflows/ci.yml` 中后续构建、发布镜像、部署步骤均带 `if: success()`，**测试失败流水线立即停止**；
+- 报告输出：`test/test_report.md`（人读）、`test/test_report.json`（机器可读）。详见 `test/README.md`。
+
 ## 实现参考
 
 - 可以参考food链路和blog链路的实现方式

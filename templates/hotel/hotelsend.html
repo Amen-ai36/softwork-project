@@ -80,6 +80,11 @@
         <p>商家专属 · 开放新民宿</p>
     </div>
     <div class="card-body">
+        {% if error %}
+        <div style="background:#fee2e2;color:#b91c1c;padding:0.75rem 1rem;border-radius:0.75rem;margin-bottom:1rem;font-size:0.9rem;line-height:1.5;">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
         <form action="/hotelsend/" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="form-group">
