@@ -12,7 +12,7 @@ from django.utils import timezone
 import os
 import uuid
 import time
-from django.db.models import Sum, Max, Avg, Q
+from django.db.models import Sum, Max, Avg, Q, Count
 from django.core.cache import cache
 import hashlib
 import re
@@ -86,6 +86,7 @@ def clear_cart(request):
         return JsonResponse({'status': 'error', 'msg': f'{names} 已下架或售罄，请先从购物车删除'}, status=400)
 
     # 批量创建历史记录
+    affected_foods = set()
     for item in cart_items:
         Order.objects.create(
                 user=user,
@@ -95,6 +96,10 @@ def clear_cart(request):
                 cost=item.food.price * item.num,  # 订单金额 = 单价 × 数量（避免重复累乘）
                 pos=0
             )
+        affected_foods.add(item.food)
+
+    for food in affected_foods:
+        sync_food_sales(food)
 
     # 删除原购物车记录
     cart_items.delete()
@@ -186,6 +191,14 @@ def make_group_buy_code():
         code = uuid.uuid4().hex[:10].upper()
         if not GroupBuyCoupon.objects.filter(code=code).exists():
             return code
+
+def sync_food_sales(food):
+    order_stats = Order.objects.filter(food=food).aggregate(order_count=Count('id'), copy_count=Sum('num'))
+    coupon_stats = GroupBuyCoupon.objects.filter(food=food).aggregate(order_count=Count('id'), copy_count=Sum('num'))
+    food.saleperson = (order_stats['order_count'] or 0) + (coupon_stats['order_count'] or 0)
+    food.sale = (order_stats['copy_count'] or 0) + (coupon_stats['copy_count'] or 0)
+    food.save(update_fields=['saleperson', 'sale'])
+    return food
 
 def index(request):
     return render(request, 'index.html')
@@ -304,6 +317,8 @@ def food(request):
         foods = foods.filter(
             Q(name__icontains=keyword) | Q(providor__icontains=keyword) | Q(inf__icontains=keyword)
         )
+    for food_item in foods:
+        sync_food_sales(food_item)
     foods_json = list(foods.values('id', 'name', 'price', 'providor', 'sale', 'rating', 'ratenum', 'is_sold_out'))
     return render(request, 'food/food.html', {
         'foods': foods,
@@ -506,6 +521,7 @@ def fooddetails(request):
         return HttpResponse("该商品已下架！")
         
     # 查询当前用户在此食物上的订单记录
+    sync_food_sales(food)
     orders = Order.objects.filter(user_id=user_id, food_id=food_id)
     order_times = orders.count()
     total_copies = orders.aggregate(Sum('num'))['num__sum'] or 0
@@ -556,6 +572,7 @@ def foodorder(request):
                 cost=food.price * int(num),
                 pos=0
             )
+            sync_food_sales(food)
 
         else:
             Temp.objects.create(
@@ -607,9 +624,7 @@ def groupbuyorder(request):
             code=make_group_buy_code(),
             status=0,
         )
-        food.saleperson += 1
-        food.sale += num
-        food.save(update_fields=['saleperson', 'sale'])
+        sync_food_sales(food)
         return render(request, 'food/groupbuy_success.html', {'coupon': coupon, 'user_id': user_id})
 
     return render(request, 'food/groupbuy_order.html', {'food': food, 'user_id': user_id})
