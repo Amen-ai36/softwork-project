@@ -1,6 +1,12 @@
 .git
+.github
 .venv
+.vscode
 .env
+dist
+docs
+k8s
+scripts
 __pycache__/
 *.py[cod]
 node_modules/

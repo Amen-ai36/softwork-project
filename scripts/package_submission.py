@@ -5,17 +5,16 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
-SECTIONS = (
-    "01_source",
-    "02_docs",
-    "03_devops",
-    "04_tests",
-    "05_management",
-    "06_defense",
-)
+SECTION_NOTES = {
+    "01_source": "项目源代码快照和仓库信息。",
+    "02_docs": "需求、设计、追溯关系和测试计划。",
+    "03_devops": "数据库种子、容器、CI/CD、Kubernetes 与部署脚本。",
+    "04_tests": "自动化测试源码、测试报告与流水线证据。",
+    "05_management": "团队计划、每日记录、完成清单和贡献材料。",
+    "06_defense": "答辩演示、技术总结和备用材料。",
+}
 
 
 def copy_path(source, destination):
@@ -43,7 +42,9 @@ def ensure_clean_head():
         text=True,
     ).stdout.strip()
     if status:
-        raise SystemExit("Refusing to package an uncommitted worktree. Commit changes first.")
+        raise SystemExit(
+            "Refusing to package an uncommitted worktree. Commit changes first."
+        )
 
 
 def build_package(name):
@@ -54,8 +55,13 @@ def build_package(name):
         raise SystemExit("Package name must resolve inside dist/.")
     if target.exists():
         shutil.rmtree(target)
-    for section in SECTIONS:
-        (target / section).mkdir(parents=True)
+    for section, note in SECTION_NOTES.items():
+        section_dir = target / section
+        section_dir.mkdir(parents=True)
+        (section_dir / "README.md").write_text(
+            f"# {section}\n\n{note}\n",
+            encoding="utf-8",
+        )
 
     subprocess.run(
         [
@@ -69,15 +75,16 @@ def build_package(name):
         check=True,
     )
 
-    for section in SECTIONS:
-        copy_path(
-            Path("submission") / section / "README.md",
-            target / section / "README.md",
-        )
-
     copy_path("README.md", target / "02_docs" / "project-README.md")
-    copy_path("docs", target / "02_docs" / "docs")
-    copy_path("test/README.md", target / "02_docs" / "test-plan.md")
+    copy_path("docs/requirements", target / "02_docs" / "requirements")
+    copy_path("docs/design", target / "02_docs" / "design")
+    copy_path("docs/use-case-list.md", target / "02_docs" / "use-case-list.md")
+    copy_path("docs/追溯表.pdf", target / "02_docs" / "追溯表.pdf")
+    copy_path(
+        "docs/project-reference.md",
+        target / "02_docs" / "project-reference.md",
+    )
+    copy_path("tests/README.md", target / "02_docs" / "test-plan.md")
 
     for path in (
         ".dockerignore",
@@ -91,20 +98,14 @@ def build_package(name):
         "scripts/deploy-k8s.ps1",
         "scripts/rollback-k8s.sh",
         "scripts/rollback-k8s.ps1",
-        "data_hex2.sql",
-        "DEPLOY.md",
-        "RAILWAY.md",
+        "data",
+        "docs/deployment",
     ):
         copy_path(path, target / "03_devops" / path)
 
-    copy_path("test", target / "04_tests" / "test")
-    copy_path("daily conclusion", target / "05_management" / "daily conclusion")
-    copy_path("Todo.md", target / "05_management" / "Todo.md")
-    copy_path("finished.md", target / "05_management" / "finished.md")
-    copy_path(
-        "submission/06_defense/materials",
-        target / "06_defense" / "materials",
-    )
+    copy_path("tests", target / "04_tests" / "tests")
+    copy_path("docs/management", target / "05_management")
+    copy_path("docs/defense", target / "06_defense")
 
     archive = shutil.make_archive(str(target), "zip", root_dir=DIST, base_dir=name)
     print(f"Created {target}")

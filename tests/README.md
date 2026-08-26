@@ -12,35 +12,35 @@
 | `test_unit.py` | 单元测试 | 价格/房型映射、评价业务规则（含 0 分、超 5 分、非数值、超长评论等异常分支）、团购核销码格式与唯一性、角色判断、密码强度规则、模型 0~5 分校验、AI 客户端（成功/无 Key/网络异常/HTTP 错误）、管理员装饰器 |
 | `test_integration_api.py` | 集成 / API 测试 | 注册/登录（主、备选、异常）、美食列表/搜索/详情/下单/购物车 API、团购下单与核销、酒店预订/评价/权限、娱乐购票/评价/权限、博客发布/评论/删除、AI 接口（成功/空输入/未登录/服务失败）、后台管理（用户/订单/内容操作）、跨端订单状态流转与可见性 |
 | `test_e2e.py` | 端到端测试 | 覆盖用例清单全部 9 个用例（UC01-UC09）：账号注册与角色工作台、美食外卖全链路、购物车备选流程、到店团购、酒店预订+评价、娱乐购票+评价、商家服务供给发布与维护（含图片上传/状态维护/用户侧限制）、博客发布+互动、后台管理、AI 助手；每个用例均含主流程与备选/异常流程 |
-| `test_database_config.py` | 数据库环境检查 | settings 与 `data_hex2.sql` 一致性；MySQL 可达时检查核心表是否存在（不可达则跳过，不阻塞流水线） |
+| `test_database_config.py` | 数据库环境检查 | settings 与 `data/seed.sql` 一致性；MySQL 可达时检查核心表是否存在（不可达则跳过，不阻塞流水线） |
 | `run_tests.py` | 测试运行器 | 统一运行以上全部测试，生成报告，失败时返回非 0 退出码 |
 
 | 用例编号 | 需求编号 | 用例名称 | 参与者 | 业务目标 |
 | --- | --- | --- | --- | --- |
 | UC01 | REQ01 | 建立账号并进入角色工作台 | 游客 | 创建合规账号，并以匹配身份进入对应业务入口 |
-| UC02 | REQ02 | 完成外卖下单、配送履约与评价 | 普通用户、骑手、商家 | 从选择菜品、接单配送到送达评价，完成一笔外卖订单 |1
-| UC03 | REQ03 | 购买并核销到店团购券 | 普通用户、商家 | 获得唯一核销码并由所属商家完成核销 |1
-| UC04 | REQ04 | 预订酒店并评价入住体验 | 普通用户 | 按房型和时长创建预订并提交评价 |1
-| UC05 | REQ05 | 购买娱乐门票并评价体验 | 普通用户 | 按游玩时间和票数购票并提交评价 |1
+| UC02 | REQ02 | 完成外卖下单、配送履约与评价 | 普通用户、骑手、商家 | 从选择菜品、接单配送到送达评价，完成一笔外卖订单 |
+| UC03 | REQ03 | 购买并核销到店团购券 | 普通用户、商家 | 获得唯一核销码并由所属商家完成核销 |
+| UC04 | REQ04 | 预订酒店并评价入住体验 | 普通用户 | 按房型和时长创建预订并提交评价 |
+| UC05 | REQ05 | 购买娱乐门票并评价体验 | 普通用户 | 按游玩时间和票数购票并提交评价 |
 | UC06 | REQ06 | 发布并维护商家服务供给 | 商家 | 上线美食、酒店或娱乐场所，并维护菜品可售状态 |
-| UC07 | REQ07 | 发布内容并参与社区互动 | 普通用户 | 发布、查找和阅读博客，发表评论并管理本人内容 |1
-| UC08 | REQ08 | 获取个性化 AI 咨询 | 普通用户、外部 AI 服务 | 基于平台供给和个人订单历史获得推荐或答疑 |1
-| UC09 | REQ09 | 开展平台运营治理 | 管理员 | 管理用户账号、处理异常订单并审核社区内容 |1
+| UC07 | REQ07 | 发布内容并参与社区互动 | 普通用户 | 发布、查找和阅读博客，发表评论并管理本人内容 |
+| UC08 | REQ08 | 获取个性化 AI 咨询 | 普通用户、外部 AI 服务 | 基于平台供给和个人订单历史获得推荐或答疑 |
+| UC09 | REQ09 | 开展平台运营治理 | 管理员 | 管理用户账号、处理异常订单并审核社区内容 |
 
-> 需求、用例、三层模型、代码模块、测试编号与测试结果的完整追溯，见 **`docs/追溯表.pdf`**。PDF 保留 2026-08-25 的组内基线结果；最新运行结果以 `test/test_report.*` 和 GitHub Actions Artifact 为准。
+> 需求、用例、三层模型、代码模块、测试编号与测试结果的完整追溯，见 **`docs/追溯表.pdf`**。PDF 保留 2026-08-25 的组内基线结果；最新运行结果以 `tests/test_report.*` 和 GitHub Actions Artifact 为准。
 
 ## 怎么运行
 
 推荐在项目根目录执行（自动选择数据库、生成报告）：
 
 ```powershell
-python test/run_tests.py
+python tests/run_tests.py
 ```
 
 也可以直接使用 Django 测试运行器：
 
 ```powershell
-python manage.py test test -v 2 --settings=food_master.test_settings
+python manage.py test tests -v 2 --settings=food_master.test_settings
 ```
 
 - 不指定 `--settings` 时默认使用生产数据库配置（MySQL），需要先配置 `FOOD_DELIVER_DB_PASSWORD` 等环境变量；
@@ -50,16 +50,16 @@ python manage.py test test -v 2 --settings=food_master.test_settings
 
 测试不污染真实数据：
 
-- 使用 SQLite（`food_master/test_settings.py`）时，Django 自动创建内存测试数据库，测试结束自动销毁，不触碰 `db.sqlite3` 与 `data_hex2.sql` 导入的 MySQL 库。
+- 使用 SQLite（`food_master/test_settings.py`）时，Django 自动创建内存测试数据库，测试结束自动销毁，不触碰 `db.sqlite3` 与 `data/seed.sql` 导入的 MySQL 库。
 - 设置环境变量 `FOOD_DELIVER_DB_PASSWORD` 后，会改连配置中的 MySQL 并创建 `test_the_food_mas2` 临时库，用于真实 MySQL 兼容性验证；该临时库同样在测试结束后销毁。
 - `test_database_config.py` 中的 MySQL 核心表检查，只在能连接真实 MySQL 时执行；未配置密码时自动跳过（记为 skipped，不算失败）。
 
 ## 测试报告
 
-每次运行 `python test/run_tests.py` 会自动生成：
+每次运行 `python tests/run_tests.py` 会自动生成：
 
-- `test/test_report.md`：人读报告，包含测试总数、通过数、失败数、跳过数、失败原因、运行环境（操作系统 / Python / Django 版本 / 数据库后端 / 生成时间）及完整输出。
-- `test/test_report.json`：机器可读报告（`environment` + `summary`），便于 CI 解析。
+- `tests/test_report.md`：人读报告，包含测试总数、通过数、失败数、跳过数、失败原因、运行环境（操作系统 / Python / Django 版本 / 数据库后端 / 生成时间）及完整输出。
+- `tests/test_report.json`：机器可读报告（`environment` + `summary`），便于 CI 解析。
 
 报告中的统计口径：
 
@@ -81,7 +81,7 @@ python manage.py test test -v 2 --settings=food_master.test_settings
 - 课程不统一规定代码覆盖率数字。本套测试以业务场景测试为主（单元 + 集成 + 端到端），
   不依赖覆盖率数字来证明质量。
 - 如需查看覆盖率，可自行安装 `coverage` 后执行：
-  `coverage run --source=myapp manage.py test test --settings=food_master.test_settings`
+  `coverage run --source=myapp manage.py test tests --settings=food_master.test_settings`
   并 `coverage report`。覆盖率仅供参考，不能代替上述业务场景测试。
 
 ## 已知边界（人工/浏览器验证项）

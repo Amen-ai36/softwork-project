@@ -22,6 +22,7 @@
 - INT-TC08：AiApiTest
 - INT-TC09：AdminApiTest
 """
+
 import json
 import os
 import tempfile
@@ -87,7 +88,10 @@ class ApiTestCase(TestCase):
             username="rider_user", password="abc12345", phone="13800000002", usertype=1
         )
         cls.merchant = User.objects.create(
-            username="merchant_user", password="abc12345", phone="13800000003", usertype=2
+            username="merchant_user",
+            password="abc12345",
+            phone="13800000003",
+            usertype=2,
         )
         cls.admin = User.objects.create(
             username="admin_user", password="abc12345", phone="13800000004", usertype=3
@@ -153,7 +157,12 @@ class AuthApiTest(ApiTestCase):
         """主流程：合法注册成功并跳转登录页，数据库生成用户"""
         response = self.client.post(
             "/account/register/",
-            {"username": "new_user", "password": "abc12345", "phone": "13800000005", "usertype": "0"},
+            {
+                "username": "new_user",
+                "password": "abc12345",
+                "phone": "13800000005",
+                "usertype": "0",
+            },
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, "/account/login/")
@@ -163,7 +172,12 @@ class AuthApiTest(ApiTestCase):
         """备选/异常流程：用户名已被占用时拒绝注册"""
         response = self.client.post(
             "/account/register/",
-            {"username": self.user.username, "password": "abc12345", "phone": "13800000006", "usertype": "0"},
+            {
+                "username": self.user.username,
+                "password": "abc12345",
+                "phone": "13800000006",
+                "usertype": "0",
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "用户名已被注册")
@@ -175,7 +189,12 @@ class AuthApiTest(ApiTestCase):
             with self.subTest(pwd=bad_pwd):
                 response = self.client.post(
                     "/account/register/",
-                    {"username": f"weak_{len(bad_pwd)}", "password": bad_pwd, "phone": "13800000007", "usertype": "0"},
+                    {
+                        "username": f"weak_{len(bad_pwd)}",
+                        "password": bad_pwd,
+                        "phone": "13800000007",
+                        "usertype": "0",
+                    },
                 )
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, "密码必须在8-16位之间")
@@ -184,7 +203,12 @@ class AuthApiTest(ApiTestCase):
         """异常流程：手机号不是 11 位数字时拒绝"""
         response = self.client.post(
             "/account/register/",
-            {"username": "badphone", "password": "abc12345", "phone": "123", "usertype": "0"},
+            {
+                "username": "badphone",
+                "password": "abc12345",
+                "phone": "123",
+                "usertype": "0",
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "手机号必须是11位数字")
@@ -193,7 +217,12 @@ class AuthApiTest(ApiTestCase):
         """异常流程：不允许通过注册页注册管理员账号"""
         response = self.client.post(
             "/account/register/",
-            {"username": "hacker", "password": "abc12345", "phone": "13800000008", "usertype": "3"},
+            {
+                "username": "hacker",
+                "password": "abc12345",
+                "phone": "13800000008",
+                "usertype": "3",
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "用户类型只能为普通用户、骑手或商家")
@@ -211,7 +240,11 @@ class AuthApiTest(ApiTestCase):
             with self.subTest(user=user.username):
                 response = Client().post(
                     "/account/login/",
-                    {"username": user.username, "password": user.password, "usertype": str(user.usertype)},
+                    {
+                        "username": user.username,
+                        "password": user.password,
+                        "usertype": str(user.usertype),
+                    },
                 )
                 self.assertEqual(response.status_code, 302)
                 self.assertEqual(response.url, expected_url)
@@ -228,18 +261,30 @@ class AuthApiTest(ApiTestCase):
         """异常流程：身份选择与账号不符时拒绝登录"""
         response = Client().post(
             "/account/login/",
-            {"username": self.user.username, "password": self.user.password, "usertype": "1"},
+            {
+                "username": self.user.username,
+                "password": self.user.password,
+                "usertype": "1",
+            },
         )
         self.assertContains(response, "用户的身份选择错误")
 
     def test_login_disabled_account_rejected(self):
         """异常流程：被停用账号拒绝登录"""
         disabled = User.objects.create(
-            username="disabled_user", password="abc12345", phone="13800000009", usertype=0, isDelete=True
+            username="disabled_user",
+            password="abc12345",
+            phone="13800000009",
+            usertype=0,
+            isDelete=True,
         )
         response = Client().post(
             "/account/login/",
-            {"username": disabled.username, "password": disabled.password, "usertype": "0"},
+            {
+                "username": disabled.username,
+                "password": disabled.password,
+                "usertype": "0",
+            },
         )
         self.assertContains(response, "该账号已被停用")
 
@@ -250,7 +295,11 @@ class AuthApiTest(ApiTestCase):
 
         response = Client().post(
             "/account/login/",
-            {"username": self.user.username, "password": self.user.password, "usertype": "9"},
+            {
+                "username": self.user.username,
+                "password": self.user.password,
+                "usertype": "9",
+            },
         )
         self.assertContains(response, "请选择身份")
 
@@ -305,7 +354,12 @@ class FoodApiTest(ApiTestCase):
         self.assertContains(response, "食物不存在")
 
         off = Food.objects.create(
-            name="下架菜", price=10, image="x", providor="p", merchant=self.merchant, is_off_shelf=True
+            name="下架菜",
+            price=10,
+            image="x",
+            providor="p",
+            merchant=self.merchant,
+            is_off_shelf=True,
         )
         response = client.get("/fooddetails/", {"foodid": off.id})
         self.assertContains(response, "该商品已下架")
@@ -343,16 +397,28 @@ class FoodApiTest(ApiTestCase):
         self.assertContains(response, "请填写完整的下单信息")
 
         sold = Food.objects.create(
-            name="售罄菜", price=10, image="x", providor="p", merchant=self.merchant, is_sold_out=True
+            name="售罄菜",
+            price=10,
+            image="x",
+            providor="p",
+            merchant=self.merchant,
+            is_sold_out=True,
         )
-        response = client.post(f"/foodorder/?foodid={sold.id}", {"num": "1", "address": "a", "cutlery": "1"})
+        response = client.post(
+            f"/foodorder/?foodid={sold.id}",
+            {"num": "1", "address": "a", "cutlery": "1"},
+        )
         self.assertContains(response, "该商品已售罄")
 
-        response = client.post(f"/foodorder/?foodid=999999", {"num": "1", "address": "a", "cutlery": "1"})
+        response = client.post(
+            f"/foodorder/?foodid=999999", {"num": "1", "address": "a", "cutlery": "1"}
+        )
         self.assertContains(response, "食物不存在")
 
         # 异常：缺少 foodid 参数
-        response = client.post("/foodorder/", {"num": "1", "address": "a", "cutlery": "1"})
+        response = client.post(
+            "/foodorder/", {"num": "1", "address": "a", "cutlery": "1"}
+        )
         self.assertContains(response, "参数错误")
 
         for bad_num in ("0", "-1", "abc"):
@@ -373,12 +439,17 @@ class FoodApiTest(ApiTestCase):
         """购物车 API：更新（主）、删除（主）、清空下单（主）、未登录/不存在（异常）"""
         client = self.login_as(self.user)
         # 加入购物车
-        client.post(f"/foodorder/?foodid={self.food.id}", {"num": "2", "address": "购物车地址", "cutlery": "2"})
+        client.post(
+            f"/foodorder/?foodid={self.food.id}",
+            {"num": "2", "address": "购物车地址", "cutlery": "2"},
+        )
         temp = Temp.objects.get(user=self.user, food=self.food)
 
         # 主流程：更新数量 → 金额 = 单价×数量
         response = client.post(
-            f"/cart/update/{temp.id}/", data=json.dumps({"num": 4}), content_type="application/json"
+            f"/cart/update/{temp.id}/",
+            data=json.dumps({"num": 4}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "ok")
@@ -402,17 +473,24 @@ class FoodApiTest(ApiTestCase):
 
         # 异常流程：未登录更新购物车 → 401
         response = Client().post(
-            "/cart/update/999999/", data=json.dumps({"num": 1}), content_type="application/json"
+            "/cart/update/999999/",
+            data=json.dumps({"num": 1}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 401)
 
         # 异常流程：不存在的购物车项 → 404
         response = client.post(
-            "/cart/update/999999/", data=json.dumps({"num": 1}), content_type="application/json"
+            "/cart/update/999999/",
+            data=json.dumps({"num": 1}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 404)
 
-        client.post(f"/foodorder/?foodid={self.food.id}", {"num": "1", "address": "a", "cutlery": "2"})
+        client.post(
+            f"/foodorder/?foodid={self.food.id}",
+            {"num": "1", "address": "a", "cutlery": "2"},
+        )
         temp = Temp.objects.get(user=self.user, food=self.food)
         for payload, expected in [
             ({"num": 0}, "数量必须大于0"),
@@ -421,7 +499,9 @@ class FoodApiTest(ApiTestCase):
         ]:
             with self.subTest(payload=payload):
                 response = client.post(
-                    f"/cart/update/{temp.id}/", data=json.dumps(payload), content_type="application/json"
+                    f"/cart/update/{temp.id}/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
                 )
                 self.assertEqual(response.status_code, 400)
                 self.assertIn(expected, response.json()["msg"])
@@ -431,7 +511,10 @@ class FoodApiTest(ApiTestCase):
         self.assertEqual(response.status_code, 405)
 
         # 异常分支：购物车存在已下架/售罄商品时清空被拒绝
-        client.post(f"/foodorder/?foodid={self.food.id}", {"num": "1", "address": "a", "cutlery": "2"})
+        client.post(
+            f"/foodorder/?foodid={self.food.id}",
+            {"num": "1", "address": "a", "cutlery": "2"},
+        )
         self.food.is_off_shelf = True
         self.food.save(update_fields=["is_off_shelf"])
         response = client.post("/cart/clear/")
@@ -444,7 +527,10 @@ class FoodApiTest(ApiTestCase):
     def test_food_order_visibility_and_review_state_are_enforced(self):
         owner = self.login_as(self.user)
         stranger = User.objects.create(
-            username="food_stranger", password="abc12345", phone="13800000021", usertype=0
+            username="food_stranger",
+            password="abc12345",
+            phone="13800000021",
+            usertype=0,
         )
         stranger_client = self.login_as(stranger)
         order = Order.objects.create(
@@ -456,7 +542,9 @@ class FoodApiTest(ApiTestCase):
             pos=3,
         )
 
-        self.assertContains(stranger_client.get("/orderpos/", {"orderid": order.id}), "无权查看该订单")
+        self.assertContains(
+            stranger_client.get("/orderpos/", {"orderid": order.id}), "无权查看该订单"
+        )
         self.assertContains(
             stranger_client.post(
                 f"/ordercomment/?orderid={order.id}",
@@ -494,27 +582,41 @@ class FoodApiTest(ApiTestCase):
     def test_merchant_food_action_toggles(self):
         """商家商品管理 API：下架/售罄切换（主）、权限与归属（异常）"""
         client = self.login_as(self.user)
-        self.assertContains(client.post("/merchant/food/action/", {"food_id": self.food.id, "action": "toggle_off_shelf"}), "只有商家可以管理商品状态")
+        self.assertContains(
+            client.post(
+                "/merchant/food/action/",
+                {"food_id": self.food.id, "action": "toggle_off_shelf"},
+            ),
+            "只有商家可以管理商品状态",
+        )
 
         merchant_client = self.login_as(self.merchant)
         response = merchant_client.post(
-            "/merchant/food/action/", {"food_id": self.food.id, "action": "toggle_off_shelf"}
+            "/merchant/food/action/",
+            {"food_id": self.food.id, "action": "toggle_off_shelf"},
         )
         self.assertEqual(response.status_code, 302)
         self.food.refresh_from_db()
         self.assertTrue(self.food.is_off_shelf)
 
         response = merchant_client.post(
-            "/merchant/food/action/", {"food_id": self.food.id, "action": "toggle_sold_out"}
+            "/merchant/food/action/",
+            {"food_id": self.food.id, "action": "toggle_sold_out"},
         )
         self.food.refresh_from_db()
         self.assertTrue(self.food.is_sold_out)
 
         # 异常：操作别人的商品
-        other = User.objects.create(username="other_seller", password="abc12345", phone="13800000011", usertype=2)
+        other = User.objects.create(
+            username="other_seller",
+            password="abc12345",
+            phone="13800000011",
+            usertype=2,
+        )
         other_client = self.login_as(other)
         response = other_client.post(
-            "/merchant/food/action/", {"food_id": self.food.id, "action": "toggle_off_shelf"}
+            "/merchant/food/action/",
+            {"food_id": self.food.id, "action": "toggle_off_shelf"},
         )
         self.assertContains(response, "商品不存在或不属于当前商家")
 
@@ -537,7 +639,9 @@ class GroupBuyApiTest(ApiTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "到店团购下单")
 
-        response = user_client.post(f"/groupbuyorder/?foodid={self.food.id}", {"num": "2"})
+        response = user_client.post(
+            f"/groupbuyorder/?foodid={self.food.id}", {"num": "2"}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "团购券生成成功")
 
@@ -550,7 +654,9 @@ class GroupBuyApiTest(ApiTestCase):
         self.assertEqual(self.food.sale, 2)
         self.assertEqual(self.food.saleperson, 1)
 
-        response = merchant_client.post("/groupbuy/redeem/", {"code": coupon.code.lower()})
+        response = merchant_client.post(
+            "/groupbuy/redeem/", {"code": coupon.code.lower()}
+        )
         self.assertEqual(response.status_code, 302)
         coupon.refresh_from_db()
         self.assertEqual(coupon.status, 1)
@@ -579,14 +685,27 @@ class GroupBuyApiTest(ApiTestCase):
         self.assertContains(response, "请输入核销码")
 
         # 不属于自己的券
-        other = User.objects.create(username="other_seller2", password="abc12345", phone="13800000012", usertype=2)
-        other_food = Food.objects.create(name="别家菜", price=12, image="x", providor="p", merchant=other)
-        other_coupon = GroupBuyCoupon.objects.create(user=self.user, food=other_food, num=1, cost=12, code="OTHER12345")
-        response = merchant_client.post("/groupbuy/redeem/", {"code": other_coupon.code})
+        other = User.objects.create(
+            username="other_seller2",
+            password="abc12345",
+            phone="13800000012",
+            usertype=2,
+        )
+        other_food = Food.objects.create(
+            name="别家菜", price=12, image="x", providor="p", merchant=other
+        )
+        other_coupon = GroupBuyCoupon.objects.create(
+            user=self.user, food=other_food, num=1, cost=12, code="OTHER12345"
+        )
+        response = merchant_client.post(
+            "/groupbuy/redeem/", {"code": other_coupon.code}
+        )
         self.assertContains(response, "核销码不存在或不属于您的商品")
 
         # 重复核销
-        mine = GroupBuyCoupon.objects.create(user=self.user, food=self.food, num=1, cost=18.5, code="MINE123456")
+        mine = GroupBuyCoupon.objects.create(
+            user=self.user, food=self.food, num=1, cost=18.5, code="MINE123456"
+        )
         response = merchant_client.post("/groupbuy/redeem/", {"code": mine.code})
         self.assertEqual(response.status_code, 302)
         response = merchant_client.post("/groupbuy/redeem/", {"code": mine.code})
@@ -617,7 +736,11 @@ class HotelApiTest(ApiTestCase):
         client = self.login_as(self.user)
         response = client.post(
             f"/hotelorder/?hotelid={self.hotel.id}",
-            {"room_type": "single_day", "duration": "2", "checkin_time": "2026-06-20T15:30"},
+            {
+                "room_type": "single_day",
+                "duration": "2",
+                "checkin_time": "2026-06-20T15:30",
+            },
         )
         self.assertEqual(response.status_code, 302)
         order = HotelOrder.objects.get(user=self.user, hotel=self.hotel)
@@ -629,7 +752,11 @@ class HotelApiTest(ApiTestCase):
         # 钟点房：single_clock 30 * 3
         response = client.post(
             f"/hotelorder/?hotelid={self.hotel.id}",
-            {"room_type": "single_clock", "duration": "3", "checkin_time": "2026-06-20T15:30"},
+            {
+                "room_type": "single_clock",
+                "duration": "3",
+                "checkin_time": "2026-06-20T15:30",
+            },
         )
         order2 = HotelOrder.objects.order_by("-id").first()
         self.assertEqual(order2.cost, 90)
@@ -644,7 +771,11 @@ class HotelApiTest(ApiTestCase):
         # 异常：时长非法
         response = client.post(
             f"/hotelorder/?hotelid={self.hotel.id}",
-            {"room_type": "single_day", "duration": "0", "checkin_time": "2026-06-20T15:30"},
+            {
+                "room_type": "single_day",
+                "duration": "0",
+                "checkin_time": "2026-06-20T15:30",
+            },
         )
         self.assertContains(response, "入住时间长度必须大于0")
 
@@ -656,20 +787,33 @@ class HotelApiTest(ApiTestCase):
         self.assertContains(response, "入住时间格式不正确")
 
         # 异常：缺字段
-        response = client.post(f"/hotelorder/?hotelid={self.hotel.id}", {"duration": "1"})
+        response = client.post(
+            f"/hotelorder/?hotelid={self.hotel.id}", {"duration": "1"}
+        )
         self.assertContains(response, "请填写完整的订房信息")
 
     def test_hotel_review_and_permission(self):
         """主流程：评价成功更新评分；异常：无权评价他人订单"""
         owner = self.login_as(self.user)
-        other = User.objects.create(username="other_hotel_user", password="abc12345", phone="13800000013", usertype=0)
+        other = User.objects.create(
+            username="other_hotel_user",
+            password="abc12345",
+            phone="13800000013",
+            usertype=0,
+        )
         owner.post(
             f"/hotelorder/?hotelid={self.hotel.id}",
-            {"room_type": "single_day", "duration": "1", "checkin_time": "2026-06-20T15:30"},
+            {
+                "room_type": "single_day",
+                "duration": "1",
+                "checkin_time": "2026-06-20T15:30",
+            },
         )
         order = HotelOrder.objects.get(user=self.user, hotel=self.hotel)
 
-        response = owner.post(f"/hotelcomment/?orderid={order.id}", {"score": "4.0", "comment": "不错"})
+        response = owner.post(
+            f"/hotelcomment/?orderid={order.id}", {"score": "4.0", "comment": "不错"}
+        )
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.hotel.refresh_from_db()
@@ -681,23 +825,39 @@ class HotelApiTest(ApiTestCase):
         # 异常：他人不能评价
         other_client = self.login_as(other)
         order2 = HotelOrder.objects.create(
-            user=self.user, hotel=self.hotel, room_type="single_day", duration=1,
-            checkin_time=timezone.now(), cost=180, pos=4,
+            user=self.user,
+            hotel=self.hotel,
+            room_type="single_day",
+            duration=1,
+            checkin_time=timezone.now(),
+            cost=180,
+            pos=4,
         )
-        response = other_client.post(f"/hotelcomment/?orderid={order2.id}", {"score": "5.0", "comment": "x"})
+        response = other_client.post(
+            f"/hotelcomment/?orderid={order2.id}", {"score": "5.0", "comment": "x"}
+        )
         self.assertContains(response, "无权评价该订单")
 
         # 异常：评分越界
-        response = owner.post(f"/hotelcomment/?orderid={order2.id}", {"score": "5.5", "comment": "x"})
+        response = owner.post(
+            f"/hotelcomment/?orderid={order2.id}", {"score": "5.5", "comment": "x"}
+        )
         self.assertContains(response, "评分必须大于0.0")
 
     def test_hotel_orderpos_visibility(self):
         """主流程：本人可查订单状态；异常：他人查看被拒"""
         user_client = self.login_as(self.user)
-        User.objects.create(username="stranger1", password="abc12345", phone="13800000014", usertype=0)
+        User.objects.create(
+            username="stranger1", password="abc12345", phone="13800000014", usertype=0
+        )
         order = HotelOrder.objects.create(
-            user=self.user, hotel=self.hotel, room_type="single_day", duration=1,
-            checkin_time=timezone.now(), cost=180, pos=4,
+            user=self.user,
+            hotel=self.hotel,
+            room_type="single_day",
+            duration=1,
+            checkin_time=timezone.now(),
+            cost=180,
+            pos=4,
         )
         response = user_client.get("/hotelorderpos/", {"orderid": order.id})
         self.assertEqual(response.status_code, 200)
@@ -760,13 +920,18 @@ class PlayApiTest(ApiTestCase):
 
     def test_play_review_and_permission(self):
         owner = self.login_as(self.user)
-        stranger = User.objects.create(username="stranger2", password="abc12345", phone="13800000015", usertype=0)
+        stranger = User.objects.create(
+            username="stranger2", password="abc12345", phone="13800000015", usertype=0
+        )
         owner.post(
-            f"/playorder/?playid={self.play.id}", {"num": "2", "visit_time": "2026-06-21T09:00"}
+            f"/playorder/?playid={self.play.id}",
+            {"num": "2", "visit_time": "2026-06-21T09:00"},
         )
         order = PlayOrder.objects.get(user=self.user, play=self.play)
 
-        response = owner.post(f"/playcomment/?orderid={order.id}", {"score": "4.5", "comment": "好玩"})
+        response = owner.post(
+            f"/playcomment/?orderid={order.id}", {"score": "4.5", "comment": "好玩"}
+        )
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.play.refresh_from_db()
@@ -775,19 +940,35 @@ class PlayApiTest(ApiTestCase):
         self.assertEqual(self.play.ratenum, 1)
 
         order2 = PlayOrder.objects.create(
-            user=self.user, play=self.play, num=1, visit_time=timezone.now(), cost=88, pos=4
+            user=self.user,
+            play=self.play,
+            num=1,
+            visit_time=timezone.now(),
+            cost=88,
+            pos=4,
         )
-        response = self.login_as(stranger).post(f"/playcomment/?orderid={order2.id}", {"score": "5.0", "comment": "x"})
+        response = self.login_as(stranger).post(
+            f"/playcomment/?orderid={order2.id}", {"score": "5.0", "comment": "x"}
+        )
         self.assertContains(response, "无权评价该订单")
 
-        response = owner.post(f"/playcomment/?orderid={order2.id}", {"score": "0", "comment": "x"})
+        response = owner.post(
+            f"/playcomment/?orderid={order2.id}", {"score": "0", "comment": "x"}
+        )
         self.assertContains(response, "评分必须大于0.0")
 
     def test_play_orderpos_visibility(self):
         user_client = self.login_as(self.user)
-        stranger = User.objects.create(username="stranger3", password="abc12345", phone="13800000016", usertype=0)
+        stranger = User.objects.create(
+            username="stranger3", password="abc12345", phone="13800000016", usertype=0
+        )
         order = PlayOrder.objects.create(
-            user=self.user, play=self.play, num=1, visit_time=timezone.now(), cost=88, pos=4
+            user=self.user,
+            play=self.play,
+            num=1,
+            visit_time=timezone.now(),
+            cost=88,
+            pos=4,
         )
         response = user_client.get("/playorderpos/", {"orderid": order.id})
         self.assertEqual(response.status_code, 200)
@@ -802,7 +983,9 @@ class BlogApiTest(ApiTestCase):
 
     def test_blog_publish_list_detail(self):
         client = self.login_as(self.user)
-        response = client.post("/blogsend/", {"title": "测试博客", "content": "测试正文"})
+        response = client.post(
+            "/blogsend/", {"title": "测试博客", "content": "测试正文"}
+        )
         self.assertEqual(response.status_code, 302)
         blog = Blog.objects.get(authorid=self.user)
         self.assertEqual(blog.title, "测试博客")
@@ -840,7 +1023,9 @@ class BlogApiTest(ApiTestCase):
 
         # 异常：空内容
         response = client.post(
-            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": ""}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": blog.id, "content": ""}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("评论内容不能为空", response.json()["error"])
@@ -855,7 +1040,9 @@ class BlogApiTest(ApiTestCase):
 
         # 异常：博客不存在
         response = client.post(
-            "/blogcomment/", data=json.dumps({"blog_id": 999999, "content": "x"}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": 999999, "content": "x"}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 404)
 
@@ -863,25 +1050,33 @@ class BlogApiTest(ApiTestCase):
         blog.isdeleted = True
         blog.save(update_fields=["isdeleted"])
         response = client.post(
-            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": "x"}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": blog.id, "content": "x"}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(Comment.objects.filter(blogid=blog).count(), 1)
 
         # 异常：非法 JSON
-        response = client.post("/blogcomment/", data="not-json", content_type="application/json")
+        response = client.post(
+            "/blogcomment/", data="not-json", content_type="application/json"
+        )
         self.assertEqual(response.status_code, 400)
 
         # 异常：未登录
         response = Client().post(
-            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": "x"}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": blog.id, "content": "x"}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 401)
 
     def test_blog_delete_main_and_abnormal(self):
         client = self.login_as(self.user)
         blog = Blog.objects.create(title="待删博客", content="内容", authorid=self.user)
-        comment = Comment.objects.create(blogid=blog, userid=self.user.id, content="待删评论")
+        comment = Comment.objects.create(
+            blogid=blog, userid=self.user.id, content="待删评论"
+        )
 
         # 主流程：删除评论（逻辑删除）
         response = client.delete(f"/blogcomment/delete/?commentid={comment.id}")
@@ -897,7 +1092,9 @@ class BlogApiTest(ApiTestCase):
         self.assertTrue(blog.isdeleted)
 
         # 异常：删除别人的博客 → 404
-        blog2 = Blog.objects.create(title="别人的博客", content="内容", authorid=self.admin)
+        blog2 = Blog.objects.create(
+            title="别人的博客", content="内容", authorid=self.admin
+        )
         response = client.delete(f"/blog/delete/?blogid={blog2.id}")
         self.assertEqual(response.status_code, 404)
 
@@ -915,7 +1112,9 @@ class AiApiTest(ApiTestCase):
     def test_ai_chat_main_flow_with_catalog_context(self):
         """主流程：返回 AI 回复，系统提示词包含平台菜品/酒店/娱乐信息"""
         client = self.login_as(self.user)
-        with patch("myapp.views.call_aliyun_llm", return_value="测试 AI 回复") as mock_call:
+        with patch(
+            "myapp.views.call_aliyun_llm", return_value="测试 AI 回复"
+        ) as mock_call:
             response = client.post("/ai-chat/", {"user_input": "推荐一下"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["reply"], "测试 AI 回复")
@@ -964,56 +1163,89 @@ class AdminApiTest(ApiTestCase):
     def test_admin_user_actions(self):
         """主流程：停用用户；异常：不能停用自己、非法角色"""
         admin = self.login_as(self.admin)
-        response = admin.post("/manage/users/action/", {"user_id": self.user.id, "action": "toggle_active"})
+        response = admin.post(
+            "/manage/users/action/",
+            {"user_id": self.user.id, "action": "toggle_active"},
+        )
         self.assertEqual(response.status_code, 302)
         self.user.refresh_from_db()
         self.assertTrue(self.user.isDelete)
 
         # 异常：不能停用当前管理员
-        response = admin.post("/manage/users/action/", {"user_id": self.admin.id, "action": "toggle_active"})
+        response = admin.post(
+            "/manage/users/action/",
+            {"user_id": self.admin.id, "action": "toggle_active"},
+        )
         self.admin.refresh_from_db()
         self.assertFalse(self.admin.isDelete)
 
         # 异常：非法角色
-        response = admin.post("/manage/users/action/", {"user_id": self.rider.id, "action": "change_role", "role": "9"})
+        response = admin.post(
+            "/manage/users/action/",
+            {"user_id": self.rider.id, "action": "change_role", "role": "9"},
+        )
         self.rider.refresh_from_db()
         self.assertEqual(self.rider.usertype, 1)
 
         # 主流程：合法改角色
-        response = admin.post("/manage/users/action/", {"user_id": self.rider.id, "action": "change_role", "role": "0"})
+        response = admin.post(
+            "/manage/users/action/",
+            {"user_id": self.rider.id, "action": "change_role", "role": "0"},
+        )
         self.rider.refresh_from_db()
         self.assertEqual(self.rider.usertype, 0)
 
         # 异常：用户不存在
-        response = admin.post("/manage/users/action/", {"user_id": 999999, "action": "toggle_active"})
+        response = admin.post(
+            "/manage/users/action/", {"user_id": 999999, "action": "toggle_active"}
+        )
         self.assertEqual(response.status_code, 302)
 
     def test_admin_order_actions(self):
         """主流程：标记已送达/异常标记；异常：已评价订单不可改、不支持的操"""
         admin = self.login_as(self.admin)
         order = Order.objects.create(
-            user=self.user, food=self.food, num=1, cost=self.food.price, address="后台测试", pos=2
+            user=self.user,
+            food=self.food,
+            num=1,
+            cost=self.food.price,
+            address="后台测试",
+            pos=2,
         )
-        response = admin.post("/manage/orders/action/", {"order_id": order.id, "action": "complete"})
+        response = admin.post(
+            "/manage/orders/action/", {"order_id": order.id, "action": "complete"}
+        )
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
         self.assertTrue(order.is_abnormal is False)
 
-        response = admin.post("/manage/orders/action/", {"order_id": order.id, "action": "toggle_abnormal"})
+        response = admin.post(
+            "/manage/orders/action/",
+            {"order_id": order.id, "action": "toggle_abnormal"},
+        )
         order.refresh_from_db()
         self.assertTrue(order.is_abnormal)
 
         # 异常：已评价订单（pos=5）不允许管理员修改
         done = Order.objects.create(
-            user=self.user, food=self.food, num=1, cost=self.food.price, address="a", pos=5
+            user=self.user,
+            food=self.food,
+            num=1,
+            cost=self.food.price,
+            address="a",
+            pos=5,
         )
-        response = admin.post("/manage/orders/action/", {"order_id": done.id, "action": "complete"})
+        response = admin.post(
+            "/manage/orders/action/", {"order_id": done.id, "action": "complete"}
+        )
         done.refresh_from_db()
         self.assertEqual(done.pos, 5)
 
         # 异常：不支持的操作
-        response = admin.post("/manage/orders/action/", {"order_id": order.id, "action": "refund"})
+        response = admin.post(
+            "/manage/orders/action/", {"order_id": order.id, "action": "refund"}
+        )
         order.refresh_from_db()
         self.assertNotEqual(order.pos, 0)
 
@@ -1021,18 +1253,26 @@ class AdminApiTest(ApiTestCase):
         """主流程：审核博客/评论（切换逻辑删除）；异常：不存在的内容"""
         admin = self.login_as(self.admin)
         blog = Blog.objects.create(title="待审核", content="内容", authorid=self.user)
-        comment = Comment.objects.create(blogid=blog, userid=self.user.id, content="评论")
+        comment = Comment.objects.create(
+            blogid=blog, userid=self.user.id, content="评论"
+        )
 
-        response = admin.post("/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id})
+        response = admin.post(
+            "/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id}
+        )
         self.assertEqual(response.status_code, 302)
         blog.refresh_from_db()
         self.assertTrue(blog.isdeleted)
 
-        response = admin.post("/manage/blogs/action/", {"item_type": "comment", "item_id": comment.id})
+        response = admin.post(
+            "/manage/blogs/action/", {"item_type": "comment", "item_id": comment.id}
+        )
         comment.refresh_from_db()
         self.assertTrue(comment.isdeleted)
 
-        response = admin.post("/manage/blogs/action/", {"item_type": "unknown", "item_id": 1})
+        response = admin.post(
+            "/manage/blogs/action/", {"item_type": "unknown", "item_id": 1}
+        )
         self.assertEqual(response.status_code, 302)
 
     def test_admin_logout(self):
@@ -1117,18 +1357,33 @@ class CrossModuleIntegrationTest(ApiTestCase):
         """主流程：订单状态页可访问；异常：别人不能操作/非法状态流转被拒绝"""
         user_client = self.login_as(self.user)
         order = Order.objects.create(
-            user=self.user, food=self.food, num=1, cost=self.food.price, address="状态测试", pos=3
+            user=self.user,
+            food=self.food,
+            num=1,
+            cost=self.food.price,
+            address="状态测试",
+            pos=3,
         )
         response = user_client.get("/orderpos/", {"orderid": order.id})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "订单状态指示")
 
         # 异常：骑手送达一个状态不对的订单（pos=3 != 要求？）正例为 pos=3；用非本人骑手试试
-        stranger_rider = User.objects.create(username="rider2", password="abc12345", phone="13800000017", usertype=1)
-        other_order = Order.objects.create(
-            user=self.user, food=self.food, num=1, cost=self.food.price, address="b", pos=3, rider=stranger_rider
+        stranger_rider = User.objects.create(
+            username="rider2", password="abc12345", phone="13800000017", usertype=1
         )
-        response = self.login_as(self.rider).post(f"/rider_deliver/?orderid={other_order.id}")
+        other_order = Order.objects.create(
+            user=self.user,
+            food=self.food,
+            num=1,
+            cost=self.food.price,
+            address="b",
+            pos=3,
+            rider=stranger_rider,
+        )
+        response = self.login_as(self.rider).post(
+            f"/rider_deliver/?orderid={other_order.id}"
+        )
         self.assertContains(response, "该订单无法操作或不属于您")
         other_order.refresh_from_db()
         self.assertEqual(other_order.pos, 3)
@@ -1139,7 +1394,12 @@ class CrossModuleIntegrationTest(ApiTestCase):
 
     def test_order_state_changes_require_post(self):
         order = Order.objects.create(
-            user=self.user, food=self.food, num=1, cost=self.food.price, address="方法测试", pos=0
+            user=self.user,
+            food=self.food,
+            num=1,
+            cost=self.food.price,
+            address="方法测试",
+            pos=0,
         )
         rider_client = self.login_as(self.rider)
         response = rider_client.get(f"/rider_accept/?orderid={order.id}")
@@ -1152,7 +1412,12 @@ class CrossModuleIntegrationTest(ApiTestCase):
         merchant_client = self.login_as(self.merchant)
         for i in range(2):
             Order.objects.create(
-                user=self.user, food=self.food, num=1, cost=self.food.price, address="聚合", pos=4
+                user=self.user,
+                food=self.food,
+                num=1,
+                cost=self.food.price,
+                address="聚合",
+                pos=4,
             )
         response = merchant_client.get("/space/")
         self.assertEqual(response.status_code, 200)

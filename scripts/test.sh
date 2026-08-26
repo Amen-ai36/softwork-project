@@ -13,4 +13,4 @@ elif [ "${REFRESH_DEPENDENCIES:-false}" = "true" ]; then
 fi
 
 cd "$PROJECT_ROOT"
-exec "$VENV_PYTHON" test/run_tests.py
+exec "$VENV_PYTHON" tests/run_tests.py

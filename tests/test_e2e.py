@@ -10,6 +10,7 @@
   并每步用 ORM / 页面内容断言真实业务状态。
 - 外部 AI 服务 mock，不访问真实网络。
 """
+
 import json
 import os
 
@@ -43,12 +44,19 @@ from myapp.models import (
 class E2EBase(TestCase):
     """端到端测试基类：提供走真实表单注册/登录的辅助方法"""
 
-    def register_user(self, username, password="abc12345", phone="13800000000", usertype="0"):
+    def register_user(
+        self, username, password="abc12345", phone="13800000000", usertype="0"
+    ):
         """走真实注册接口创建用户，返回该用户的登录态 Client"""
         client = Client()
         response = client.post(
             "/account/register/",
-            {"username": username, "password": password, "phone": phone, "usertype": usertype},
+            {
+                "username": username,
+                "password": password,
+                "phone": phone,
+                "usertype": usertype,
+            },
         )
         assert response.status_code == 302, response.content[:200]
         assert response.url == "/account/login/"
@@ -138,46 +146,96 @@ class AccountRegistrationE2ETest(E2EBase):
         self.register_user("uc01_dup", phone="13800000205", usertype="0")
         response = Client().post(
             "/account/register/",
-            {"username": "uc01_dup", "password": "abc12345", "phone": "13800000206", "usertype": "0"},
+            {
+                "username": "uc01_dup",
+                "password": "abc12345",
+                "phone": "13800000206",
+                "usertype": "0",
+            },
         )
         self.assertContains(response, "用户名已被注册")
         self.assertEqual(User.objects.filter(username="uc01_dup").count(), 1)
 
         # 注册异常：弱密码 / 手机号错误 / 角色非法 / 禁止注册管理员
         cases = [
-            ({"username": "u_weak1", "password": "12345678", "phone": "13800000207", "usertype": "0"}, "密码必须在8-16位之间"),
-            ({"username": "u_badphone", "password": "abc12345", "phone": "123", "usertype": "0"}, "手机号必须是11位数字"),
-            ({"username": "u_badrole", "password": "abc12345", "phone": "13800000208", "usertype": "9"}, "用户类型只能为普通用户、骑手或商家"),
-            ({"username": "u_hackadmin", "password": "abc12345", "phone": "13800000209", "usertype": "3"}, "用户类型只能为普通用户、骑手或商家"),
+            (
+                {
+                    "username": "u_weak1",
+                    "password": "12345678",
+                    "phone": "13800000207",
+                    "usertype": "0",
+                },
+                "密码必须在8-16位之间",
+            ),
+            (
+                {
+                    "username": "u_badphone",
+                    "password": "abc12345",
+                    "phone": "123",
+                    "usertype": "0",
+                },
+                "手机号必须是11位数字",
+            ),
+            (
+                {
+                    "username": "u_badrole",
+                    "password": "abc12345",
+                    "phone": "13800000208",
+                    "usertype": "9",
+                },
+                "用户类型只能为普通用户、骑手或商家",
+            ),
+            (
+                {
+                    "username": "u_hackadmin",
+                    "password": "abc12345",
+                    "phone": "13800000209",
+                    "usertype": "3",
+                },
+                "用户类型只能为普通用户、骑手或商家",
+            ),
         ]
         for payload, expect in cases:
             with self.subTest(username=payload["username"]):
                 response = Client().post("/account/register/", payload)
                 self.assertContains(response, expect)
-        self.assertFalse(User.objects.filter(username__in=["u_hackadmin", "u_badrole"]).exists())
+        self.assertFalse(
+            User.objects.filter(username__in=["u_hackadmin", "u_badrole"]).exists()
+        )
 
         # 登录异常：用户不存在 / 密码错误 / 身份不匹配 / 账号停用
         response = Client().post(
-            "/account/login/", {"username": "ghost_user", "password": "abc12345", "usertype": "0"}
+            "/account/login/",
+            {"username": "ghost_user", "password": "abc12345", "usertype": "0"},
         )
         self.assertContains(response, "用户未注册")
 
         response = Client().post(
-            "/account/login/", {"username": "uc01_dup", "password": "wrong12345", "usertype": "0"}
+            "/account/login/",
+            {"username": "uc01_dup", "password": "wrong12345", "usertype": "0"},
         )
         self.assertContains(response, "用户名或者密码错误")
 
         response = Client().post(
-            "/account/login/", {"username": "uc01_dup", "password": "abc12345", "usertype": "1"}
+            "/account/login/",
+            {"username": "uc01_dup", "password": "abc12345", "usertype": "1"},
         )
         self.assertContains(response, "用户的身份选择错误")
 
         disabled = User.objects.create(
-            username="uc01_disabled", password="abc12345", phone="13800000210", usertype=0, isDelete=True
+            username="uc01_disabled",
+            password="abc12345",
+            phone="13800000210",
+            usertype=0,
+            isDelete=True,
         )
         response = Client().post(
             "/account/login/",
-            {"username": disabled.username, "password": disabled.password, "usertype": "0"},
+            {
+                "username": disabled.username,
+                "password": disabled.password,
+                "usertype": "0",
+            },
         )
         self.assertContains(response, "该账号已被停用")
 
@@ -191,7 +249,8 @@ class AccountRegistrationE2ETest(E2EBase):
         # 会话有效性：非法身份登录不产生会话
         client = Client()
         client.post(
-            "/account/login/", {"username": "uc01_dup", "password": "wrong12345", "usertype": "0"}
+            "/account/login/",
+            {"username": "uc01_dup", "password": "wrong12345", "usertype": "0"},
         )
         self.assertNotIn("user_id", client.session)
 
@@ -224,7 +283,9 @@ class FoodDeliveryE2ETest(E2EBase):
                         "price": "20",
                         "providor": "E2E商家",
                         "inf": "端到端测试菜品",
-                        "image": SimpleUploadedFile("food.png", b"\x89PNG\r\n\x1a\n", content_type="image/png"),
+                        "image": SimpleUploadedFile(
+                            "food.png", b"\x89PNG\r\n\x1a\n", content_type="image/png"
+                        ),
                     },
                 )
         finally:
@@ -289,7 +350,11 @@ class FoodDeliveryE2ETest(E2EBase):
 
         response = user_client.post(
             f"/ordercomment/?orderid={order.id}",
-            {"scoretofood": "5.0", "scoretodeliver": "4.5", "comment": "E2E 全流程完成"},
+            {
+                "scoretofood": "5.0",
+                "scoretodeliver": "4.5",
+                "comment": "E2E 全流程完成",
+            },
         )
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
@@ -301,6 +366,7 @@ class FoodDeliveryE2ETest(E2EBase):
         response = merchant_client.get("/space/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, food.name)
+
     def test_uc02_abnormal_branches(self):
         """异常流程：不可售/信息缺失拒单、越权/错误状态推进失败、非法评分与超长评价被拒"""
         self.register_user("uc02_u", phone="13800000401", usertype="0")
@@ -315,23 +381,36 @@ class FoodDeliveryE2ETest(E2EBase):
 
         # 售罄/下架菜品拒绝下单
         sold = Food.objects.create(
-            name="售罄菜", price=10, image="x", providor="p", merchant=merchant_user, is_sold_out=True
+            name="售罄菜",
+            price=10,
+            image="x",
+            providor="p",
+            merchant=merchant_user,
+            is_sold_out=True,
         )
         response = user_client.post(
-            f"/foodorder/?foodid={sold.id}", {"num": "1", "address": "a", "cutlery": "1"}
+            f"/foodorder/?foodid={sold.id}",
+            {"num": "1", "address": "a", "cutlery": "1"},
         )
         self.assertContains(response, "该商品已售罄")
 
         # 信息不完整拒绝下单
-        ok_food = Food.objects.create(name="正常菜", price=12, image="x", providor="p", merchant=merchant_user)
-        response = user_client.post(f"/foodorder/?foodid={ok_food.id}", {"num": "1", "cutlery": "1"})
+        ok_food = Food.objects.create(
+            name="正常菜", price=12, image="x", providor="p", merchant=merchant_user
+        )
+        response = user_client.post(
+            f"/foodorder/?foodid={ok_food.id}", {"num": "1", "cutlery": "1"}
+        )
         self.assertContains(response, "请填写完整的下单信息")
 
         # 正常下单后：订单已被接走 → 其他骑手接单失败
         user_client.post(
-            f"/foodorder/?foodid={ok_food.id}", {"num": "1", "address": "异常分支地址", "cutlery": "1"}
+            f"/foodorder/?foodid={ok_food.id}",
+            {"num": "1", "address": "异常分支地址", "cutlery": "1"},
         )
-        order = Order.objects.get(user=User.objects.get(username="uc02_u"), food=ok_food)
+        order = Order.objects.get(
+            user=User.objects.get(username="uc02_u"), food=ok_food
+        )
         rider_client.post(f"/rider_accept/?orderid={order.id}")
         order.refresh_from_db()
         self.assertEqual(order.pos, 1)
@@ -339,8 +418,12 @@ class FoodDeliveryE2ETest(E2EBase):
         self.assertContains(response, "该订单已被其他骑手接走或不存在")
 
         # 非所属商家不能备餐
-        stranger = User.objects.create(username="uc02_mx", password="abc12345", phone="13800000405", usertype=2)
-        response = self.login_existing(stranger).post(f"/merchant_prepare/?orderid={order.id}")
+        stranger = User.objects.create(
+            username="uc02_mx", password="abc12345", phone="13800000405", usertype=2
+        )
+        response = self.login_existing(stranger).post(
+            f"/merchant_prepare/?orderid={order.id}"
+        )
         self.assertContains(response, "该订单无法操作或不属于您的商品")
         order.refresh_from_db()
         self.assertEqual(order.pos, 1)
@@ -360,16 +443,31 @@ class FoodDeliveryE2ETest(E2EBase):
 
         # 非法评分（0/5.5/非数值）与超长评价被拒绝，订单状态不变
         for payload, expect in [
-            ({"scoretofood": "0", "scoretodeliver": "5.0", "comment": "c"}, "评分必须大于0.0"),
-            ({"scoretofood": "5.5", "scoretodeliver": "5.0", "comment": "c"}, "评分必须大于0.0"),
-            ({"scoretofood": "abc", "scoretodeliver": "5.0", "comment": "c"}, "评分必须是数值"),
-            ({"scoretofood": "4.0", "scoretodeliver": "5.0", "comment": "评" * 201}, "不能超过200个字符"),
+            (
+                {"scoretofood": "0", "scoretodeliver": "5.0", "comment": "c"},
+                "评分必须大于0.0",
+            ),
+            (
+                {"scoretofood": "5.5", "scoretodeliver": "5.0", "comment": "c"},
+                "评分必须大于0.0",
+            ),
+            (
+                {"scoretofood": "abc", "scoretodeliver": "5.0", "comment": "c"},
+                "评分必须是数值",
+            ),
+            (
+                {"scoretofood": "4.0", "scoretodeliver": "5.0", "comment": "评" * 201},
+                "不能超过200个字符",
+            ),
         ]:
             with self.subTest(comment_len=len(payload["comment"])):
-                response = user_client.post(f"/ordercomment/?orderid={order.id}", payload)
+                response = user_client.post(
+                    f"/ordercomment/?orderid={order.id}", payload
+                )
                 self.assertContains(response, expect)
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
+
 
 class CartToOrderE2ETest(E2EBase):
     """[E2E-TC02 / UC02 备选流程] 购物车完整链路（加入 → 更新 → 清空下单 → 配送）"""
@@ -382,7 +480,11 @@ class CartToOrderE2ETest(E2EBase):
         rider = User.objects.get(username="cart_rider")
         merchant = User.objects.get(username="cart_merchant")
         food = Food.objects.create(
-            name="购物车套餐", price=15.0, image="images/food/1.jpg", providor="商家", merchant=merchant
+            name="购物车套餐",
+            price=15.0,
+            image="images/food/1.jpg",
+            providor="商家",
+            merchant=merchant,
         )
 
         user_client = self.login_user("cart_user", usertype="0")
@@ -400,7 +502,9 @@ class CartToOrderE2ETest(E2EBase):
 
         # 2. 更新购物车数量（走真实购物车 API）
         response = user_client.post(
-            f"/cart/update/{temp.id}/", data=json.dumps({"num": "3"}), content_type="application/json"
+            f"/cart/update/{temp.id}/",
+            data=json.dumps({"num": "3"}),
+            content_type="application/json",
         )
         self.assertEqual(response.json()["status"], "ok")
         self.assertEqual(response.json()["num"], 3)
@@ -434,7 +538,11 @@ class GroupBuyE2ETest(E2EBase):
         user = User.objects.get(username="gb_user")
         merchant = User.objects.get(username="gb_merchant")
         food = Food.objects.create(
-            name="团购烤鱼", price=58.0, image="images/food/2.jpg", providor="团购商家", merchant=merchant
+            name="团购烤鱼",
+            price=58.0,
+            image="images/food/2.jpg",
+            providor="团购商家",
+            merchant=merchant,
         )
 
         user_client = self.login_user("gb_user", usertype="0")
@@ -482,7 +590,9 @@ class GroupBuyE2ETest(E2EBase):
         user_client = self.login_user("uc03_u", usertype="0")
         merchant_client = self.login_user("uc03_m", usertype="2")
         merchant = User.objects.get(username="uc03_m")
-        food = Food.objects.create(name="UC03异常菜", price=30.0, image="x", providor="p", merchant=merchant)
+        food = Food.objects.create(
+            name="UC03异常菜", price=30.0, image="x", providor="p", merchant=merchant
+        )
 
         # 数量为空/0/负数/非整数均拒绝
         for bad in (None, "0", "-1", "abc"):
@@ -491,7 +601,9 @@ class GroupBuyE2ETest(E2EBase):
                 response = user_client.post(f"/groupbuyorder/?foodid={food.id}", data)
                 self.assertContains(response, "团购数量")
         self.assertFalse(
-            GroupBuyCoupon.objects.filter(user=User.objects.get(username="uc03_u"), food=food).exists()
+            GroupBuyCoupon.objects.filter(
+                user=User.objects.get(username="uc03_u"), food=food
+            ).exists()
         )
 
         # 非商家不能核销
@@ -504,24 +616,39 @@ class GroupBuyE2ETest(E2EBase):
 
         # 正常创建并核销后重复核销被拒绝
         user_client.post(f"/groupbuyorder/?foodid={food.id}", {"num": "2"})
-        coupon = GroupBuyCoupon.objects.get(user=User.objects.get(username="uc03_u"), food=food)
+        coupon = GroupBuyCoupon.objects.get(
+            user=User.objects.get(username="uc03_u"), food=food
+        )
         response = merchant_client.post("/groupbuy/redeem/", {"code": coupon.code})
         self.assertEqual(response.status_code, 302)
         response = merchant_client.post("/groupbuy/redeem/", {"code": coupon.code})
         self.assertContains(response, "该团购券已核销")
 
         # 不属于自己商品的券不能核销
-        other = User.objects.create(username="uc03_m2", password="abc12345", phone="13800000503", usertype=2)
-        other_food = Food.objects.create(name="别家菜", price=10, image="x", providor="p", merchant=other)
+        other = User.objects.create(
+            username="uc03_m2", password="abc12345", phone="13800000503", usertype=2
+        )
+        other_food = Food.objects.create(
+            name="别家菜", price=10, image="x", providor="p", merchant=other
+        )
         other_coup = GroupBuyCoupon.objects.create(
-            user=User.objects.get(username="uc03_u"), food=other_food, num=1, cost=10, code="OTHER2024"
+            user=User.objects.get(username="uc03_u"),
+            food=other_food,
+            num=1,
+            cost=10,
+            code="OTHER2024",
         )
         response = merchant_client.post("/groupbuy/redeem/", {"code": other_coup.code})
         self.assertContains(response, "核销码不存在或不属于您的商品")
 
         # 已取消的券不能核销
         cancelled = GroupBuyCoupon.objects.create(
-            user=User.objects.get(username="uc03_u"), food=food, num=1, cost=30, code="CANCEL2024", status=2
+            user=User.objects.get(username="uc03_u"),
+            food=food,
+            num=1,
+            cost=30,
+            code="CANCEL2024",
+            status=2,
         )
         response = merchant_client.post("/groupbuy/redeem/", {"code": cancelled.code})
         self.assertContains(response, "该团购券已取消")
@@ -555,10 +682,16 @@ class HotelE2ETest(E2EBase):
 
         response = user_client.post(
             f"/hotelorder/?hotelid={hotel.id}",
-            {"room_type": "single_day", "duration": "2", "checkin_time": "2026-07-01T14:00"},
+            {
+                "room_type": "single_day",
+                "duration": "2",
+                "checkin_time": "2026-07-01T14:00",
+            },
         )
         self.assertEqual(response.status_code, 302)
-        order = HotelOrder.objects.get(user=User.objects.get(username="hotel_user"), hotel=hotel)
+        order = HotelOrder.objects.get(
+            user=User.objects.get(username="hotel_user"), hotel=hotel
+        )
         self.assertEqual(order.cost, 400.0)
         self.assertEqual(order.pos, 4)
         hotel.refresh_from_db()
@@ -570,7 +703,9 @@ class HotelE2ETest(E2EBase):
         self.assertContains(response, "待评价")
 
         # 3. 评价并校验评分聚合
-        response = user_client.post(f"/hotelcomment/?orderid={order.id}", {"score": "4.0", "comment": "满意"})
+        response = user_client.post(
+            f"/hotelcomment/?orderid={order.id}", {"score": "4.0", "comment": "满意"}
+        )
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         hotel.refresh_from_db()
@@ -585,7 +720,12 @@ class HotelE2ETest(E2EBase):
         user_client = self.login_user("uc04_u", usertype="0")
         other_client = self.login_user("uc04_other", usertype="0")
         hotel = Hotel.objects.create(
-            name="UC04异常酒店", addr="a", price_day=200, price_clock=40, image="x", inf="i"
+            name="UC04异常酒店",
+            addr="a",
+            price_day=200,
+            price_clock=40,
+            image="x",
+            inf="i",
         )
 
         # 未知房型
@@ -600,7 +740,11 @@ class HotelE2ETest(E2EBase):
             with self.subTest(bad=bad):
                 response = user_client.post(
                     f"/hotelorder/?hotelid={hotel.id}",
-                    {"room_type": "single_day", "duration": bad, "checkin_time": "2026-08-26T10:00"},
+                    {
+                        "room_type": "single_day",
+                        "duration": bad,
+                        "checkin_time": "2026-08-26T10:00",
+                    },
                 )
                 self.assertIn("入住时间长度", response.content.decode())
 
@@ -612,23 +756,37 @@ class HotelE2ETest(E2EBase):
         self.assertContains(response, "入住时间格式不正确")
 
         # 信息不完整 / 酒店不存在
-        response = user_client.post(f"/hotelorder/?hotelid={hotel.id}", {"room_type": "single_day"})
+        response = user_client.post(
+            f"/hotelorder/?hotelid={hotel.id}", {"room_type": "single_day"}
+        )
         self.assertContains(response, "请填写完整的订房信息")
         response = user_client.post(
             f"/hotelorder/?hotelid=999999",
-            {"room_type": "single_day", "duration": "1", "checkin_time": "2026-08-26T10:00"},
+            {
+                "room_type": "single_day",
+                "duration": "1",
+                "checkin_time": "2026-08-26T10:00",
+            },
         )
         self.assertContains(response, "酒店不存在")
 
         # 正常下单 → 非本人查看/评价被拒
         user_client.post(
             f"/hotelorder/?hotelid={hotel.id}",
-            {"room_type": "single_day", "duration": "1", "checkin_time": "2026-08-26T10:00"},
+            {
+                "room_type": "single_day",
+                "duration": "1",
+                "checkin_time": "2026-08-26T10:00",
+            },
         )
-        order = HotelOrder.objects.get(user=User.objects.get(username="uc04_u"), hotel=hotel)
+        order = HotelOrder.objects.get(
+            user=User.objects.get(username="uc04_u"), hotel=hotel
+        )
         response = other_client.get("/hotelorderpos/", {"orderid": order.id})
         self.assertContains(response, "无权查看该订单")
-        response = other_client.post(f"/hotelcomment/?orderid={order.id}", {"score": "4.0", "comment": "x"})
+        response = other_client.post(
+            f"/hotelcomment/?orderid={order.id}", {"score": "4.0", "comment": "x"}
+        )
         self.assertContains(response, "无权评价该订单")
 
         # 非法评分/超长评价被拒，订单状态不变
@@ -639,7 +797,10 @@ class HotelE2ETest(E2EBase):
             ("4.0", "评" * 201, "不能超过200个字符"),
         ]:
             with self.subTest(score=score):
-                response = user_client.post(f"/hotelcomment/?orderid={order.id}", {"score": score, "comment": comment})
+                response = user_client.post(
+                    f"/hotelcomment/?orderid={order.id}",
+                    {"score": score, "comment": comment},
+                )
                 self.assertContains(response, expect)
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
@@ -672,17 +833,22 @@ class PlayE2ETest(E2EBase):
         self.assertContains(response, play.name)
 
         response = user_client.post(
-            f"/playorder/?playid={play.id}", {"num": "2", "visit_time": "2026-07-02T09:00"}
+            f"/playorder/?playid={play.id}",
+            {"num": "2", "visit_time": "2026-07-02T09:00"},
         )
         self.assertEqual(response.status_code, 302)
-        order = PlayOrder.objects.get(user=User.objects.get(username="play_user"), play=play)
+        order = PlayOrder.objects.get(
+            user=User.objects.get(username="play_user"), play=play
+        )
         self.assertEqual(order.cost, 198.0)
         self.assertEqual(order.pos, 4)
 
         response = user_client.get("/playorderpos/", {"orderid": order.id})
         self.assertContains(response, "待评价")
 
-        response = user_client.post(f"/playcomment/?orderid={order.id}", {"score": "5.0", "comment": "超赞"})
+        response = user_client.post(
+            f"/playcomment/?orderid={order.id}", {"score": "5.0", "comment": "超赞"}
+        )
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         play.refresh_from_db()
@@ -696,18 +862,23 @@ class PlayE2ETest(E2EBase):
         self.register_user("uc05_other", phone="13800000702", usertype="0")
         user_client = self.login_user("uc05_u", usertype="0")
         other_client = self.login_user("uc05_other", usertype="0")
-        play = Play.objects.create(name="UC05异常乐园", addr="a", price=88, image="x", inf="i")
+        play = Play.objects.create(
+            name="UC05异常乐园", addr="a", price=88, image="x", inf="i"
+        )
 
         # 票数非法
         for bad in ("0", "-1", "abc"):
             with self.subTest(bad=bad):
                 response = user_client.post(
-                    f"/playorder/?playid={play.id}", {"num": bad, "visit_time": "2026-08-26T09:00"}
+                    f"/playorder/?playid={play.id}",
+                    {"num": bad, "visit_time": "2026-08-26T09:00"},
                 )
                 self.assertIn("票数", response.content.decode())
 
         # 游玩时间格式非法 / 信息不完整
-        response = user_client.post(f"/playorder/?playid={play.id}", {"num": "1", "visit_time": "bad"})
+        response = user_client.post(
+            f"/playorder/?playid={play.id}", {"num": "1", "visit_time": "bad"}
+        )
         self.assertContains(response, "预定时间格式不正确")
         response = user_client.post(f"/playorder/?playid={play.id}", {"num": "1"})
         self.assertContains(response, "请填写完整的购票信息")
@@ -719,11 +890,18 @@ class PlayE2ETest(E2EBase):
         self.assertContains(response, "娱乐场所不存在")
 
         # 正常购票 → 非本人查看/评价被拒
-        user_client.post(f"/playorder/?playid={play.id}", {"num": "2", "visit_time": "2026-08-26T09:00"})
-        order = PlayOrder.objects.get(user=User.objects.get(username="uc05_u"), play=play)
+        user_client.post(
+            f"/playorder/?playid={play.id}",
+            {"num": "2", "visit_time": "2026-08-26T09:00"},
+        )
+        order = PlayOrder.objects.get(
+            user=User.objects.get(username="uc05_u"), play=play
+        )
         response = other_client.get("/playorderpos/", {"orderid": order.id})
         self.assertContains(response, "无权查看该订单")
-        response = other_client.post(f"/playcomment/?orderid={order.id}", {"score": "5.0", "comment": "x"})
+        response = other_client.post(
+            f"/playcomment/?orderid={order.id}", {"score": "5.0", "comment": "x"}
+        )
         self.assertContains(response, "无权评价该订单")
 
         # 非法评分/超长评价被拒
@@ -733,7 +911,10 @@ class PlayE2ETest(E2EBase):
             ("4.0", "评" * 201, "不能超过200个字符"),
         ]:
             with self.subTest(score=score):
-                response = user_client.post(f"/playcomment/?orderid={order.id}", {"score": score, "comment": comment})
+                response = user_client.post(
+                    f"/playcomment/?orderid={order.id}",
+                    {"score": score, "comment": comment},
+                )
                 self.assertContains(response, expect)
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
@@ -745,7 +926,9 @@ class MerchantSupplyE2ETest(E2EBase):
     def _png(self, name="supply.png", size=64):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
-        return SimpleUploadedFile(name, b"\x89PNG\r\n\x1a\n" + b"x" * size, content_type="image/png")
+        return SimpleUploadedFile(
+            name, b"\x89PNG\r\n\x1a\n" + b"x" * size, content_type="image/png"
+        )
 
     def _upload_ctx(self):
         import tempfile
@@ -849,15 +1032,20 @@ class MerchantSupplyE2ETest(E2EBase):
         food.refresh_from_db()
         self.assertTrue(food.is_sold_out)
         response = user_client.post(
-            f"/foodorder/?foodid={food.id}", {"num": "1", "address": "a", "cutlery": "1"}
+            f"/foodorder/?foodid={food.id}",
+            {"num": "1", "address": "a", "cutlery": "1"},
         )
         self.assertContains(response, "该商品已售罄")
 
-        merchant_client.post("/merchant/food/action/", {"food_id": food.id, "action": "toggle_sold_out"})
+        merchant_client.post(
+            "/merchant/food/action/", {"food_id": food.id, "action": "toggle_sold_out"}
+        )
         food.refresh_from_db()
         self.assertFalse(food.is_sold_out)
 
-        merchant_client.post("/merchant/food/action/", {"food_id": food.id, "action": "toggle_off_shelf"})
+        merchant_client.post(
+            "/merchant/food/action/", {"food_id": food.id, "action": "toggle_off_shelf"}
+        )
         food.refresh_from_db()
         self.assertTrue(food.is_off_shelf)
         payload = self.json_payload(user_client.get("/food/"), "foods-data")
@@ -865,15 +1053,22 @@ class MerchantSupplyE2ETest(E2EBase):
         response = user_client.get("/fooddetails/", {"foodid": food.id})
         self.assertContains(response, "该商品已下架")
 
-        merchant_client.post("/merchant/food/action/", {"food_id": food.id, "action": "toggle_off_shelf"})
+        merchant_client.post(
+            "/merchant/food/action/", {"food_id": food.id, "action": "toggle_off_shelf"}
+        )
         food.refresh_from_db()
         self.assertFalse(food.is_off_shelf)
         payload = self.json_payload(user_client.get("/food/"), "foods-data")
         self.assertIn(food.name, [f["name"] for f in payload])
 
         # 购物车包含不可售商品时整体拒绝结算
-        user_client.post(f"/foodorder/?foodid={food.id}", {"num": "1", "address": "购物车", "cutlery": "2"})
-        merchant_client.post("/merchant/food/action/", {"food_id": food.id, "action": "toggle_sold_out"})
+        user_client.post(
+            f"/foodorder/?foodid={food.id}",
+            {"num": "1", "address": "购物车", "cutlery": "2"},
+        )
+        merchant_client.post(
+            "/merchant/food/action/", {"food_id": food.id, "action": "toggle_sold_out"}
+        )
         response = user_client.post("/cart/clear/")
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["status"], "error")
@@ -909,27 +1104,40 @@ class MerchantSupplyE2ETest(E2EBase):
             with override_settings(BASE_DIR=temp_dir):
                 # 必填字段缺失
                 self.assertContains(
-                    merchant_client.post("/foodsend/", {"name": "x", "price": "10"}), "请填写完整的美食信息"
+                    merchant_client.post("/foodsend/", {"name": "x", "price": "10"}),
+                    "请填写完整的美食信息",
                 )
                 self.assertContains(
-                    merchant_client.post("/hotelsend/", {"name": "x"}), "请填写酒店名称、地址和图片路径"
+                    merchant_client.post("/hotelsend/", {"name": "x"}),
+                    "请填写酒店名称、地址和图片路径",
                 )
                 self.assertContains(
-                    merchant_client.post("/playsend/", {"name": "x", "price": "10"}), "请填写完整的娱乐场所信息"
+                    merchant_client.post("/playsend/", {"name": "x", "price": "10"}),
+                    "请填写完整的娱乐场所信息",
                 )
 
                 # 价格非法
                 self.assertContains(
                     merchant_client.post(
                         "/foodsend/",
-                        {"name": "x", "price": "abc", "providor": "p", "image": self._png("f.png")},
+                        {
+                            "name": "x",
+                            "price": "abc",
+                            "providor": "p",
+                            "image": self._png("f.png"),
+                        },
                     ),
                     "价格必须是数字",
                 )
                 self.assertContains(
                     merchant_client.post(
                         "/playsend/",
-                        {"name": "x", "addr": "a", "price": "abc", "image": self._png("p.png")},
+                        {
+                            "name": "x",
+                            "addr": "a",
+                            "price": "abc",
+                            "image": self._png("p.png"),
+                        },
                     ),
                     "门票价格必须是数字",
                 )
@@ -938,21 +1146,40 @@ class MerchantSupplyE2ETest(E2EBase):
                 self.assertContains(
                     merchant_client.post(
                         "/playsend/",
-                        {"name": "x", "addr": "a", "price": "10", "start_time": "9:00", "image": self._png("p.png")},
+                        {
+                            "name": "x",
+                            "addr": "a",
+                            "price": "10",
+                            "start_time": "9:00",
+                            "image": self._png("p.png"),
+                        },
                     ),
                     "开始营业时间格式不正确",
                 )
                 self.assertContains(
                     merchant_client.post(
                         "/playsend/",
-                        {"name": "x", "addr": "a", "price": "10", "start_time": "25:00", "image": self._png("p.png")},
+                        {
+                            "name": "x",
+                            "addr": "a",
+                            "price": "10",
+                            "start_time": "25:00",
+                            "image": self._png("p.png"),
+                        },
                     ),
                     "开始营业时间不合法",
                 )
                 self.assertContains(
                     merchant_client.post(
                         "/playsend/",
-                        {"name": "x", "addr": "a", "price": "10", "start_time": "10:00", "open_time": "8", "image": self._png("p.png")},
+                        {
+                            "name": "x",
+                            "addr": "a",
+                            "price": "10",
+                            "start_time": "10:00",
+                            "open_time": "8",
+                            "image": self._png("p.png"),
+                        },
                     ),
                     "运营时间格式不正确",
                 )
@@ -964,19 +1191,30 @@ class MerchantSupplyE2ETest(E2EBase):
                     ),
                     "请上传图片",
                 )
-                bad_type = SimpleUploadedFile("a.txt", b"abc", content_type="text/plain")
+                bad_type = SimpleUploadedFile(
+                    "a.txt", b"abc", content_type="text/plain"
+                )
                 self.assertContains(
                     merchant_client.post(
-                        "/foodsend/", {"name": "x", "price": "10", "providor": "p", "image": bad_type}
+                        "/foodsend/",
+                        {
+                            "name": "x",
+                            "price": "10",
+                            "providor": "p",
+                            "image": bad_type,
+                        },
                     ),
                     "只支持 JPG 或 PNG 格式图片",
                 )
                 too_big = SimpleUploadedFile(
-                    "big.png", b"\x89PNG\r\n\x1a\n" + b"x" * (2 * 1024 * 1024), content_type="image/png"
+                    "big.png",
+                    b"\x89PNG\r\n\x1a\n" + b"x" * (2 * 1024 * 1024),
+                    content_type="image/png",
                 )
                 self.assertContains(
                     merchant_client.post(
-                        "/foodsend/", {"name": "x", "price": "10", "providor": "p", "image": too_big}
+                        "/foodsend/",
+                        {"name": "x", "price": "10", "providor": "p", "image": too_big},
                     ),
                     "图片大小不能超过 2MB",
                 )
@@ -1009,7 +1247,9 @@ class BlogE2ETest(E2EBase):
         user_client = self.login_user("blog_user", usertype="0")
 
         # 发布
-        response = user_client.post("/blogsend/", {"title": "E2E 游记", "content": "今天去了游乐园"})
+        response = user_client.post(
+            "/blogsend/", {"title": "E2E 游记", "content": "今天去了游乐园"}
+        )
         self.assertEqual(response.status_code, 302)
         blog = Blog.objects.get(authorid=user)
         self.assertFalse(blog.isdeleted)
@@ -1022,7 +1262,9 @@ class BlogE2ETest(E2EBase):
 
         # AJAX 评论
         response = user_client.post(
-            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": "写得真好"}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": blog.id, "content": "写得真好"}),
+            content_type="application/json",
         )
         self.assertEqual(response.json()["status"], "ok")
         comment = Comment.objects.get(blogid=blog)
@@ -1060,7 +1302,9 @@ class BlogE2ETest(E2EBase):
 
         # 评论异常：空内容/超长/非法JSON/博客不存在/未登录
         response = user_client.post(
-            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": ""}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": blog.id, "content": ""}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
         response = user_client.post(
@@ -1069,14 +1313,20 @@ class BlogE2ETest(E2EBase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
-        response = user_client.post("/blogcomment/", data="not-json", content_type="application/json")
+        response = user_client.post(
+            "/blogcomment/", data="not-json", content_type="application/json"
+        )
         self.assertEqual(response.status_code, 400)
         response = user_client.post(
-            "/blogcomment/", data=json.dumps({"blog_id": 999999, "content": "x"}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": 999999, "content": "x"}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 404)
         response = Client().post(
-            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": "x"}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": blog.id, "content": "x"}),
+            content_type="application/json",
         )
         self.assertEqual(response.status_code, 401)
 
@@ -1088,7 +1338,9 @@ class BlogE2ETest(E2EBase):
 
         # 非评论者不能删除评论
         user_client.post(
-            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": "正常评论"}), content_type="application/json"
+            "/blogcomment/",
+            data=json.dumps({"blog_id": blog.id, "content": "正常评论"}),
+            content_type="application/json",
         )
         comment = Comment.objects.get(blogid=blog, isdeleted=False)
         response = other_client.delete(f"/blogcomment/delete/?commentid={comment.id}")
@@ -1114,10 +1366,16 @@ class AdminE2ETest(E2EBase):
         self.register_user("admin_merchant", phone="13800000116", usertype="2")
         user = User.objects.get(username="admin_target_user")
         merchant = User.objects.get(username="admin_merchant")
-        food = Food.objects.create(name="后台菜", price=10.0, image="x", providor="p", merchant=merchant)
-        order = Order.objects.create(user=user, food=food, num=1, cost=10.0, address="后台地址", pos=2)
+        food = Food.objects.create(
+            name="后台菜", price=10.0, image="x", providor="p", merchant=merchant
+        )
+        order = Order.objects.create(
+            user=user, food=food, num=1, cost=10.0, address="后台地址", pos=2
+        )
         blog = Blog.objects.create(title="后台待审博客", content="内容", authorid=user)
-        admin = User.objects.create(username="boss_admin", password="abc12345", phone="13800000117", usertype=3)
+        admin = User.objects.create(
+            username="boss_admin", password="abc12345", phone="13800000117", usertype=3
+        )
 
         # 管理员从登录入口进入后台
         admin_client = self.login_user("boss_admin", usertype="3")
@@ -1126,22 +1384,29 @@ class AdminE2ETest(E2EBase):
         self.assertContains(response, admin.username)
 
         # 1. 停用违规用户 → 该用户无法再登录
-        response = admin_client.post("/manage/users/action/", {"user_id": user.id, "action": "toggle_active"})
+        response = admin_client.post(
+            "/manage/users/action/", {"user_id": user.id, "action": "toggle_active"}
+        )
         self.assertEqual(response.status_code, 302)
         user.refresh_from_db()
         self.assertTrue(user.isDelete)
         response = Client().post(
-            "/account/login/", {"username": user.username, "password": "abc12345", "usertype": "0"}
+            "/account/login/",
+            {"username": user.username, "password": "abc12345", "usertype": "0"},
         )
         self.assertContains(response, "该账号已被停用")
 
         # 2. 订单标记为已送达
-        response = admin_client.post("/manage/orders/action/", {"order_id": order.id, "action": "complete"})
+        response = admin_client.post(
+            "/manage/orders/action/", {"order_id": order.id, "action": "complete"}
+        )
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
 
         # 3. 审核博客（下架）
-        response = admin_client.post("/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id})
+        response = admin_client.post(
+            "/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id}
+        )
         blog.refresh_from_db()
         self.assertTrue(blog.isdeleted)
 
@@ -1156,8 +1421,12 @@ class AdminE2ETest(E2EBase):
         self.register_user("uc09_m", phone="13800001002", usertype="2")
         user = User.objects.get(username="uc09_u")
         merchant = User.objects.get(username="uc09_m")
-        food = Food.objects.create(name="治理菜品", price=10, image="x", providor="p", merchant=merchant)
-        admin = User.objects.create(username="uc09_admin", password="abc12345", phone="13800001003", usertype=3)
+        food = Food.objects.create(
+            name="治理菜品", price=10, image="x", providor="p", merchant=merchant
+        )
+        admin = User.objects.create(
+            username="uc09_admin", password="abc12345", phone="13800001003", usertype=3
+        )
         admin_client = self.login_user("uc09_admin", usertype="3")
 
         # 非管理员访问被重定向
@@ -1166,25 +1435,42 @@ class AdminE2ETest(E2EBase):
         self.assertEqual(response.url, "/account/login/")
 
         # 不能停用自己 / 不能移除自己的管理员角色
-        admin_client.post("/manage/users/action/", {"user_id": admin.id, "action": "toggle_active"})
+        admin_client.post(
+            "/manage/users/action/", {"user_id": admin.id, "action": "toggle_active"}
+        )
         admin.refresh_from_db()
         self.assertFalse(admin.isDelete)
-        admin_client.post("/manage/users/action/", {"user_id": admin.id, "action": "change_role", "role": "0"})
+        admin_client.post(
+            "/manage/users/action/",
+            {"user_id": admin.id, "action": "change_role", "role": "0"},
+        )
         admin.refresh_from_db()
         self.assertEqual(admin.usertype, 3)
 
         # 已评价订单（pos=5）不能被管理员改写
-        done = Order.objects.create(user=user, food=food, num=1, cost=10, address="a", pos=5)
-        admin_client.post("/manage/orders/action/", {"order_id": done.id, "action": "complete"})
+        done = Order.objects.create(
+            user=user, food=food, num=1, cost=10, address="a", pos=5
+        )
+        admin_client.post(
+            "/manage/orders/action/", {"order_id": done.id, "action": "complete"}
+        )
         done.refresh_from_db()
         self.assertEqual(done.pos, 5)
 
         # 异常标记可切换并解除
-        order = Order.objects.create(user=user, food=food, num=1, cost=10, address="b", pos=2)
-        admin_client.post("/manage/orders/action/", {"order_id": order.id, "action": "toggle_abnormal"})
+        order = Order.objects.create(
+            user=user, food=food, num=1, cost=10, address="b", pos=2
+        )
+        admin_client.post(
+            "/manage/orders/action/",
+            {"order_id": order.id, "action": "toggle_abnormal"},
+        )
         order.refresh_from_db()
         self.assertTrue(order.is_abnormal)
-        admin_client.post("/manage/orders/action/", {"order_id": order.id, "action": "toggle_abnormal"})
+        admin_client.post(
+            "/manage/orders/action/",
+            {"order_id": order.id, "action": "toggle_abnormal"},
+        )
         order.refresh_from_db()
         self.assertFalse(order.is_abnormal)
 
@@ -1200,12 +1486,16 @@ class AdminE2ETest(E2EBase):
 
         # 隐藏内容后公开列表不可见，恢复后重新可见
         blog = Blog.objects.create(title="治理博客", content="内容", authorid=user)
-        admin_client.post("/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id})
+        admin_client.post(
+            "/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id}
+        )
         blog.refresh_from_db()
         self.assertTrue(blog.isdeleted)
         response = self.login_user("uc09_u", usertype="0").get("/blog/", {"q": "治理"})
         self.assertNotContains(response, blog.title)
-        admin_client.post("/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id})
+        admin_client.post(
+            "/manage/blogs/action/", {"item_type": "blog", "item_id": blog.id}
+        )
         blog.refresh_from_db()
         self.assertFalse(blog.isdeleted)
         response = self.login_user("uc09_u", usertype="0").get("/blog/", {"q": "治理"})
@@ -1220,12 +1510,20 @@ class AiAssistantE2ETest(E2EBase):
         self.register_user("ai_user", phone="13800000118", usertype="0")
         self.register_user("ai_merchant", phone="13800000119", usertype="2")
         merchant = User.objects.get(username="ai_merchant")
-        Food.objects.create(name="AI推荐菜", price=25.0, image="x", providor="AI商家", merchant=merchant)
-        Hotel.objects.create(name="AI推荐酒店", addr="x", price_day=100, image="y", merchant=merchant)
-        Play.objects.create(name="AI推荐乐园", addr="x", price=50, image="z", merchant=merchant)
+        Food.objects.create(
+            name="AI推荐菜", price=25.0, image="x", providor="AI商家", merchant=merchant
+        )
+        Hotel.objects.create(
+            name="AI推荐酒店", addr="x", price_day=100, image="y", merchant=merchant
+        )
+        Play.objects.create(
+            name="AI推荐乐园", addr="x", price=50, image="z", merchant=merchant
+        )
 
         user_client = self.login_user("ai_user", usertype="0")
-        with patch("myapp.views.call_aliyun_llm", return_value="为您推荐：AI推荐菜") as mock_call:
+        with patch(
+            "myapp.views.call_aliyun_llm", return_value="为您推荐：AI推荐菜"
+        ) as mock_call:
             response = user_client.post("/ai-chat/", {"user_input": "今天吃什么"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["reply"], "为您推荐：AI推荐菜")
@@ -1240,12 +1538,24 @@ class AiAssistantE2ETest(E2EBase):
         self.register_user("uc08_u", phone="13800000901", usertype="0")
         self.register_user("uc08_m", phone="13800000902", usertype="2")
         merchant = User.objects.get(username="uc08_m")
-        Food.objects.create(name="正常可售菜", price=10, image="x", providor="p", merchant=merchant)
         Food.objects.create(
-            name="已下架隐藏菜", price=10, image="x", providor="p", merchant=merchant, is_off_shelf=True
+            name="正常可售菜", price=10, image="x", providor="p", merchant=merchant
         )
         Food.objects.create(
-            name="已售罄隐藏菜", price=10, image="x", providor="p", merchant=merchant, is_sold_out=True
+            name="已下架隐藏菜",
+            price=10,
+            image="x",
+            providor="p",
+            merchant=merchant,
+            is_off_shelf=True,
+        )
+        Food.objects.create(
+            name="已售罄隐藏菜",
+            price=10,
+            image="x",
+            providor="p",
+            merchant=merchant,
+            is_sold_out=True,
         )
 
         # 未登录 → 重定向首页

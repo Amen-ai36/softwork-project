@@ -48,7 +48,7 @@ docker compose up -d --build
 首次启动会自动：
 
 - 创建 MySQL 数据库 `the_food_mas2`。
-- 导入 `data_hex2.sql`。
+- 导入 `data/seed.sql`。
 - 收集 Django 静态文件。
 - 执行数据库迁移。
 - 通过 Nginx 暴露公网 80 端口。

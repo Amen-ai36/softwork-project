@@ -3,7 +3,7 @@
 统一测试入口 + 测试报告生成器
 ==============================
 用法（项目根目录）：
-    python test/run_tests.py
+    python tests/run_tests.py
 
 功能：
 1. 依次运行全部自动化测试：
@@ -12,8 +12,8 @@
    - test_e2e.py              端到端测试（完整业务流程）
    - test_database_config.py  数据库配置与真实环境检查
 2. 生成测试报告：
-   - test/test_report.md    人读报告（总数、通过、失败、失败原因、运行环境）
-   - test/test_report.json  机器可读报告
+   - tests/test_report.md    人读报告（总数、通过、失败、失败原因、运行环境）
+   - tests/test_report.json  机器可读报告
 3. 测试失败时以非 0 退出码结束 —— 流水线（CI/CD）中后续发布/部署步骤
    不会继续执行。
 
@@ -21,6 +21,7 @@
 - 默认使用 SQLite（food_master/test_settings.py），无需配置即可运行；
 - 设置环境变量 FOOD_DELIVER_DB_PASSWORD 后自动切换为 MySQL 真实数据库验证。
 """
+
 import json
 import os
 import platform
@@ -36,10 +37,10 @@ REPORT_MD = TEST_DIR / "test_report.md"
 REPORT_JSON = TEST_DIR / "test_report.json"
 
 TEST_LABELS = [
-    "test.test_unit",
-    "test.test_integration_api",
-    "test.test_e2e",
-    "test.test_database_config",
+    "tests.test_unit",
+    "tests.test_integration_api",
+    "tests.test_e2e",
+    "tests.test_database_config",
 ]
 
 DETAIL_RE = re.compile(r"^(FAIL|ERROR):\s+(.+)$")
@@ -91,7 +92,15 @@ def run_tests():
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"
-    proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
+    proc = subprocess.run(
+        cmd,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+    )
     return proc, (proc.stdout or "") + (proc.stderr or "")
 
 
@@ -115,7 +124,13 @@ def parse_output(output):
             ):
                 reason = s[:300]
                 break
-        reasons.append({"test": m.group(2), "kind": m.group(1), "reason": reason or "（无详细信息）"})
+        reasons.append(
+            {
+                "test": m.group(2),
+                "kind": m.group(1),
+                "reason": reason or "（无详细信息）",
+            }
+        )
 
     ran = RAN_RE.search(output)
     total = int(ran.group(1)) if ran else 0
@@ -185,7 +200,9 @@ def write_reports(summary, environment, output):
 
     REPORT_MD.write_text("\n".join(md), encoding="utf-8")
     payload = {"environment": environment, "summary": summary}
-    REPORT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    REPORT_JSON.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def main():
@@ -199,13 +216,22 @@ def main():
         reason = "（未生成测试统计，运行进程异常退出）"
         for line in output.splitlines():
             stripped = line.strip()
-            if stripped.startswith(("SyntaxError", "ImportError", "ModuleNotFoundError", "django.core.exceptions")):
+            if stripped.startswith(
+                (
+                    "SyntaxError",
+                    "ImportError",
+                    "ModuleNotFoundError",
+                    "django.core.exceptions",
+                )
+            ):
                 reason = stripped
                 break
             if "Error:" in stripped and "Traceback" not in stripped:
                 reason = stripped
                 break
-        summary["reasons"] = [{"test": "(测试收集/启动失败)", "kind": "ERROR", "reason": reason}]
+        summary["reasons"] = [
+            {"test": "(测试收集/启动失败)", "kind": "ERROR", "reason": reason}
+        ]
         summary["failed"] += 1
     write_reports(summary, environment, output)
 
@@ -215,8 +241,10 @@ def main():
     print(f"  {REPORT_MD}")
     print(f"  {REPORT_JSON}")
     print("-" * 60)
-    print(f"总数: {summary['total']}  通过: {summary['passed']}  "
-          f"失败: {summary['failed']}  跳过: {summary['skipped']}  结果: {summary['status']}")
+    print(
+        f"总数: {summary['total']}  通过: {summary['passed']}  "
+        f"失败: {summary['failed']}  跳过: {summary['skipped']}  结果: {summary['status']}"
+    )
     if summary["reasons"]:
         for item in summary["reasons"]:
             print(f"  [{item['kind']}] {item['test']}: {item['reason']}")

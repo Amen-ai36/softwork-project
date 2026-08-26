@@ -21,7 +21,7 @@ if ($RefreshDependencies) {
 
 Push-Location $ProjectRoot
 try {
-    & $VenvPython test\run_tests.py
+    & $VenvPython tests\run_tests.py
     exit $LASTEXITCODE
 }
 finally {

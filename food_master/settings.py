@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,15 +20,15 @@ def env_bool(name, default=False):
     value = os.environ.get(name)
     if value is None:
         return default
-    return value.lower() in ('1', 'true', 'yes', 'on')
+    return value.lower() in ("1", "true", "yes", "on")
 
 
-def env_list(name, default=''):
+def env_list(name, default=""):
     value = os.environ.get(name, default)
-    return [item.strip() for item in value.split(',') if item.strip()]
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
-def first_env(*names, default=''):
+def first_env(*names, default=""):
     for name in names:
         value = os.environ.get(name)
         if value:
@@ -40,97 +41,107 @@ def first_env(*names, default=''):
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-dev-only-change-me-before-deploying',
+    "DJANGO_SECRET_KEY",
+    "django-insecure-dev-only-change-me-before-deploying",
 )
 
 # 阿里云 LLM 配置
-ALIYUN_API_KEY = first_env('ALIYUN_API_KEY', 'DASHSCOPE_API_KEY')
+ALIYUN_API_KEY = first_env("ALIYUN_API_KEY", "DASHSCOPE_API_KEY")
 ALIYUN_BASE_URL = os.environ.get(
-    'ALIYUN_BASE_URL',
-    'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    "ALIYUN_BASE_URL",
+    "https://dashscope.aliyuncs.com/compatible-mode/v1",
 )
-ALIYUN_MODEL = os.environ.get('ALIYUN_MODEL', 'qwen-plus')
+ALIYUN_MODEL = os.environ.get("ALIYUN_MODEL", "qwen-plus")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool('DJANGO_DEBUG', True)
+DEBUG = env_bool("DJANGO_DEBUG", True)
 
-ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', '*')
-railway_public_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-if railway_public_domain and '*' not in ALLOWED_HOSTS and railway_public_domain not in ALLOWED_HOSTS:
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "*")
+railway_public_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+if (
+    railway_public_domain
+    and "*" not in ALLOWED_HOSTS
+    and railway_public_domain not in ALLOWED_HOSTS
+):
     ALLOWED_HOSTS.append(railway_public_domain)
 
-CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 if railway_public_domain:
-    railway_origin = f'https://{railway_public_domain}'
+    railway_origin = f"https://{railway_public_domain}"
     if railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
-SECURE_SSL_REDIRECT = env_bool('DJANGO_SECURE_SSL_REDIRECT', False)
-SESSION_COOKIE_SECURE = env_bool('DJANGO_SESSION_COOKIE_SECURE', False)
-CSRF_COOKIE_SECURE = env_bool('DJANGO_CSRF_COOKIE_SECURE', False)
-SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '0'))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
-SECURE_HSTS_PRELOAD = env_bool('DJANGO_SECURE_HSTS_PRELOAD', False)
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", False)
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", False)
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool(
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", False
+)
+SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'myapp',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "myapp",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'food_master.urls'
+ROOT_URLCONF = "food_master.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'food_master.wsgi.application'
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+WSGI_APPLICATION = "food_master.wsgi.application"
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': first_env('FOOD_DELIVER_DB_NAME', 'MYSQLDATABASE', default='the_food_mas2'),
-        'USER': first_env('FOOD_DELIVER_DB_USER', 'MYSQLUSER', default='root'),
-        'PASSWORD': first_env('FOOD_DELIVER_DB_PASSWORD', 'MYSQLPASSWORD', default='changeme'),
-        'HOST': first_env('FOOD_DELIVER_DB_HOST', 'MYSQLHOST', default='localhost'),
-        'PORT': first_env('FOOD_DELIVER_DB_PORT', 'MYSQLPORT', default='3306'),
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": first_env(
+            "FOOD_DELIVER_DB_NAME", "MYSQLDATABASE", default="the_food_mas2"
+        ),
+        "USER": first_env("FOOD_DELIVER_DB_USER", "MYSQLUSER", default="root"),
+        "PASSWORD": first_env(
+            "FOOD_DELIVER_DB_PASSWORD", "MYSQLPASSWORD", default="changeme"
+        ),
+        "HOST": first_env("FOOD_DELIVER_DB_HOST", "MYSQLHOST", default="localhost"),
+        "PORT": first_env("FOOD_DELIVER_DB_PORT", "MYSQLPORT", default="3306"),
     }
 }
 
@@ -140,16 +151,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -157,9 +168,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -171,13 +182,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.environ.get('DJANGO_STATIC_ROOT', os.path.join(BASE_DIR, 'staticfiles'))
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATIC_URL = "/static/"
+STATIC_ROOT = os.environ.get(
+    "DJANGO_STATIC_ROOT", os.path.join(BASE_DIR, "staticfiles")
+)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, "static"),
 ]

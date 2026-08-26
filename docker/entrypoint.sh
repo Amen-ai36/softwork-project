@@ -13,7 +13,7 @@ until nc -z "$DB_HOST" "$DB_PORT"; do
   sleep 2
 done
 
-if [ "${IMPORT_SQL_ON_START:-true}" = "true" ] && [ -f /app/data_hex2.sql ]; then
+if [ "${IMPORT_SQL_ON_START:-true}" = "true" ] && [ -f /app/data/seed.sql ]; then
   echo "Checking database initialization state..."
   mysql_app() {
     MYSQL_PWD="$DB_PASSWORD" mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" "$DB_NAME" -N -B "$@"
@@ -25,8 +25,8 @@ if [ "${IMPORT_SQL_ON_START:-true}" = "true" ] && [ -f /app/data_hex2.sql ]; the
     mysql_app -e "CREATE TABLE IF NOT EXISTS app_import_state (id TINYINT PRIMARY KEY, status VARCHAR(20) NOT NULL, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);"
 
     if mysql_app -e "INSERT INTO app_import_state (id, status) VALUES (1, 'running');"; then
-      echo "Database is empty; importing data_hex2.sql..."
-      if MYSQL_PWD="$DB_PASSWORD" mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" --binary-mode "$DB_NAME" < /app/data_hex2.sql; then
+      echo "Database is empty; importing data/seed.sql..."
+      if MYSQL_PWD="$DB_PASSWORD" mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" --binary-mode "$DB_NAME" < /app/data/seed.sql; then
         mysql_app -e "UPDATE app_import_state SET status = 'done' WHERE id = 1;"
       else
         mysql_app -e "UPDATE app_import_state SET status = 'failed' WHERE id = 1;" || true

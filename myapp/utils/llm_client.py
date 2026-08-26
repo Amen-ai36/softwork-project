@@ -1,6 +1,7 @@
 import requests
 from django.conf import settings
 
+
 def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024):
     """
     调用阿里云 DashScope 兼容模式的 LLM API
@@ -15,14 +16,13 @@ def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024
     if not api_key:
         print("ALIYUN_API_KEY/DASHSCOPE_API_KEY is not configured")
         return None
-    base_url = getattr(settings, "ALIYUN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    base_url = getattr(
+        settings, "ALIYUN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    )
     model = getattr(settings, "ALIYUN_MODEL", "qwen-plus")
     url = f"{base_url}/chat/completions"
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     messages = []
     if system_prompt:
@@ -33,7 +33,7 @@ def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024
         "model": "qwen-plus",  # 可换成 qwen-turbo, qwen-max 等
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": max_tokens
+        "max_tokens": max_tokens,
     }
     data["model"] = model
 
@@ -45,6 +45,6 @@ def call_aliyun_llm(prompt, system_prompt=None, temperature=0.7, max_tokens=1024
         return result["choices"][0]["message"]["content"]
     except requests.exceptions.RequestException as e:
         print(f"阿里云 LLM API 调用失败: {e}")
-        if hasattr(e, 'response') and e.response:
+        if hasattr(e, "response") and e.response:
             print(f"响应内容: {e.response.text}")
         return None

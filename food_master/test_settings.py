@@ -7,8 +7,9 @@
 
 用法：
     python manage.py test test --settings=food_master.test_settings
-    或直接使用 python test/run_tests.py（自动选择）。
+    或直接使用 python tests/run_tests.py（自动选择）。
 """
+
 import os
 
 from .settings import *  # noqa: F401,F403

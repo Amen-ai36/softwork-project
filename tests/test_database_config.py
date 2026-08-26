@@ -5,11 +5,12 @@
 真实数据库是否已包含项目需要的核心表。
 
 设计：
-- 纯配置断言（settings 与 data_hex2.sql 声明一致）不依赖数据库连接，始终执行。
+- 纯配置断言（settings 与 data/seed.sql 声明一致）不依赖数据库连接，始终执行。
 - 真实 MySQL 表检查：如果本机没有 mysql 客户端或无法连接（如未配置密码），
   则跳过（skip），不会把"环境未配置"当成"测试失败"，避免阻塞流水线。
 - 通过环境变量 FOOD_DELIVER_DB_PASSWORD 连接真实 MySQL 时可完整执行。
 """
+
 import os
 import re
 import shutil
@@ -18,10 +19,9 @@ import unittest
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS_PATH = ROOT / "food_master" / "settings.py"
-SQL_PATH = ROOT / "data_hex2.sql"
+SQL_PATH = ROOT / "data" / "seed.sql"
 COMMON_MYSQL_PATHS = [
     Path(r"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"),
     Path(r"D:\MySQL\MySQL Server 8.0\bin\mysql.exe"),
@@ -47,13 +47,13 @@ def find_mysql_client():
 
 class DatabaseConfigTest(unittest.TestCase):
     def test_settings_match_sql_dump_database(self):
-        """配置一致性：settings 数据库名应与 data_hex2.sql 声明的数据库一致"""
+        """配置一致性：settings 数据库名应与 data/seed.sql 声明的数据库一致"""
         settings = load_settings()
         db = settings.DATABASES["default"]
         dump_text = SQL_PATH.read_text(encoding="utf-8", errors="ignore")
         match = re.search(r"Database:\s+([A-Za-z0-9_]+)", dump_text)
 
-        self.assertIsNotNone(match, "data_hex2.sql should declare its source database")
+        self.assertIsNotNone(match, "data/seed.sql should declare its source database")
         self.assertEqual(db["ENGINE"], "django.db.backends.mysql")
         self.assertEqual(db["NAME"], match.group(1))
         self.assertEqual(db["USER"], os.environ.get("FOOD_DELIVER_DB_USER", "root"))
@@ -66,9 +66,14 @@ class DatabaseConfigTest(unittest.TestCase):
         test_settings = importlib.import_module("food_master.test_settings")
         self.assertIn("default", test_settings.DATABASES)
         if os.environ.get("FOOD_DELIVER_DB_PASSWORD"):
-            self.assertEqual(test_settings.DATABASES["default"]["ENGINE"], "django.db.backends.mysql")
+            self.assertEqual(
+                test_settings.DATABASES["default"]["ENGINE"], "django.db.backends.mysql"
+            )
         else:
-            self.assertEqual(test_settings.DATABASES["default"]["ENGINE"], "django.db.backends.sqlite3")
+            self.assertEqual(
+                test_settings.DATABASES["default"]["ENGINE"],
+                "django.db.backends.sqlite3",
+            )
 
     def test_imported_mysql_database_has_required_tables(self):
         """真实环境检查：MySQL 中存在项目核心表（无法连接时跳过）"""
@@ -102,7 +107,9 @@ class DatabaseConfigTest(unittest.TestCase):
         )
         if result.returncode != 0:
             hint = result.stderr.strip()[:200]
-            self.skipTest(f"无法连接 MySQL（{hint}）。如需检查真实库，请设置 FOOD_DELIVER_DB_PASSWORD 后重试")
+            self.skipTest(
+                f"无法连接 MySQL（{hint}）。如需检查真实库，请设置 FOOD_DELIVER_DB_PASSWORD 后重试"
+            )
 
         tables = set(result.stdout.split())
         required_tables = {

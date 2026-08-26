@@ -32,7 +32,7 @@ ALIYUN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 
 ## 数据库初始化
 
-首次启动时，如果 MySQL 中还没有 `django_migrations` 表，容器会自动导入仓库里的 `data_hex2.sql`，然后执行 `python manage.py migrate`。
+首次启动时，如果 MySQL 中还没有 `django_migrations` 表，容器会自动导入仓库里的 `data/seed.sql`，然后执行 `python manage.py migrate`。
 
 如需禁用自动导入，把变量改成：
 
@@ -44,4 +44,4 @@ IMPORT_SQL_ON_START=false
 ```text
 IMPORT_SQL_ON_START=false
 ```
-后续重新部署只执行 Django 迁移，不再尝试导入 `data_hex2.sql`。
+后续重新部署只执行 Django 迁移，不再尝试导入 `data/seed.sql`。
