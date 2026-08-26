@@ -60,7 +60,8 @@
 
         <!-- 评价表单 -->
         <div>
-            <div class="section-title">✍️ {% if order.pos == 5 %}修改评价{% else %}填写评价{% endif %}</div>
+            {% if order.pos == 4 %}
+            <div class="section-title">✍️ 填写评价</div>
             <form action="/playorderpos/?orderid={{ order.id }}" method="post">
                 {% csrf_token %}
                 <div style="display:flex; flex-direction:column; gap:16px;">
@@ -82,6 +83,11 @@
                 </div>
             </form>
             <p class="form-hint" style="margin-top:12px;">保存后个人中心的评价操作将显示为「已评价」</p>
+            {% else %}
+            <div class="form-actions">
+                <a href="/space/" class="btn btn-default">👤 返回个人中心</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

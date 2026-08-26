@@ -259,18 +259,18 @@ class FoodDeliveryE2ETest(E2EBase):
         self.assertContains(response, "E2E 大学宿舍")
         self.assertContains(response, "接单")
 
-        response = rider_client.get(f"/rider_accept/?orderid={order.id}")
+        response = rider_client.post(f"/rider_accept/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 1)
         self.assertEqual(order.rider, rider)
 
-        response = merchant_client.get(f"/merchant_prepare/?orderid={order.id}")
+        response = merchant_client.post(f"/merchant_prepare/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 2)
 
-        response = rider_client.get(f"/rider_get/?orderid={order.id}")
+        response = rider_client.post(f"/rider_get/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 3)
@@ -278,7 +278,7 @@ class FoodDeliveryE2ETest(E2EBase):
         response = rider_client.get("/space/")
         self.assertContains(response, "配送中")
 
-        response = rider_client.get(f"/rider_deliver/?orderid={order.id}")
+        response = rider_client.post(f"/rider_deliver/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
@@ -332,29 +332,29 @@ class FoodDeliveryE2ETest(E2EBase):
             f"/foodorder/?foodid={ok_food.id}", {"num": "1", "address": "异常分支地址", "cutlery": "1"}
         )
         order = Order.objects.get(user=User.objects.get(username="uc02_u"), food=ok_food)
-        rider_client.get(f"/rider_accept/?orderid={order.id}")
+        rider_client.post(f"/rider_accept/?orderid={order.id}")
         order.refresh_from_db()
         self.assertEqual(order.pos, 1)
-        response = rider2_client.get(f"/rider_accept/?orderid={order.id}")
+        response = rider2_client.post(f"/rider_accept/?orderid={order.id}")
         self.assertContains(response, "该订单已被其他骑手接走或不存在")
 
         # 非所属商家不能备餐
         stranger = User.objects.create(username="uc02_mx", password="abc12345", phone="13800000405", usertype=2)
-        response = self.login_existing(stranger).get(f"/merchant_prepare/?orderid={order.id}")
+        response = self.login_existing(stranger).post(f"/merchant_prepare/?orderid={order.id}")
         self.assertContains(response, "该订单无法操作或不属于您的商品")
         order.refresh_from_db()
         self.assertEqual(order.pos, 1)
 
         # 非绑定骑手不能取餐/送达
-        merchant_client.get(f"/merchant_prepare/?orderid={order.id}")
+        merchant_client.post(f"/merchant_prepare/?orderid={order.id}")
         order.refresh_from_db()
         self.assertEqual(order.pos, 2)
-        response = rider2_client.get(f"/rider_get/?orderid={order.id}")
+        response = rider2_client.post(f"/rider_get/?orderid={order.id}")
         self.assertContains(response, "该订单无法操作或不属于您")
         order.refresh_from_db()
         self.assertEqual(order.pos, 2)
-        rider_client.get(f"/rider_get/?orderid={order.id}")
-        rider_client.get(f"/rider_deliver/?orderid={order.id}")
+        rider_client.post(f"/rider_get/?orderid={order.id}")
+        rider_client.post(f"/rider_deliver/?orderid={order.id}")
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
 
@@ -415,12 +415,12 @@ class CartToOrderE2ETest(E2EBase):
         self.assertEqual(order.pos, 0)
 
         # 4. 走完整配送链路
-        rider_client.get(f"/rider_accept/?orderid={order.id}")
+        rider_client.post(f"/rider_accept/?orderid={order.id}")
         order.refresh_from_db()
         self.assertEqual(order.pos, 1)
-        merchant_client.get(f"/merchant_prepare/?orderid={order.id}")
-        rider_client.get(f"/rider_get/?orderid={order.id}")
-        rider_client.get(f"/rider_deliver/?orderid={order.id}")
+        merchant_client.post(f"/merchant_prepare/?orderid={order.id}")
+        rider_client.post(f"/rider_get/?orderid={order.id}")
+        rider_client.post(f"/rider_deliver/?orderid={order.id}")
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
 

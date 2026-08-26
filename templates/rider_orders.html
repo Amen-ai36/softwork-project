@@ -43,7 +43,10 @@
                     <td class="td-sub">{{ order.address }}</td>
                     <td class="td-sub">{{ order.time|date:"m-d H:i" }}</td>
                     <td class="td-action">
-                        <a href="/rider_accept/?orderid={{ order.id }}" class="btn-table-action success">📦 接单</a>
+                        <form action="/rider_accept/?orderid={{ order.id }}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-table-action success">📦 接单</button>
+                        </form>
                     </td>
                 </tr>
                 {% empty %}

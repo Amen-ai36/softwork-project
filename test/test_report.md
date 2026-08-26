@@ -1,16 +1,16 @@
 # 自动化测试报告
 
-- 生成时间：2026-08-26 13:58:51
+- 生成时间：2026-08-26 15:55:40
 - 运行环境：Windows-10-10.0.26200-SP0
-- Python：3.10.10 / Django：5.2.14
-- 数据库：SQLite（food_master.test_settings）
+- Python：3.10.10 / Django：3.2.11
+- 数据库：MySQL（通过 FOOD_DELIVER_DB_PASSWORD 环境变量）
 
 ## 结果汇总
 
 | 项目 | 数量 |
 | --- | --- |
-| 测试总数 | 104 |
-| 通过数 | 104 |
+| 测试总数 | 106 |
+| 通过数 | 106 |
 | 失败数 | 0 |
 | 跳过数（环境原因） | 0 |
 | 结果 | OK |
@@ -21,7 +21,6 @@
 ## 完整输出
 
 ```text
-Found 104 test(s).
 Operations to perform:
   Synchronize unmigrated apps: messages, staticfiles
   Apply all migrations: admin, auth, contenttypes, myapp, sessions
@@ -67,18 +66,10 @@ Running migrations:
   Applying myapp.0019_auto_20260610_1714... OK
   Applying sessions.0001_initial... OK
 System check identified no issues (0 silenced).
-blog.authorid.id: 1
-user_id: 1
-<class 'int'>
-<class 'int'>
-blog.authorid.id: 1
-user_id: 1
-<class 'int'>
-<class 'int'>
 阿里云 LLM API 调用失败: 500 Server Error
 阿里云 LLM API 调用失败: boom
 ALIYUN_API_KEY/DASHSCOPE_API_KEY is not configured
-Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Creating test database for alias 'default' ('test_the_food_mas2')...
 
 test_admin_passes_and_gets_app_admin (test.test_unit.AdminRequiredDecoratorTest)
 主流程：管理员访问可进入，request.app_admin 指向当前管理员 ... ok
@@ -139,7 +130,7 @@ test_is_merchant_none_user_returns_false (test.test_unit.UserHelperRuleTest)
 test_is_merchant_true_only_for_merchant (test.test_unit.UserHelperRuleTest) ... ok
 test_is_rider_true_only_for_rider (test.test_unit.UserHelperRuleTest) ... ok
 test_admin_blog_and_comment_actions (test.test_integration_api.AdminApiTest)
-主流程：审核博客/评论（切换逻辑删除）；异常：不存在的内容 ... C:\Users\ASUS\AppData\Local\Programs\Python\Python310\lib\site-packages\django\core\handlers\base.py:61: UserWarning: No directory at: E:\all\01-2-软件大二下\软件工程基础\上机\softwork-project\staticfiles\
+主流程：审核博客/评论（切换逻辑删除）；异常：不存在的内容 ... D:\rgproject\final_work\.venv\lib\site-packages\django\core\handlers\base.py:58: UserWarning: No directory at: D:\rgproject\final_work\staticfiles\
   mw_instance = middleware(adapted_handler)
 ok
 test_admin_dashboard_access_control (test.test_integration_api.AdminApiTest)
@@ -184,6 +175,7 @@ test_blog_delete_main_and_abnormal (test.test_integration_api.BlogApiTest) ... o
 test_blog_publish_list_detail (test.test_integration_api.BlogApiTest) ... ok
 test_merchant_space_revenue_aggregation (test.test_integration_api.CrossModuleIntegrationTest)
 主流程：商家个人中心统计聚合（销售额/订单数/评价均值） ... ok
+test_order_state_changes_require_post (test.test_integration_api.CrossModuleIntegrationTest) ... ok
 test_order_status_endpoint_reflects_state (test.test_integration_api.CrossModuleIntegrationTest)
 主流程：订单状态页可访问；异常：别人不能操作/非法状态流转被拒绝 ... ok
 test_order_visibility_across_roles (test.test_integration_api.CrossModuleIntegrationTest)
@@ -194,6 +186,7 @@ test_food_detail_success_and_branches (test.test_integration_api.FoodApiTest)
 主流程：详情页正常；异常分支：缺参、不存在、已下架 ... ok
 test_food_list_and_search (test.test_integration_api.FoodApiTest)
 主流程：列表返回 200 且包含菜品；备选流程：关键词搜索命中 ... ok
+test_food_order_visibility_and_review_state_are_enforced (test.test_integration_api.FoodApiTest) ... ok
 test_food_requires_login (test.test_integration_api.FoodApiTest)
 异常流程：未登录访问美食列表被重定向 ... ok
 test_foodorder_add_to_cart_creates_temp (test.test_integration_api.FoodApiTest)
@@ -211,9 +204,7 @@ test_groupbuy_redeem_exception_branches (test.test_integration_api.GroupBuyApiTe
 test_groupbuy_validation_branches (test.test_integration_api.GroupBuyApiTest)
 异常流程：空数量 / 0 / 负数 / 非数字 ... ok
 test_hotel_booking_main_and_abnormal (test.test_integration_api.HotelApiTest)
-主流程：预订成功金额=单价×时长；异常：缺参/非法时长/非法时间/未知房型 ... C:\Users\ASUS\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\models\fields\__init__.py:1671: RuntimeWarning: DateTimeField HotelOrder.checkin_time received a naive datetime (2026-06-20 15:30:00) while time zone support is active.
-  warnings.warn(
-ok
+主流程：预订成功金额=单价×时长；异常：缺参/非法时长/非法时间/未知房型 ... ok
 test_hotel_list_search_detail (test.test_integration_api.HotelApiTest)
 主流程：列表、搜索、详情 ... ok
 test_hotel_orderpos_visibility (test.test_integration_api.HotelApiTest)
@@ -221,9 +212,7 @@ test_hotel_orderpos_visibility (test.test_integration_api.HotelApiTest)
 test_hotel_review_and_permission (test.test_integration_api.HotelApiTest)
 主流程：评价成功更新评分；异常：无权评价他人订单 ... ok
 test_play_list_search_detail (test.test_integration_api.PlayApiTest) ... ok
-test_play_order_main_and_abnormal (test.test_integration_api.PlayApiTest) ... C:\Users\ASUS\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\models\fields\__init__.py:1671: RuntimeWarning: DateTimeField PlayOrder.visit_time received a naive datetime (2026-06-21 09:00:00) while time zone support is active.
-  warnings.warn(
-ok
+test_play_order_main_and_abnormal (test.test_integration_api.PlayApiTest) ... ok
 test_play_orderpos_visibility (test.test_integration_api.PlayApiTest) ... ok
 test_play_review_and_permission (test.test_integration_api.PlayApiTest) ... ok
 test_uc01_abnormal_branches (test.test_e2e.AccountRegistrationE2ETest)
@@ -246,24 +235,16 @@ test_uc02_abnormal_branches (test.test_e2e.FoodDeliveryE2ETest)
 test_full_group_buy_scenario (test.test_e2e.GroupBuyE2ETest) ... ok
 test_uc03_abnormal_branches (test.test_e2e.GroupBuyE2ETest)
 异常流程：非法数量、非商家核销、空码/不存在/他人券、重复核销、已取消券 ... ok
-test_full_hotel_scenario (test.test_e2e.HotelE2ETest) ... C:\Users\ASUS\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\models\fields\__init__.py:1671: RuntimeWarning: DateTimeField HotelOrder.checkin_time received a naive datetime (2026-07-01 14:00:00) while time zone support is active.
-  warnings.warn(
-ok
+test_full_hotel_scenario (test.test_e2e.HotelE2ETest) ... ok
 test_uc04_abnormal_branches (test.test_e2e.HotelE2ETest)
-异常流程：房型/时长/时间非法拒订、非本人查看与评价被拒、非法评分与超长评价被拒 ... C:\Users\ASUS\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\models\fields\__init__.py:1671: RuntimeWarning: DateTimeField HotelOrder.checkin_time received a naive datetime (2026-08-26 10:00:00) while time zone support is active.
-  warnings.warn(
-ok
+异常流程：房型/时长/时间非法拒订、非本人查看与评价被拒、非法评分与超长评价被拒 ... ok
 test_uc06_abnormal_branches (test.test_e2e.MerchantSupplyE2ETest)
 备选/异常流程：非商家、字段缺失、价格/时间非法、图片非法、越权维护全部被拒 ... ok
 test_uc06_main_flow (test.test_e2e.MerchantSupplyE2ETest)
 主成功流程：商家发布美食/酒店/娱乐 → 列表与空间可见 → 维护菜品状态并同步用户侧 ... ok
-test_full_play_scenario (test.test_e2e.PlayE2ETest) ... C:\Users\ASUS\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\models\fields\__init__.py:1671: RuntimeWarning: DateTimeField PlayOrder.visit_time received a naive datetime (2026-07-02 09:00:00) while time zone support is active.
-  warnings.warn(
-ok
+test_full_play_scenario (test.test_e2e.PlayE2ETest) ... ok
 test_uc05_abnormal_branches (test.test_e2e.PlayE2ETest)
-异常流程：票数/时间非法拒购、场所不存在、非本人查看与评价被拒、非法评分被拒 ... C:\Users\ASUS\AppData\Local\Programs\Python\Python310\lib\site-packages\django\db\models\fields\__init__.py:1671: RuntimeWarning: DateTimeField PlayOrder.visit_time received a naive datetime (2026-08-26 09:00:00) while time zone support is active.
-  warnings.warn(
-ok
+异常流程：票数/时间非法拒购、场所不存在、非本人查看与评价被拒、非法评分被拒 ... ok
 test_http_error_returns_none (test.test_unit.LlmClientTest)
 异常分支：HTTP 非 2xx 状态码返回 None ... ok
 test_network_exception_returns_none (test.test_unit.LlmClientTest)
@@ -283,8 +264,8 @@ test_settings_match_sql_dump_database (test.test_database_config.DatabaseConfigT
 配置一致性：settings 数据库名应与 data_hex2.sql 声明的数据库一致 ... ok
 
 ----------------------------------------------------------------------
-Ran 104 tests in 0.956s
+Ran 106 tests in 2.206s
 
 OK
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('test_the_food_mas2')...
 ```

@@ -3,7 +3,6 @@ from django.conf import settings
 from .models import *
 from myapp.utils.llm_client import call_aliyun_llm
 import json
-from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -12,60 +11,78 @@ from django.utils import timezone
 import os
 import uuid
 import time
+from django.db import transaction
 from django.db.models import Sum, Max, Avg, Q, Count
 from django.core.cache import cache
-import hashlib
 import re
-from django.shortcuts import render, redirect, HttpResponse
+from django.shortcuts import render, redirect
 from django.contrib.auth import logout
-from django.shortcuts import redirect
 
 # 全局信息的缓存 key
 CACHE_KEY_GLOBAL_INFO = "global_platform_info"
 # 缓存时间（秒），可根据数据更新频率调整，例如 1 小时
 CACHE_TIMEOUT = 3600
 
+@require_POST
 def update_cart_item(request, tempid):
     """更新购物车中的数量或地址"""
-    if request.method == 'POST':
-        try:
-            user_id = request.session.get('user_id')
-            if not user_id:
-                return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
-            user = User.objects.get(id=user_id)
-            data = json.loads(request.body)
-            new_num = data.get('num')
-            new_address = data.get('address')
-            cart_item = Temp.objects.get(id=tempid, user=user)
-            if new_num is not None:
-                cart_item.num = int(new_num)
-                cart_item.cost = cart_item.food.price * cart_item.num
-            if new_address:
-                cart_item.address = new_address
-            cart_item.save()
-            return JsonResponse({'status': 'ok', 'num': cart_item.num, 'address': cart_item.address, 'cost': cart_item.cost})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'msg': str(e)}, status=400)
-    return JsonResponse({'status': 'error', 'msg': '仅支持POST'}, status=405)
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
 
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'status': 'error', 'msg': '请求数据格式错误'}, status=400)
+
+    cart_item = Temp.objects.filter(id=tempid, user_id=user_id, pos=0).select_related('food').first()
+    if not cart_item:
+        return JsonResponse({'status': 'error', 'msg': '购物车条目不存在'}, status=404)
+
+    new_num = data.get('num')
+    new_address = data.get('address')
+    if new_num is None and new_address is None:
+        return JsonResponse({'status': 'error', 'msg': '没有可更新的内容'}, status=400)
+
+    if new_num is not None:
+        try:
+            new_num = int(new_num)
+        except (TypeError, ValueError):
+            return JsonResponse({'status': 'error', 'msg': '数量必须是正整数'}, status=400)
+        if new_num <= 0:
+            return JsonResponse({'status': 'error', 'msg': '数量必须大于0'}, status=400)
+        cart_item.num = new_num
+
+    if new_address is not None:
+        new_address = str(new_address).strip()
+        if not new_address:
+            return JsonResponse({'status': 'error', 'msg': '配送地址不能为空'}, status=400)
+        cart_item.address = new_address
+
+    # Temp.cost 始终保存单价；响应中的 cost 是当前条目总价。
+    cart_item.cost = cart_item.food.price
+    cart_item.save(update_fields=['num', 'address', 'cost'])
+    return JsonResponse({
+        'status': 'ok',
+        'num': cart_item.num,
+        'address': cart_item.address,
+        'cost': cart_item.food.price * cart_item.num,
+    })
+
+@require_POST
 def delete_cart_item(request, tempid):
     """删除购物车记录"""
-    if request.method == 'POST':
-        try:
-            user_id = request.session.get('user_id')
-            if not user_id:
-                return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
-            user = User.objects.get(id=user_id)
-            cart_item = Temp.objects.get(id=tempid, user=user)
-            cart_item.delete()
-            return JsonResponse({'status': 'ok'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'msg': str(e)}, status=400)
-    return JsonResponse({'status': 'error', 'msg': '仅支持POST'}, status=405)
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
+    deleted, _ = Temp.objects.filter(id=tempid, user_id=user_id, pos=0).delete()
+    if not deleted:
+        return JsonResponse({'status': 'error', 'msg': '购物车条目不存在'}, status=404)
+    return JsonResponse({'status': 'ok'})
 
 @require_POST
 def clear_cart(request):
-    """清空购物车：将当前用户所有购物车记录迁移到 CartHistory，然后删除"""
+    """将当前用户的有效购物车条目原子地转换为订单。"""
     user_id = request.session.get('user_id')
     if not user_id:
         return JsonResponse({'status': 'error', 'msg': '未登录'}, status=401)
@@ -75,34 +92,36 @@ def clear_cart(request):
     except User.DoesNotExist:
         return JsonResponse({'status': 'error', 'msg': '用户不存在'}, status=401)
 
-    # 获取当前用户所有购物车项
-    cart_items = Temp.objects.filter(user=user, pos=0)
-    if not cart_items.exists():
-        return JsonResponse({'status': 'ok', 'msg': '购物车已是空的'})
+    with transaction.atomic():
+        cart_items = list(
+            Temp.objects.select_for_update().filter(user=user, pos=0).select_related('food')
+        )
+        if not cart_items:
+            return JsonResponse({'status': 'ok', 'msg': '购物车已是空的'})
 
-    unavailable = cart_items.filter(Q(food__is_off_shelf=True) | Q(food__is_sold_out=True)).select_related('food')
-    if unavailable.exists():
-        names = '、'.join(item.food.name for item in unavailable)
-        return JsonResponse({'status': 'error', 'msg': f'{names} 已下架或售罄，请先从购物车删除'}, status=400)
+        unavailable = [item.food.name for item in cart_items if item.food.is_off_shelf or item.food.is_sold_out]
+        if unavailable:
+            names = '、'.join(unavailable)
+            return JsonResponse({'status': 'error', 'msg': f'{names} 已下架或售罄，请先从购物车删除'}, status=400)
 
-    # 批量创建历史记录
-    affected_foods = set()
-    for item in cart_items:
-        Order.objects.create(
+        if any(item.num <= 0 or not item.address.strip() for item in cart_items):
+            return JsonResponse({'status': 'error', 'msg': '购物车中存在无效数量或配送地址'}, status=400)
+
+        Order.objects.bulk_create([
+            Order(
                 user=user,
                 food=item.food,
                 num=item.num,
-                address=item.address,
-                cost=item.food.price * item.num,  # 订单金额 = 单价 × 数量（避免重复累乘）
-                pos=0
+                address=item.address.strip(),
+                cost=item.food.price * item.num,
+                pos=0,
             )
-        affected_foods.add(item.food)
-
-    for food in affected_foods:
-        sync_food_sales(food)
-
-    # 删除原购物车记录
-    cart_items.delete()
+            for item in cart_items
+        ])
+        affected_foods = {item.food for item in cart_items}
+        Temp.objects.filter(id__in=[item.id for item in cart_items]).delete()
+        for food in affected_foods:
+            sync_food_sales(food)
 
     return JsonResponse({'status': 'ok', 'msg': '购物车已清空'})
 
@@ -144,7 +163,10 @@ def ai_chat_view(request):
         if not user_id:
             return redirect('/index/')
         
-        user = User.objects.filter(id=user_id).first()
+        user = User.objects.filter(id=user_id, isDelete=False).first()
+        if not user:
+            request.session.flush()
+            return redirect('/index/')
         user_input = request.POST.get("user_input", "").strip()
         if not user_input:
             return JsonResponse({"error": "输入不能为空"}, status=400)
@@ -557,19 +579,28 @@ def foodorder(request):
 
     if request.method == 'POST':
         num = request.POST.get('num')
-        address = request.POST.get('address')
-        cutlery = request.POST.get('cutlery')  # 是否需要餐具，前端传递 "on" 或 None
+        address = request.POST.get('address', '').strip()
+        cutlery = request.POST.get('cutlery')
         
         if not num or not address:
             return HttpResponse("请填写完整的下单信息！")
-            
+
+        try:
+            num = int(num)
+        except (TypeError, ValueError):
+            return HttpResponse("购买数量必须是正整数！")
+        if num <= 0:
+            return HttpResponse("购买数量必须大于0！")
+        if cutlery not in ('1', '2'):
+            return HttpResponse("请选择立即下单或加入购物车！")
+
         if cutlery == "1":
             Order.objects.create(
                 user_id=user_id,
                 food_id=food_id,
                 num=num,
                 address=address,
-                cost=food.price * int(num),
+                cost=food.price * num,
                 pos=0
             )
             sync_food_sales(food)
@@ -580,7 +611,7 @@ def foodorder(request):
                 food_id=food_id,
                 num=num,
                 address=address,
-                cost=food.price, # 这里是单价所以不要乘以数量!!!!
+                cost=food.price,
                 pos=0
             )
 
@@ -656,35 +687,44 @@ def groupbuy_redeem(request):
     return redirect('/space/')
 
 def orderpos(request):
-    if not request.session.get('user_id'):
+    user_id = request.session.get('user_id')
+    if not user_id:
         return redirect('/index/')
         
     order_id = request.GET.get('orderid') 
     if not order_id:
         return HttpResponse("参数错误！")
         
-    order = Order.objects.filter(id=order_id).first()
+    order = Order.objects.filter(id=order_id, user_id=user_id).select_related('food', 'rider').first()
     if not order:
+        if Order.objects.filter(id=order_id).exists():
+            return HttpResponse("无权查看该订单！")
         return HttpResponse("订单不存在！")
     
     return render(request, 'foodorder/orderpos.html', {'orders': order})
 
 def ordercomment(request):
-    if not request.session.get('user_id'):
+    user_id = request.session.get('user_id')
+    if not user_id:
         return redirect('/index/')
         
     order_id = request.GET.get('orderid')
     if not order_id:
         return HttpResponse("参数错误！")
         
-    order = Order.objects.filter(id=order_id).first()
+    order = Order.objects.filter(id=order_id, user_id=user_id).first()
     if not order:
+        if Order.objects.filter(id=order_id).exists():
+            return HttpResponse("无权评价该订单！")
         return HttpResponse("订单不存在！")
-        
+
+    if order.pos != 4:
+        return HttpResponse("该订单当前不可评价！")
+
     if request.method == 'POST':
         scoretofood = request.POST.get('scoretofood')
         scoretodeliver = request.POST.get('scoretodeliver')
-        comment = request.POST.get('comment', '')
+        comment = request.POST.get('comment', '').strip()
         
         # 基本校验
         try:
@@ -769,11 +809,6 @@ def blogsdetails(request):
         user = User.objects.filter(id=comment.userid).first()
         comment.username = user.username if user else '匿名用户'
 
-    print(f"blog.authorid.id: {blog.authorid.id}")
-    print(f"user_id: {user_id}")
-    print(type(blog.authorid.id))
-    print(type(user_id))
-    
     return render(request, 'blog/blogsdetails.html', {'blog': blog, 'user_id': user_id, 'author_name': author_name, 'comments': comments})
 
 @require_http_methods(["POST"])
@@ -806,7 +841,7 @@ def blogcomment(request):
 
     # 获取博客对象
     try:
-        blog = Blog.objects.get(id=blog_id)
+        blog = Blog.objects.get(id=blog_id, isdeleted=False)
     except Blog.DoesNotExist:
         return JsonResponse({'error': '博客不存在'}, status=404)
 

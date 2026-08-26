@@ -1,15 +1,17 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django.db import transaction
+from django.db.models import Avg, Count, F, Q
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from django.db.models import Avg, Count, Q
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
 from .models import *
 from .views import is_merchant, is_rider, get_login_user
 import os
 import uuid
 import time
-from django.conf import settings  
 
 ROOM_PRICE_FIELDS = {
     'single_clock': 'price_clock',
@@ -35,6 +37,14 @@ def get_hotel_room_price(hotel, room_type):
     return getattr(hotel, field, None)
 
 
+def parse_business_datetime(value):
+    """解析表单时间，并在启用时区时转换为当前时区的 aware datetime。"""
+    parsed = parse_datetime(value)
+    if parsed and settings.USE_TZ and timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
 def update_hotel_rating(hotel):
     stats = HotelOrder.objects.filter(hotel=hotel, pos=5, score__gt=0).aggregate(
         avg_score=Avg('score'),
@@ -51,6 +61,9 @@ def update_hotel_rating(hotel):
 
 
 def save_hotel_review(order, score, comment):
+    if order.pos != 4:
+        return "该订单当前不可评价！"
+
     try:
         s = float(score)
         if not (0.0 < s <= 5.0):
@@ -58,6 +71,7 @@ def save_hotel_review(order, score, comment):
     except (TypeError, ValueError):
         return "评分必须是数值！"
 
+    comment = (comment or '').strip()
     if len(comment) > 200:
         return "评论长度不能超过200个字符！"
 
@@ -217,22 +231,22 @@ def hotelorder(request):
         except (TypeError, ValueError):
             return HttpResponse("入住时间长度必须是正整数！")
 
-        checkin_dt = parse_datetime(checkin_time)
+        checkin_dt = parse_business_datetime(checkin_time)
         if not checkin_dt:
             return HttpResponse("入住时间格式不正确！")
 
         cost = price * duration
-        HotelOrder.objects.create(
-            user_id=user_id,
-            hotel_id=hotel_id,
-            room_type=room_type,
-            duration=duration,
-            checkin_time=checkin_dt,
-            cost=cost,
-            pos=4,
-        )
-        hotel.orders += 1
-        hotel.save()
+        with transaction.atomic():
+            HotelOrder.objects.create(
+                user_id=user_id,
+                hotel_id=hotel_id,
+                room_type=room_type,
+                duration=duration,
+                checkin_time=checkin_dt,
+                cost=cost,
+                pos=4,
+            )
+            Hotel.objects.filter(id=hotel_id).update(orders=F('orders') + 1)
 
         return redirect(f'/hoteldetails/?hotelid={hotel_id}')
 
@@ -252,6 +266,9 @@ def hotelcomment(request):
 
     if order.user_id != request.session.get('user_id'):
         return HttpResponse("无权评价该订单！")
+
+    if order.pos != 4:
+        return HttpResponse("该订单当前不可评价！")
 
     if request.method == 'POST':
         score = request.POST.get('score')
@@ -320,6 +337,9 @@ def update_play_rating(play):
 
 def save_play_review(order, score, comment):
     """校验并保存娱乐订单评价，返回错误信息或 None"""
+    if order.pos != 4:
+        return "该订单当前不可评价！"
+
     try:
         s = float(score)
         if not (0.0 < s <= 5.0):
@@ -327,6 +347,7 @@ def save_play_review(order, score, comment):
     except (TypeError, ValueError):
         return "评分必须是数值！"
 
+    comment = (comment or '').strip()
     if len(comment) > 200:
         return "评论长度不能超过200个字符！"
 
@@ -490,21 +511,21 @@ def playorder(request):
         except (TypeError, ValueError):
             return HttpResponse("购买票数必须是正整数！")
 
-        visit_dt = parse_datetime(visit_time)
+        visit_dt = parse_business_datetime(visit_time)
         if not visit_dt:
             return HttpResponse("预定时间格式不正确！")
 
         cost = play.price * num
-        PlayOrder.objects.create(
-            user_id=user_id,
-            play_id=play_id,
-            num=num,
-            visit_time=visit_dt,
-            cost=cost,
-            pos=4,
-        )
-        play.orders += 1
-        play.save()
+        with transaction.atomic():
+            PlayOrder.objects.create(
+                user_id=user_id,
+                play_id=play_id,
+                num=num,
+                visit_time=visit_dt,
+                cost=cost,
+                pos=4,
+            )
+            Play.objects.filter(id=play_id).update(orders=F('orders') + 1)
 
         return redirect(f'/playdetails/?playid={play_id}')
 
@@ -526,6 +547,9 @@ def playcomment(request):
 
     if order.user_id != request.session.get('user_id'):
         return HttpResponse("无权评价该订单！")
+
+    if order.pos != 4:
+        return HttpResponse("该订单当前不可评价！")
 
     if request.method == 'POST':
         score = request.POST.get('score')
@@ -592,6 +616,7 @@ def rider_orders(request):
     })
 
 
+@require_POST
 def rider_accept(request):
     """骑手接单：pos=0 → pos=1，绑定骑手"""
     user = get_login_user(request)
@@ -604,16 +629,13 @@ def rider_accept(request):
     if not order_id:
         return HttpResponse("参数错误！")
 
-    order = Order.objects.filter(id=order_id, pos=0).first()
-    if not order:
+    updated = Order.objects.filter(id=order_id, pos=0, rider__isnull=True).update(pos=1, rider=user)
+    if not updated:
         return HttpResponse('<script>alert("该订单已被其他骑手接走或不存在！");history.back();</script>')
-
-    order.pos = 1
-    order.rider = user
-    order.save()
     return redirect('/rider/')
 
 
+@require_POST
 def rider_deliver(request):
     """骑手已送达：pos=3 → pos=4"""
     user = get_login_user(request)
@@ -626,14 +648,12 @@ def rider_deliver(request):
     if not order_id:
         return HttpResponse("参数错误！")
 
-    order = Order.objects.filter(id=order_id, pos=3, rider=user).first()
-    if not order:
+    updated = Order.objects.filter(id=order_id, pos=3, rider=user).update(pos=4)
+    if not updated:
         return HttpResponse('<script>alert("该订单无法操作或不属于您！");history.back();</script>')
-
-    order.pos = 4
-    order.save()
     return redirect('/space/')
 
+@require_POST
 def rider_get(request):
     """骑手已取餐：pos=2 → pos=3"""
     user = get_login_user(request)
@@ -646,15 +666,13 @@ def rider_get(request):
     if not order_id:
         return HttpResponse("参数错误！")
 
-    order = Order.objects.filter(id=order_id, pos=2, rider=user).first()
-    if not order:
+    updated = Order.objects.filter(id=order_id, pos=2, rider=user).update(pos=3)
+    if not updated:
         return HttpResponse('<script>alert("该订单无法操作或不属于您！");history.back();</script>')
-
-    order.pos = 3
-    order.save()
     return redirect('/space/')
 
 
+@require_POST
 def merchant_prepare(request):
     """商家完成食物准备：pos=1 → pos=2"""
     user = get_login_user(request)
@@ -667,10 +685,7 @@ def merchant_prepare(request):
     if not order_id:
         return HttpResponse("参数错误！")
 
-    order = Order.objects.filter(id=order_id, pos=1, food__merchant=user).first()
-    if not order:
+    updated = Order.objects.filter(id=order_id, pos=1, food__merchant=user).update(pos=2)
+    if not updated:
         return HttpResponse('<script>alert("该订单无法操作或不属于您的商品！");history.back();</script>')
-
-    order.pos = 2
-    order.save()
     return redirect('/space/')

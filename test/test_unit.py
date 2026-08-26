@@ -148,6 +148,11 @@ class HotelReviewRuleTest(TestCase):
         self.assertEqual(self.hotel.ratenum, 1)
         self.assertEqual(self.hotel.orders, 0)  # 评价不增加订单数
 
+        error = views1.save_hotel_review(order, "1.0", "重复评价")
+        self.assertIn("当前不可评价", error)
+        order.refresh_from_db()
+        self.assertEqual(str(order.score), "4.5")
+
     def test_save_hotel_review_zero_score_rejected(self):
         """异常分支：0 分不允许"""
         order = self._order()
@@ -242,6 +247,11 @@ class PlayReviewRuleTest(TestCase):
         self.assertEqual(str(order.score), "4.5")
         self.assertEqual(str(self.play.rating), "4.5")
         self.assertEqual(self.play.ratenum, 1)
+
+        error = views1.save_play_review(order, "1.0", "重复评价")
+        self.assertIn("当前不可评价", error)
+        order.refresh_from_db()
+        self.assertEqual(str(order.score), "4.5")
 
     def test_save_play_review_invalid_scores_rejected(self):
         """异常分支：0/超5/非数值均被拒绝"""

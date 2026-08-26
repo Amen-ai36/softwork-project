@@ -129,9 +129,15 @@
                     </td>
                     <td class="td-action">
                         {% if order.pos == 2 %}
-                            <a href="/rider_get/?orderid={{ order.id }}" class="btn-table-action success">✅ 已取餐</a>
+                            <form action="/rider_get/?orderid={{ order.id }}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-table-action success">✅ 已取餐</button>
+                            </form>
                         {% elif order.pos == 3 %}
-                            <a href="/rider_deliver/?orderid={{ order.id }}" class="btn-table-action success">✅ 已送达</a>
+                            <form action="/rider_deliver/?orderid={{ order.id }}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-table-action success">✅ 已送达</button>
+                            </form>
                         {% else %}
                             <span class="btn-table-action disabled">🚫 暂无操作</span>
                         {% endif %}
@@ -414,7 +420,10 @@
                     <td class="td-sub">{{ order.time|date:"m-d H:i" }}</td>
                     <td class="td-action">
                         {% if order.pos == 1 %}
-                            <a href="/merchant_prepare/?orderid={{ order.id }}" class="btn-table-action success">🍳 完成备餐</a>
+                            <form action="/merchant_prepare/?orderid={{ order.id }}" method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-table-action success">🍳 完成备餐</button>
+                            </form>
                         {% else %}
                             <span class="btn-table-action disabled">🚫 暂无操作</span>
                         {% endif %}

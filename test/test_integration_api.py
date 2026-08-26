@@ -335,6 +335,20 @@ class FoodApiTest(ApiTestCase):
         response = client.post("/foodorder/", {"num": "1", "address": "a", "cutlery": "1"})
         self.assertContains(response, "参数错误")
 
+        for bad_num in ("0", "-1", "abc"):
+            with self.subTest(num=bad_num):
+                response = client.post(
+                    f"/foodorder/?foodid={self.food.id}",
+                    {"num": bad_num, "address": "a", "cutlery": "1"},
+                )
+                self.assertIn("购买数量", response.content.decode())
+
+        response = client.post(
+            f"/foodorder/?foodid={self.food.id}",
+            {"num": "1", "address": "a", "cutlery": "unexpected"},
+        )
+        self.assertContains(response, "请选择立即下单或加入购物车")
+
     def test_cart_update_delete_clear_api(self):
         """购物车 API：更新（主）、删除（主）、清空下单（主）、未登录/不存在（异常）"""
         client = self.login_as(self.user)
@@ -372,11 +386,25 @@ class FoodApiTest(ApiTestCase):
         )
         self.assertEqual(response.status_code, 401)
 
-        # 异常流程：不存在的购物车项 → 400
+        # 异常流程：不存在的购物车项 → 404
         response = client.post(
             "/cart/update/999999/", data=json.dumps({"num": 1}), content_type="application/json"
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 404)
+
+        client.post(f"/foodorder/?foodid={self.food.id}", {"num": "1", "address": "a", "cutlery": "2"})
+        temp = Temp.objects.get(user=self.user, food=self.food)
+        for payload, expected in [
+            ({"num": 0}, "数量必须大于0"),
+            ({"num": "bad"}, "数量必须是正整数"),
+            ({"address": "   "}, "配送地址不能为空"),
+        ]:
+            with self.subTest(payload=payload):
+                response = client.post(
+                    f"/cart/update/{temp.id}/", data=json.dumps(payload), content_type="application/json"
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(expected, response.json()["msg"])
 
         # 异常流程：GET 方式删除 → 405
         response = Client().get("/cart/delete/999999/")
@@ -392,6 +420,56 @@ class FoodApiTest(ApiTestCase):
         self.assertIn("已下架或售罄", response.json()["msg"])
         self.food.is_off_shelf = False
         self.food.save(update_fields=["is_off_shelf"])
+
+    def test_food_order_visibility_and_review_state_are_enforced(self):
+        owner = self.login_as(self.user)
+        stranger = User.objects.create(
+            username="food_stranger", password="abc12345", phone="13800000021", usertype=0
+        )
+        stranger_client = self.login_as(stranger)
+        order = Order.objects.create(
+            user=self.user,
+            food=self.food,
+            num=1,
+            cost=self.food.price,
+            address="隐私测试地址",
+            pos=3,
+        )
+
+        self.assertContains(stranger_client.get("/orderpos/", {"orderid": order.id}), "无权查看该订单")
+        self.assertContains(
+            stranger_client.post(
+                f"/ordercomment/?orderid={order.id}",
+                {"scoretofood": "5", "scoretodeliver": "5", "comment": "越权"},
+            ),
+            "无权评价该订单",
+        )
+        self.assertContains(
+            owner.post(
+                f"/ordercomment/?orderid={order.id}",
+                {"scoretofood": "5", "scoretodeliver": "5", "comment": "过早评价"},
+            ),
+            "该订单当前不可评价",
+        )
+
+        order.pos = 4
+        order.save(update_fields=["pos"])
+        response = owner.post(
+            f"/ordercomment/?orderid={order.id}",
+            {"scoretofood": "4.5", "scoretodeliver": "5", "comment": "首次评价"},
+        )
+        self.assertEqual(response.status_code, 302)
+        order.refresh_from_db()
+        self.assertEqual(order.pos, 5)
+
+        response = owner.post(
+            f"/ordercomment/?orderid={order.id}",
+            {"scoretofood": "1", "scoretodeliver": "1", "comment": "重复评价"},
+        )
+        self.assertContains(response, "该订单当前不可评价")
+        order.refresh_from_db()
+        self.assertEqual(str(order.scoretofood), "4.5")
+        self.assertEqual(order.comment, "首次评价")
 
     def test_merchant_food_action_toggles(self):
         """商家商品管理 API：下架/售罄切换（主）、权限与归属（异常）"""
@@ -761,6 +839,15 @@ class BlogApiTest(ApiTestCase):
         )
         self.assertEqual(response.status_code, 404)
 
+        # 异常：已逻辑删除的博客不可继续评论
+        blog.isdeleted = True
+        blog.save(update_fields=["isdeleted"])
+        response = client.post(
+            "/blogcomment/", data=json.dumps({"blog_id": blog.id, "content": "x"}), content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(Comment.objects.filter(blogid=blog).count(), 1)
+
         # 异常：非法 JSON
         response = client.post("/blogcomment/", data="not-json", content_type="application/json")
         self.assertEqual(response.status_code, 400)
@@ -962,7 +1049,7 @@ class CrossModuleIntegrationTest(ApiTestCase):
         self.assertContains(response, "接单")
 
         # 骑手接单
-        response = rider_client.get(f"/rider_accept/?orderid={order.id}")
+        response = rider_client.post(f"/rider_accept/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 1)
@@ -974,19 +1061,19 @@ class CrossModuleIntegrationTest(ApiTestCase):
         self.assertContains(response, "完成备餐")
 
         # 商家备餐
-        response = merchant_client.get(f"/merchant_prepare/?orderid={order.id}")
+        response = merchant_client.post(f"/merchant_prepare/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 2)
 
         # 骑手取餐
-        response = rider_client.get(f"/rider_get/?orderid={order.id}")
+        response = rider_client.post(f"/rider_get/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 3)
 
         # 骑手送达
-        response = rider_client.get(f"/rider_deliver/?orderid={order.id}")
+        response = rider_client.post(f"/rider_deliver/?orderid={order.id}")
         self.assertEqual(response.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.pos, 4)
@@ -1021,7 +1108,7 @@ class CrossModuleIntegrationTest(ApiTestCase):
         other_order = Order.objects.create(
             user=self.user, food=self.food, num=1, cost=self.food.price, address="b", pos=3, rider=stranger_rider
         )
-        response = self.login_as(self.rider).get(f"/rider_deliver/?orderid={other_order.id}")
+        response = self.login_as(self.rider).post(f"/rider_deliver/?orderid={other_order.id}")
         self.assertContains(response, "该订单无法操作或不属于您")
         other_order.refresh_from_db()
         self.assertEqual(other_order.pos, 3)
@@ -1029,6 +1116,16 @@ class CrossModuleIntegrationTest(ApiTestCase):
         # 异常：普通用户不能访问骑手专属页
         response = user_client.get("/rider/")
         self.assertContains(response, "只有骑手可以访问此页面")
+
+    def test_order_state_changes_require_post(self):
+        order = Order.objects.create(
+            user=self.user, food=self.food, num=1, cost=self.food.price, address="方法测试", pos=0
+        )
+        rider_client = self.login_as(self.rider)
+        response = rider_client.get(f"/rider_accept/?orderid={order.id}")
+        self.assertEqual(response.status_code, 405)
+        order.refresh_from_db()
+        self.assertEqual(order.pos, 0)
 
     def test_merchant_space_revenue_aggregation(self):
         """主流程：商家个人中心统计聚合（销售额/订单数/评价均值）"""
