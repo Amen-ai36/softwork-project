@@ -128,7 +128,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': first_env('FOOD_DELIVER_DB_NAME', 'MYSQLDATABASE', default='the_food_mas2'),
         'USER': first_env('FOOD_DELIVER_DB_USER', 'MYSQLUSER', default='root'),
-        'PASSWORD': first_env('FOOD_DELIVER_DB_PASSWORD', 'MYSQLPASSWORD', default='changeme'),
+        'PASSWORD': first_env('FOOD_DELIVER_DB_PASSWORD', 'MYSQLPASSWORD', default='Buaa362880!'),
         'HOST': first_env('FOOD_DELIVER_DB_HOST', 'MYSQLHOST', default='localhost'),
         'PORT': first_env('FOOD_DELIVER_DB_PORT', 'MYSQLPORT', default='3306'),
     }

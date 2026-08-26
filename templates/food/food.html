@@ -1,529 +1,244 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>美食列表 · Life Master</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "app_base.html" %}
 
-        body {
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&h=1080&fit=crop&q=85') no-repeat center center fixed;
-            background-size: cover;
-            background-color: #1a2a1a; /* 后备色 */
-            min-height: 100vh;
-            padding: 2rem;
-        }
+{% block title %}美食服务平台 · Life Master 商户与消费中心{% endblock %}
+{% block page_title %}美食名录管理{% endblock %}
 
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 28px;
-            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            transition: all 0.2s;
-        }
-
-        /* header 使用 flex 布局，让标题和按钮在同一行 */
-        .header {
-            background: #2d3e2b;
-            padding: 1.5rem 2rem;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .header h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            letter-spacing: -0.3px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header h2::before {
-            content: "🍜";
-            font-size: 1.8rem;
-        }
-
-        /* 个人中心按钮样式 */
-        .user-btn {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(4px);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 0.5rem 1.2rem;
-            border-radius: 40px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .user-btn:hover {
-            background: #ffb347;
-            color: #2d3e2b;
-            border-color: #ffb347;
-            transform: translateY(-2px);
-        }
-
-        .search-bar {
-            padding: 1.2rem 1rem 0.5rem 1rem;
-        }
-
-        .search-form {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-            flex-wrap: wrap;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 0.75rem;
-        }
-
-        .search-input {
-            flex: 1;
-            min-width: 220px;
-            border: 1px solid #d7dde6;
-            border-radius: 12px;
-            padding: 0.7rem 0.9rem;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .search-input:focus {
-            border-color: #ffb347;
-            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.18);
-        }
-
-        .search-btn,
-        .clear-btn {
-            border: none;
-            border-radius: 12px;
-            padding: 0.7rem 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .search-btn {
-            background: #2d3e2b;
-            color: white;
-        }
-
-        .clear-btn {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .search-summary {
-            width: 100%;
-            color: #64748b;
-            font-size: 0.88rem;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            padding: 0 1rem 1.5rem 1rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }
-
-        th {
-            background-color: #f5f3ef;
-            color: #2d3e2b;
-            font-weight: 600;
-            padding: 1rem 0.8rem;
-            text-align: left;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        td {
-            padding: 0.9rem 0.8rem;
-            border-bottom: 1px solid #edf2f7;
-            color: #1f2937;
-        }
-
-        tr:hover td {
-            background-color: #fef9e6;
-            transition: 0.1s;
-        }
-
-        td:nth-child(2) {
-            font-weight: 600;
-            color: #e67e22;
-        }
-
-        .detail-btn {
-            background: #ffb347;
-            color: #2d3e2b;
-            border: none;
-            padding: 0.4rem 1rem;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: 0.2s;
-        }
-
-        .detail-btn:hover {
-            background: #ff9f1c;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .empty-row td {
-            text-align: center;
-            color: #94a3b8;
-            font-style: italic;
-            padding: 2rem;
-        }
-
-        @media (max-width: 640px) {
-            body {
-                padding: 1rem;
-            }
-            th, td {
-                padding: 0.6rem 0.4rem;
-                font-size: 0.85rem;
-            }
-            .header h2 {
-                font-size: 1.4rem;
-            }
-            .user-btn {
-                font-size: 0.85rem;
-                padding: 0.4rem 1rem;
-            }
-            .detail-btn {
-                padding: 0.2rem 0.8rem;
-                font-size: 0.75rem;
-            }
-        }
-
-        #plus-button {
-            width: 60px;
-            height: 60px;
-            background: #ffb347;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: #2d3e2b;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: fixed;
-            bottom: calc(2rem + 80px);
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        #plus-button:hover {
-            transform: scale(1.1);
-            background: #ff9f1c;
-        }
-
-        /* AI Chat Widget */
-        #ai-chat-widget {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        #ai-chat-icon {
-            background: #ffb347;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        #ai-chat-icon:hover {
-            transform: scale(1.1);
-        }
-
-        #ai-chat-box {
-            position: absolute;
-            bottom: 75px;
-            right: 0;
-            width: 320px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            overflow: hidden;
-            border: 1px solid #edf2f7;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #ai-chat-header {
-            background: #2d3e2b;
-            color: white;
-            padding: 1rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        #ai-chat-close {
-            cursor: pointer;
-            font-size: 1.2rem;
-            opacity: 0.8;
-            user-select: none;
-        }
-
-        #ai-chat-close:hover {
-            opacity: 1;
-        }
-
-        #ai-chat-messages {
-            height: 350px;
-            padding: 1rem;
-            overflow-y: auto;
-            background: #f8f9fc;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .chat-msg {
-            max-width: 85%;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .msg-user {
-            align-self: flex-end;
-            background: #ffb347;
-            color: #2d3e2b;
-            border-bottom-right-radius: 4px;
-        }
-
-        .msg-ai {
-            align-self: flex-start;
-            background: white;
-            color: #1f2937;
-            border: 1px solid #e2e8f0;
-            border-bottom-left-radius: 4px;
-        }
-
-        #ai-chat-input {
-            padding: 1rem;
-            background: white;
-            border-top: 1px solid #edf2f7;
-            display: flex;
-            gap: 8px;
-        }
-
-        #ai-chat-input input {
-            flex: 1;
-            padding: 0.6rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            outline: none;
-        }
-
-        #ai-chat-input input:focus {
-            border-color: #ffb347;
-        }
-
-        #ai-chat-input button {
-            background: #2d3e2b;
-            color: white;
-            border: none;
-            padding: 0 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-
-        #ai-chat-input button:hover {
-            background: #3a5038;
-        }
-
-        .sort-icons {
-            display: inline-flex;
-            flex-direction: column;      /* 垂直排列 */
-            align-items: center;
-            margin-left: 6px;
-            font-size: 0.7rem;          /* 适当缩小三角形 */
-            line-height: 1;
-            vertical-align: middle;
-        }
-
-        .sort-asc, .sort-desc {
-            cursor: pointer;
-            color: #aaa;
-            transition: color 0.1s;
-            user-select: none;
-        }
-
-        .sort-asc:hover, .sort-desc:hover {
-            color: #ffb347 !important;
-        }
-
-        .hot-label {
-            background-color: #0a58ca;  /* 蓝色背景 */
-            color: white;               /* 白色文字 */
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin-left: 0.5rem;
-            display: inline-block;
-            vertical-align: middle;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h2>美食中心</h2>
-        <a href="/blog" class="user-btn">📝 博客中心</a>
-        <a href="/play" class="user-btn">🎮 娱乐中心</a>
-        <a href="/hotel" class="user-btn">🏨 酒店民宿</a>
-        <a href="/space" class="user-btn">👤 个人中心</a>
+{% block content %}
+<div class="page-title-bar">
+    <div>
+        <h1>🍽️ 美食中心</h1>
+        <div class="page-sub">甄选美味，发现生活中的每一份好味道</div>
     </div>
-    <div class="search-bar">
-        <form class="search-form" action="/food/" method="get">
-            <input class="search-input" type="search" name="q" value="{{ keyword }}" placeholder="搜索食物名称、提供商或简介">
-            <button class="search-btn" type="submit">搜索</button>
+</div>
+
+<div class="panel-card">
+    <!-- 检索过滤与胶囊区 -->
+    <div class="filter-header">
+        <form class="search-form-row" action="/food/" method="get">
+            <div class="input-group">
+                <span class="search-icon-inside">🔍</span>
+                <input id="mainSearchInput" class="search-input" type="search" name="q" value="{{ keyword }}" placeholder="搜索商品名称、商户或特征...">
+                <span class="shortcut-badge">/</span>
+            </div>
+            <button class="btn btn-primary" type="submit">查询数据</button>
             {% if keyword %}
-            <a class="clear-btn" href="/food/">清空</a>
-            <div class="search-summary">正在搜索：{{ keyword }}，共 {{ foods|length }} 条结果</div>
+            <a class="btn btn-default" href="/food/">重置筛选</a>
+            <div class="search-meta-text">
+                正在检索关键词：“<strong>{{ keyword }}</strong>”，共筛选出 <strong>{{ foods|length }}</strong> 条记录
+            </div>
             {% endif %}
         </form>
+
+        <!-- 即时切片胶囊 (客户端多维快筛) -->
+        <div class="quick-filter-pills">
+            <span class="pill-label">快速筛选：</span>
+            <button type="button" class="filter-pill active" onclick="applyQuickFilter('all', this)">全部商品</button>
+            <button type="button" class="filter-pill" onclick="applyQuickFilter('in-stock', this)">仅看在售</button>
+            <button type="button" class="filter-pill" onclick="applyQuickFilter('top-rated', this)">高分口碑 (★ 4.5+)</button>
+            <button type="button" class="filter-pill" onclick="applyQuickFilter('hot-sale', this)">热销榜前列</button>
+        </div>
     </div>
-    <div class="table-wrapper">
+
+    <!-- 排序控制栏 -->
+    <div class="table-toolbar">
+        <div class="sort-group">
+            <button type="button" class="sort-btn active" id="sort-default" onclick="resetSort()">综合排序</button>
+            <button type="button" class="sort-btn" id="tab-sale" onclick="triggerSort('sale')">
+                销量
+                <span class="sort-indicators">
+                    <svg class="arrow-up" viewBox="0 0 10 6"><path d="M5 0L10 6H0L5 0Z"/></svg>
+                    <svg class="arrow-down" viewBox="0 0 10 6"><path d="M5 6L0 0H10L5 6Z"/></svg>
+                </span>
+            </button>
+            <button type="button" class="sort-btn" id="tab-price" onclick="triggerSort('price')">
+                价格
+                <span class="sort-indicators">
+                    <svg class="arrow-up" viewBox="0 0 10 6"><path d="M5 0L10 6H0L5 0Z"/></svg>
+                    <svg class="arrow-down" viewBox="0 0 10 6"><path d="M5 6L0 0H10L5 6Z"/></svg>
+                </span>
+            </button>
+            <button type="button" class="sort-btn" id="tab-rating" onclick="triggerSort('rating')">
+                评分
+                <span class="sort-indicators">
+                    <svg class="arrow-up" viewBox="0 0 10 6"><path d="M5 0L10 6H0L5 0Z"/></svg>
+                    <svg class="arrow-down" viewBox="0 0 10 6"><path d="M5 6L0 0H10L5 6Z"/></svg>
+                </span>
+            </button>
+        </div>
+
+        <div class="data-summary">
+            当前展示：<strong id="displayCount">{{ foods|length }}</strong> / {{ foods|length }} 项
+        </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
-                    <th>食物名称</th>
-                    <th>价格
-                        <span class="sort-icons" data-field="price" style="cursor:pointer;">
-                            <span class="sort-asc" data-order="asc">▲</span>
-                            <span class="sort-desc" data-order="desc">▼</span>
-                        </span>
-                    </th>
-                    <th>提供商</th>
-                    <th>销量
-                        <span class="sort-icons" data-field="sale" style="cursor:pointer;">
-                            <span class="sort-asc" data-order="asc">▲</span>
-                            <span class="sort-desc" data-order="desc">▼</span>
-                        </span>
-                    </th>
-                    <th>评分
-                        <span class="sort-icons" data-field="rating" style="cursor:pointer;">
-                            <span class="sort-asc" data-order="asc">▲</span>
-                            <span class="sort-desc" data-order="desc">▼</span>
-                        </span>
-                    </th>
-                    <th>详情一览</th>
+                    <th style="width: 30%;">商品名称</th>
+                    <th style="width: 15%;">参考价格</th>
+                    <th style="width: 20%;">提供商户</th>
+                    <th style="width: 15%;">历史出货热度</th>
+                    <th style="width: 10%;">综合评分</th>
+                    <th style="width: 10%; text-align: right;">操作</th>
                 </tr>
             </thead>
             <tbody id="foodTableBody">
+                <!-- JS 动态渲染数据 -->
             </tbody>
         </table>
     </div>
 </div>
 
 {{ foods_json|json_script:"foods-data" }}
+{% endblock %}
 
+{% block extra_fab %}
+{% if is_merchant %}
+<a href="/foodsend/" class="fab-button" title="上架新品">
+    <span>➕</span>
+    <span>发布菜品</span>
+</a>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
 <script>
-// 获取原始数据（后端已处理搜索过滤）
-const foodsData = JSON.parse(document.getElementById('foods-data').textContent);
-let currentFoods = [...foodsData];
-let currentSort = { field: null, order: null };
+// ---------- 数据加载与基础计算 ----------
+const rawFoodsData = JSON.parse(document.getElementById('foods-data').textContent);
+let currentFoods = [...rawFoodsData];
+let currentFilterType = 'all';
+let sortState = { field: null, order: null };
 
-// 渲染表格
+// 计算全表最大销量用于渲染相对进度条
+const maxSaleVolume = Math.max(...rawFoodsData.map(f => parseInt(f.sale) || 0), 15);
+
+// 基于字符串生成柔和的特征背景色与文字色（Avatar标牌）
+function getAvatarStyle(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `background-color: hsl(${h}, 70%, 94%); color: hsl(${h}, 70%, 30%);`;
+}
+
+// 格式化金额显示
+function formatPrice(val) {
+    const num = parseFloat(val);
+    if (isNaN(num)) return `¥ ${val}`;
+    return `<span class="td-price"><span class="td-price-symbol">¥</span>${num.toFixed(2)}</span>`;
+}
+
+// 渲染数据表格
 function renderTable(data) {
     const tbody = document.getElementById('foodTableBody');
+    const countSpan = document.getElementById('displayCount');
+    if (countSpan) countSpan.innerText = data.length;
     if (!tbody) return;
     tbody.innerHTML = '';
+
     if (data.length === 0) {
         const row = tbody.insertRow();
-        row.innerHTML = '<td colspan="6">✨ 暂无美食数据，快去添加吧~</td>';
+        row.innerHTML = `
+            <td colspan="6" style="text-align: center; color: #94a3b8; padding: 48px 0;">
+                <div style="font-size: 24px; margin-bottom: 6px;">🍃</div>
+                <div>未找到符合当前条件的菜品记录</div>
+            </td>`;
         return;
     }
+
     data.forEach(food => {
         const row = tbody.insertRow();
-        row.insertCell().innerText = food.name;
-        row.insertCell().innerText = food.price;
-        row.insertCell().innerText = food.providor;
-        row.insertCell().innerText = food.sale;
-        const ratingCell = row.insertCell();
+
+        // 1. 商品名称（含生成式微标牌）
+        const nameCell = row.insertCell();
+        const initial = (food.name || '美').charAt(0);
+        const style = getAvatarStyle(food.name || '');
+        nameCell.innerHTML = `
+            <div class="cell-main">
+                <div class="avatar" style="${style}">${initial}</div>
+                <span class="td-name">${food.name}</span>
+            </div>
+        `;
+
+        // 2. 价格
+        const priceCell = row.insertCell();
+        priceCell.innerHTML = formatPrice(food.price);
+
+        // 3. 提供商户
+        const provCell = row.insertCell();
+        provCell.className = 'td-sub';
+        provCell.innerText = food.providor;
+
+        // 4. 销量微柱状图
+        const saleCell = row.insertCell();
+        const saleVal = parseInt(food.sale) || 0;
+        const percent = Math.min(Math.round((saleVal / maxSaleVolume) * 100), 100);
+        saleCell.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:4px; width:85px;">
+                <span style="font-variant-numeric:tabular-nums; font-weight:600; font-size:13px;">${saleVal.toLocaleString()}</span>
+                <div style="width:100%; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden;">
+                    <div style="height:100%; background:linear-gradient(90deg,#93c5fd,#2563eb); border-radius:2px; width:${percent}%;"></div>
+                </div>
+            </div>
+        `;
+
+        // 5. 综合评分
+        const rateCell = row.insertCell();
         if (food.ratenum === 0) {
-            ratingCell.innerText = '✨ 暂无评分';
+            rateCell.innerHTML = '<span class="tag tag-gray">暂无评分</span>';
         } else {
             const rating = parseFloat(food.rating);
+            let hotBadge = '';
             if (rating >= 4.8 && food.ratenum >= 4) {
-                ratingCell.innerHTML = `<span class="rating">⭐ ${rating} <span class="hot-label">好评如潮</span></span>`;
-            } else {
-                ratingCell.innerHTML = `<span class="rating">⭐ ${rating}</span>`;
+                hotBadge = '<span class="tag tag-blue" style="margin-left:6px;">好评如潮</span>';
             }
+            rateCell.innerHTML = `
+                <div style="display:inline-flex; align-items:center; gap:5px; font-size:13px;">
+                    <span class="rating-pill"><span class="star-icon">★</span>${rating.toFixed(1)}</span>
+                    ${hotBadge}
+                </div>
+            `;
         }
-        const detailCell = row.insertCell();
+
+        // 6. 操作按钮 (单行保证)
+        const actionCell = row.insertCell();
+        actionCell.className = 'td-action';
         if (food.is_sold_out) {
-            detailCell.innerHTML = `<a href="/fooddetails/?userid={{ user_id }}&foodid=${food.id}" class="detail-btn">售罄 · 看看</a>`;
+            actionCell.innerHTML = `<span class="btn-table-action disabled">已售罄</span>`;
         } else {
-            detailCell.innerHTML = `<a href="/fooddetails/?userid={{ user_id }}&foodid=${food.id}" class="detail-btn">让我看看</a>`;
+            actionCell.innerHTML = `<a href="/fooddetails/?userid={{ user_id }}&foodid=${food.id}" class="btn-table-action">查看详情</a>`;
         }
     });
 }
 
-// 排序函数
-function sortFoods(field, order) {
-    const sorted = [...currentFoods];
-    sorted.sort((a, b) => {
+// ---------- 快速切片胶囊筛选 (Quick Filter Pills) ----------
+function applyQuickFilter(type, btnElement) {
+    currentFilterType = type;
+    document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+    if (btnElement) btnElement.classList.add('active');
+
+    let filtered = [...rawFoodsData];
+    if (type === 'in-stock') {
+        filtered = filtered.filter(f => !f.is_sold_out);
+    } else if (type === 'top-rated') {
+        filtered = filtered.filter(f => f.ratenum > 0 && parseFloat(f.rating) >= 4.5);
+    } else if (type === 'hot-sale') {
+        filtered = [...filtered].sort((a,b) => parseInt(b.sale) - parseInt(a.sale)).slice(0, Math.max(5, Math.ceil(filtered.length * 0.4)));
+    }
+
+    if (sortState.field) {
+        executeSortArray(filtered, sortState.field, sortState.order);
+    }
+    currentFoods = filtered;
+    renderTable(currentFoods);
+}
+
+// ---------- 排序算法与状态机 ----------
+function executeSortArray(array, field, order) {
+    array.sort((a, b) => {
         let valA, valB;
         if (field === 'price') {
             valA = parseFloat(a.price);
@@ -532,218 +247,59 @@ function sortFoods(field, order) {
             valA = parseInt(a.sale);
             valB = parseInt(b.sale);
         } else if (field === 'rating') {
-            const aHasRating = a.ratenum > 0;
-            const bHasRating = b.ratenum > 0;
-            if (!aHasRating && !bHasRating) return 0;
-            if (!aHasRating) return 1;
-            if (!bHasRating) return -1;
+            const aHas = a.ratenum > 0;
+            const bHas = b.ratenum > 0;
+            if (!aHas && !bHas) return 0;
+            if (!aHas) return 1;
+            if (!bHas) return -1;
             valA = parseFloat(a.rating);
             valB = parseFloat(b.rating);
-        } else {
-            return 0;
         }
         return order === 'asc' ? valA - valB : valB - valA;
     });
-    currentSort = { field, order };
-    currentFoods = sorted;
+}
+
+function triggerSort(field) {
+    let order = 'desc';
+    if (sortState.field === field) {
+        order = sortState.order === 'desc' ? 'asc' : 'desc';
+    }
+    sortState = { field, order };
+    executeSortArray(currentFoods, field, order);
     renderTable(currentFoods);
-    updateSortIcons(field, order);
+    updateSortButtonsUI();
 }
 
-// 更新排序图标高亮
-function updateSortIcons(activeField, activeOrder) {
-    document.querySelectorAll('.sort-icons').forEach(container => {
-        const field = container.getAttribute('data-field');
-        const ascSpan = container.querySelector('.sort-asc');
-        const descSpan = container.querySelector('.sort-desc');
-        if (ascSpan) ascSpan.style.color = '#aaa';
-        if (descSpan) descSpan.style.color = '#aaa';
-        if (field === activeField) {
-            if (activeOrder === 'asc' && ascSpan) ascSpan.style.color = '#000';
-            if (activeOrder === 'desc' && descSpan) descSpan.style.color = '#000';
-        }
+function resetSort() {
+    sortState = { field: null, order: null };
+    applyQuickFilter(currentFilterType, document.querySelector('.filter-pill.active'));
+    updateSortButtonsUI();
+}
+
+function updateSortButtonsUI() {
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.querySelectorAll('svg').forEach(svg => svg.classList.remove('active'));
     });
-}
 
-// 绑定点击事件
-function bindSortEvents() {
-    document.querySelectorAll('.sort-icons').forEach(container => {
-        const field = container.getAttribute('data-field');
-        const ascSpan = container.querySelector('.sort-asc');
-        const descSpan = container.querySelector('.sort-desc');
-        if (ascSpan) {
-            ascSpan.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sortFoods(field, 'asc');
-            });
-        }
-        if (descSpan) {
-            descSpan.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sortFoods(field, 'desc');
-            });
-        }
-    });
-}
+    if (!sortState.field) {
+        document.getElementById('sort-default').classList.add('active');
+        return;
+    }
 
-// 初始化
-function init() {
-    currentFoods = [...foodsData];
-    renderTable(currentFoods);
-    bindSortEvents();
-}
-
-init();
-</script>
-
-{% if is_merchant %}
-<div id="plus-button" onclick="location.href='/foodsend/'" title="添加美食">➕</div>
-{% endif %}
-
-<!-- AI Chat Widget -->
-<div id="ai-chat-widget">
-    <div id="ai-chat-icon" onclick="toggleChat()">🤖</div>
-    <div id="ai-chat-box" style="display:none;">
-        <div id="ai-chat-header">智能生活助手 <span id="ai-chat-close" onclick="toggleChat()">✖</span></div>
-        <div id="ai-chat-messages"></div>
-        <div id="ai-chat-input">
-            <input type="text" id="ai-msg" placeholder="输入你的问题..." onkeypress="if(event.keyCode==13) sendMsg()">
-            <button onclick="sendMsg()">发送</button>
-        </div>
-    </div>
-</div>
-
-<script>
-// ---------- 聊天记录持久化 ----------
-const STORAGE_KEY = 'ai_chat_history';
-
-// 获取历史消息
-function loadHistory() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-}
-
-// 保存历史消息（每次更新后调用）
-function saveHistory(messages) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-}
-
-// 渲染历史消息到界面（清空现有内容后重新生成）
-function renderHistory() {
-    const container = document.getElementById('ai-chat-messages');
-    const history = loadHistory();
-    container.innerHTML = '';           // 清空现有内容
-    if (history.length === 0) {
-        // 如果没有历史，显示默认欢迎消息（同时保存，避免重复保存问题）
-        const defaultMsg = { text: '您好！我是您的智能生活助手，有什么我可以帮您的吗？', sender: 'ai' };
-        appendMsg(defaultMsg.text, defaultMsg.sender, false); // 第三个参数表示不重复保存
-        saveHistory([defaultMsg]);
-    } else {
-        // 逐条渲染历史消息（不会重复保存）
-        history.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'chat-msg ' + (msg.sender === 'user' ? 'msg-user' : 'msg-ai');
-            div.innerText = msg.text;
-            container.appendChild(div);
-        });
-        container.scrollTop = container.scrollHeight;
+    const activeBtn = document.getElementById(`tab-${sortState.field}`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        const arrow = sortState.order === 'asc'
+            ? activeBtn.querySelector('.arrow-up')
+            : activeBtn.querySelector('.arrow-down');
+        if (arrow) arrow.classList.add('active');
     }
 }
 
-// 追加一条新消息（同时保存到 localStorage）
-// 参数 saveToHistory: 是否保存到 localStorage（防止重复保存）
-function appendMsg(text, sender, saveToHistory = true) {
-    const msgs = document.getElementById('ai-chat-messages');
-    const div = document.createElement('div');
-    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
-    div.innerText = text;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-
-    if (saveToHistory) {
-        const history = loadHistory();
-        history.push({ text: text, sender: sender });
-        saveHistory(history);
-    }
-}
-
-// ---------- 原有功能保持不变 ----------
-function toggleChat() {
-    var box = document.getElementById('ai-chat-box');
-    var icon = document.getElementById('ai-chat-icon');
-    if (box.style.display === 'none') {
-        box.style.display = 'flex';
-        icon.style.display = 'none';
-        document.getElementById('ai-msg').focus();
-    } else {
-        box.style.display = 'none';
-        icon.style.display = 'flex';
-    }
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-function sendMsg() {
-    var input = document.getElementById('ai-msg');
-    var text = input.value.trim();
-    if (!text) return;
-    
-    appendMsg(text, 'user');
-    input.value = '';
-    
-    // 加载动画
-    var loadingId = 'loading-' + Date.now();
-    var msgs = document.getElementById('ai-chat-messages');
-    var div = document.createElement('div');
-    div.id = loadingId;
-    div.className = 'chat-msg msg-ai';
-    div.innerText = '正在思考中... 🤔（AI回复时请不要刷新以免丢失记录）';
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-
-    var formData = new FormData();
-    formData.append('user_input', text);
-    
-    fetch('/ai-chat/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById(loadingId).remove();
-        if (data.reply) {
-            appendMsg(data.reply, 'ai');
-        } else if (data.error) {
-            appendMsg(data.error, 'ai');
-        }
-    })
-    .catch(error => {
-        document.getElementById(loadingId).remove();
-        appendMsg('连接失败了，请检查网络或稍后再试。', 'ai');
-    });
-}
-
-// ---------- 页面加载时恢复聊天记录 ----------
+// 初始化加载
 window.addEventListener('DOMContentLoaded', () => {
-    renderHistory();
+    renderTable(currentFoods);
 });
 </script>
-
-</body>
-</html>
+{% endblock %}

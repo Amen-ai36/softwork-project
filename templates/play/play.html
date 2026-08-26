@@ -1,484 +1,107 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>娱乐中心 · Life Master</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "app_base.html" %}
 
-        body {
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&h=1080&fit=crop&q=85') no-repeat center center fixed;
-            background-size: cover;
-            background-color: #1a2a1a;
-            min-height: 100vh;
-            padding: 2rem;
-        }
+{% block title %}休闲娱乐 · Life Master{% endblock %}
+{% block page_title %}休闲娱乐{% endblock %}
 
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
-            pointer-events: none;
-            z-index: 0;
-        }
+{% block extra_head %}
+<style>
+    .sort-icons {
+        display: inline-flex;
+        flex-direction: column;
+        gap: 1px;
+        margin-left: 6px;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+    .sort-icons span {
+        font-size: 9px;
+        line-height: 1;
+        color: #cbd5e1;
+        transition: color 0.15s ease;
+    }
+    .sort-icons span:hover { color: var(--brand-primary); }
+    .sort-icons span.active { color: var(--brand-primary); }
+</style>
+{% endblock %}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 28px;
-            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: #2d3e2b;
-            padding: 1.5rem 2rem;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .header h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header h2::before {
-            content: "🎮";
-            font-size: 1.8rem;
-        }
-
-        .user-btn {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(4px);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 0.5rem 1.2rem;
-            border-radius: 40px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .user-btn:hover {
-            background: #ffb347;
-            color: #2d3e2b;
-            border-color: #ffb347;
-            transform: translateY(-2px);
-        }
-
-        .search-bar {
-            padding: 1.2rem 1rem 0.5rem 1rem;
-        }
-
-        .search-form {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-            flex-wrap: wrap;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 0.75rem;
-        }
-
-        .search-input {
-            flex: 1;
-            min-width: 220px;
-            border: 1px solid #d7dde6;
-            border-radius: 12px;
-            padding: 0.7rem 0.9rem;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .search-input:focus {
-            border-color: #ffb347;
-            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.18);
-        }
-
-        .search-btn, .clear-btn {
-            border: none;
-            border-radius: 12px;
-            padding: 0.7rem 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .search-btn {
-            background: #2d3e2b;
-            color: white;
-        }
-
-        .clear-btn {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .search-summary {
-            width: 100%;
-            color: #64748b;
-            font-size: 0.88rem;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            padding: 0 1rem 1.5rem 1rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        th {
-            background-color: #f5f3ef;
-            color: #2d3e2b;
-            font-weight: 600;
-            padding: 1rem 0.8rem;
-            text-align: left;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        td {
-            padding: 0.9rem 0.8rem;
-            border-bottom: 1px solid #edf2f7;
-            color: #1f2937;
-        }
-
-        tr:hover td {
-            background-color: #fef9e6;
-        }
-
-        .detail-btn {
-            background: #ffb347;
-            color: #2d3e2b;
-            border: none;
-            padding: 0.4rem 1rem;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: 0.2s;
-        }
-
-        .detail-btn:hover {
-            background: #ff9f1c;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .empty-row td {
-            text-align: center;
-            color: #94a3b8;
-            font-style: italic;
-            padding: 2rem;
-        }
-
-        @media (max-width: 640px) {
-            body { padding: 1rem; }
-            th, td { padding: 0.6rem 0.4rem; font-size: 0.85rem; }
-            .header h2 { font-size: 1.4rem; }
-            .user-btn { font-size: 0.85rem; padding: 0.4rem 1rem; }
-            .detail-btn { padding: 0.2rem 0.8rem; font-size: 0.75rem; }
-        }
-
-        #plus-button {
-            width: 60px;
-            height: 60px;
-            background: #ffb347;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: #2d3e2b;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: fixed;
-            bottom: calc(2rem + 80px);
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        #plus-button:hover {
-            transform: scale(1.1);
-            background: #ff9f1c;
-        }
-
-        /* AI Chat Widget */
-        #ai-chat-widget {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        #ai-chat-icon {
-            background: #ffb347;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        #ai-chat-icon:hover {
-            transform: scale(1.1);
-        }
-
-        #ai-chat-box {
-            position: absolute;
-            bottom: 75px;
-            right: 0;
-            width: 320px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            overflow: hidden;
-            border: 1px solid #edf2f7;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #ai-chat-header {
-            background: #2d3e2b;
-            color: white;
-            padding: 1rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        #ai-chat-close {
-            cursor: pointer;
-            font-size: 1.2rem;
-            opacity: 0.8;
-        }
-
-        #ai-chat-close:hover {
-            opacity: 1;
-        }
-
-        #ai-chat-messages {
-            height: 350px;
-            padding: 1rem;
-            overflow-y: auto;
-            background: #f8f9fc;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .chat-msg {
-            max-width: 85%;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .msg-user {
-            align-self: flex-end;
-            background: #ffb347;
-            color: #2d3e2b;
-            border-bottom-right-radius: 4px;
-        }
-
-        .msg-ai {
-            align-self: flex-start;
-            background: white;
-            color: #1f2937;
-            border: 1px solid #e2e8f0;
-            border-bottom-left-radius: 4px;
-        }
-
-        #ai-chat-input {
-            padding: 1rem;
-            background: white;
-            border-top: 1px solid #edf2f7;
-            display: flex;
-            gap: 8px;
-        }
-
-        #ai-chat-input input {
-            flex: 1;
-            padding: 0.6rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            outline: none;
-        }
-
-        #ai-chat-input input:focus {
-            border-color: #ffb347;
-        }
-
-        #ai-chat-input button {
-            background: #2d3e2b;
-            color: white;
-            border: none;
-            padding: 0 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        #ai-chat-input button:hover {
-            background: #3a5038;
-        }
-
-        .hot-label {
-            background-color: #0a58ca;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin-left: 0.5rem;
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        .emphasize {
-            font-weight: bold;
-            color: #e67e22;
-            background-color: #fff3f0;
-            padding: 0 4px;
-            border-radius: 6px;
-            font-size: 1.05em;
-        }
-
-        .emphasize:hover {
-            background-color: #ffe0db;
-            color: #c9302c;
-        }
-
-        /* 排序图标垂直排列 */
-        .sort-icons {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            margin-left: 6px;
-            font-size: 0.7rem;
-            line-height: 1;
-            vertical-align: middle;
-        }
-
-        .sort-asc, .sort-desc {
-            cursor: pointer;
-            color: #aaa;
-            transition: color 0.1s;
-            user-select: none;
-        }
-
-        .sort-asc:hover, .sort-desc:hover {
-            color: #ffb347 !important;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h2>娱乐中心</h2>
-        <a href="/food" class="user-btn">🍜 美食中心</a>
-        <a href="/blog" class="user-btn">📝 博客中心</a>
-        <a href="/hotel" class="user-btn">🏨 酒店民宿</a>
-        <a href="/space" class="user-btn">👤 个人中心</a>
+{% block content %}
+<div class="page-title-bar">
+    <div>
+        <h1>🎯 休闲娱乐</h1>
+        <div class="page-sub">发现身边的趣味场所，享受美好时光</div>
     </div>
-    <div class="search-bar">
-        <form class="search-form" action="/play/" method="get">
-            <input class="search-input" type="search" name="q" value="{{ keyword }}" placeholder="搜索场所名称、地址或简介">
-            <button class="search-btn" type="submit">搜索</button>
+    <div class="page-actions">
+        {% if is_merchant %}
+        <a href="/playsend/" class="btn btn-primary">➕ 添加娱乐场所</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel-card">
+    <!-- 检索过滤与胶囊区 -->
+    <div class="filter-header">
+        <form class="search-form-row" action="/play/" method="get">
+            <div class="input-group">
+                <span class="search-icon-inside">🔍</span>
+                <input id="mainSearchInput" class="search-input" type="search" name="q" value="{{ keyword }}" placeholder="搜索场所名称、地址或简介...">
+                <span class="shortcut-badge">/</span>
+            </div>
+            <button class="btn btn-primary" type="submit">查询数据</button>
             {% if keyword %}
-            <a class="clear-btn" href="/play/">清空</a>
-            <div class="search-summary">正在搜索：{{ keyword }}，共 <span id="resultCount">{{ plays|length }}</span> 条结果</div>
+            <a class="btn btn-default" href="/play/">重置筛选</a>
+            <div class="search-meta-text">
+                正在检索关键词：“<strong>{{ keyword }}</strong>”，共筛选出 <strong id="resultCount">{{ plays|length }}</strong> 条记录
+            </div>
             {% endif %}
         </form>
     </div>
-    <div class="table-wrapper">
+
+    <!-- 数据表格 -->
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
-                    <th>场所名称</th>
-                    <th>地址</th>
-                    <th>
+                    <th style="width: 18%;">场所名称</th>
+                    <th style="width: 18%;">地址</th>
+                    <th style="width: 10%;">
                         门票价格
                         <span class="sort-icons" data-field="price">
                             <span class="sort-asc" data-order="asc">▲</span>
                             <span class="sort-desc" data-order="desc">▼</span>
                         </span>
                     </th>
-                    <th>开始营业</th>
-                    <th>运营时间</th>
-                    <th>
+                    <th style="width: 10%;">开始营业</th>
+                    <th style="width: 10%;">运营时间</th>
+                    <th style="width: 14%;">
                         评分
                         <span class="sort-icons" data-field="rating">
                             <span class="sort-asc" data-order="asc">▲</span>
                             <span class="sort-desc" data-order="desc">▼</span>
                         </span>
                     </th>
-                    <th>详情一览</th>
+                    <th style="width: 12%; text-align: right;">详情一览</th>
                 </tr>
             </thead>
-            <tbody id="playTableBody"></tbody>
+            <tbody id="playTableBody">
+                <!-- JS 动态渲染数据 -->
+            </tbody>
         </table>
     </div>
 </div>
 
 {{ plays_json|json_script:"plays-data" }}
+{% endblock %}
 
+{% block extra_fab %}
 {% if is_merchant %}
-<div id="plus-button" onclick="location.href='/playsend/'" title="添加娱乐场所">➕</div>
+<a href="/playsend/" class="fab-button" title="添加娱乐场所">
+    <span>➕</span>
+    <span>添加场所</span>
+</a>
 {% endif %}
+{% endblock %}
 
-<div id="ai-chat-widget">
-    <div id="ai-chat-icon" onclick="toggleChat()">🤖</div>
-    <div id="ai-chat-box" style="display:none;">
-        <div id="ai-chat-header">智能生活助手 <span id="ai-chat-close" onclick="toggleChat()">✖</span></div>
-        <div id="ai-chat-messages"></div>
-        <div id="ai-chat-input">
-            <input type="text" id="ai-msg" placeholder="输入你的问题..." onkeypress="if(event.keyCode==13) sendMsg()">
-            <button onclick="sendMsg()">发送</button>
-        </div>
-    </div>
-</div>
-
+{% block scripts %}
 <script>
 // ---------- 娱乐排序逻辑 ----------
 let playsData = [];
@@ -502,30 +125,33 @@ function renderPlayTable(data) {
     tbody.innerHTML = '';
     if (data.length === 0) {
         const row = tbody.insertRow();
-        row.innerHTML = '<td colspan="7">✨ 暂无娱乐场所数据</td>';
+        row.innerHTML = '<td colspan="7" style="text-align:center; color:#94a3b8; padding:48px 0;"><div style="font-size:24px; margin-bottom:6px;">🎮</div><div>✨ 暂无娱乐场所数据</div></td>';
         document.getElementById('resultCount') && (document.getElementById('resultCount').innerText = 0);
         return;
     }
     data.forEach(play => {
         const row = tbody.insertRow();
-        row.insertCell().innerText = play.name;
-        row.insertCell().innerText = play.addr;
-        row.insertCell().innerHTML = `¥<span class="emphasize">${play.price}</span>`;
-        row.insertCell().innerText = play.start_time;
-        row.insertCell().innerText = play.open_time;
+        const nameCell = row.insertCell();
+        nameCell.innerHTML = `<span class="td-name">${play.name}</span>`;
+        row.insertCell().innerHTML = `<span class="td-sub">${play.addr}</span>`;
+        const priceCell = row.insertCell();
+        priceCell.innerHTML = `<span class="td-price"><span class="td-price-symbol">¥</span>${play.price}</span>`;
+        row.insertCell().innerHTML = `<span class="td-sub">${play.start_time}</span>`;
+        row.insertCell().innerHTML = `<span class="td-sub">${play.open_time}</span>`;
         const ratingCell = row.insertCell();
         if (play.ratenum === 0) {
-            ratingCell.innerText = '✨ 暂无评分';
+            ratingCell.innerHTML = '<span class="tag tag-gray">✨ 暂无评分</span>';
         } else {
             const rating = parseFloat(play.rating);
+            let hotBadge = '';
             if (rating >= 4.8 && play.ratenum >= 4) {
-                ratingCell.innerHTML = `<span class="rating">⭐ ${rating} <span class="hot-label">好评如潮</span></span>`;
-            } else {
-                ratingCell.innerHTML = `<span class="rating">⭐ ${rating}</span>`;
+                hotBadge = '<span class="tag tag-blue" style="margin-left:6px;">好评如潮</span>';
             }
+            ratingCell.innerHTML = `<span class="rating-pill"><span class="star-icon">★</span>${rating}</span>${hotBadge}`;
         }
         const detailCell = row.insertCell();
-        detailCell.innerHTML = `<a href="/playdetails/?userid={{ user_id }}&playid=${play.id}" class="detail-btn">让我看看</a>`;
+        detailCell.className = 'td-action';
+        detailCell.innerHTML = `<a href="/playdetails/?userid={{ user_id }}&playid=${play.id}" class="btn-table-action">让我看看</a>`;
     });
     document.getElementById('resultCount') && (document.getElementById('resultCount').innerText = data.length);
 }
@@ -560,11 +186,11 @@ function updateSortIcons(activeField, activeOrder) {
         const field = container.getAttribute('data-field');
         const ascSpan = container.querySelector('.sort-asc');
         const descSpan = container.querySelector('.sort-desc');
-        if (ascSpan) ascSpan.style.color = '#aaa';
-        if (descSpan) descSpan.style.color = '#aaa';
+        if (ascSpan) ascSpan.classList.remove('active');
+        if (descSpan) descSpan.classList.remove('active');
         if (field === activeField) {
-            if (activeOrder === 'asc' && ascSpan) ascSpan.style.color = '#000';
-            if (activeOrder === 'desc' && descSpan) descSpan.style.color = '#000';
+            if (activeOrder === 'asc' && ascSpan) ascSpan.classList.add('active');
+            if (activeOrder === 'desc' && descSpan) descSpan.classList.add('active');
         }
     });
 }
@@ -596,119 +222,5 @@ function initPlays() {
 }
 
 initPlays();
-
-// ---------- AI 聊天功能（保持不变）----------
-const STORAGE_KEY = 'ai_chat_history';
-
-function loadHistory() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-}
-
-function saveHistory(messages) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-}
-
-function createMessageDiv(text, sender) {
-    const div = document.createElement('div');
-    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
-    div.innerText = text;
-    return div;
-}
-
-function appendMsg(text, sender, saveToHistory = true) {
-    const container = document.getElementById('ai-chat-messages');
-    const div = createMessageDiv(text, sender);
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-    if (saveToHistory) {
-        const history = loadHistory();
-        history.push({ text, sender });
-        saveHistory(history);
-    }
-}
-
-function renderHistory() {
-    const container = document.getElementById('ai-chat-messages');
-    const history = loadHistory();
-    container.innerHTML = '';
-    if (history.length === 0) {
-        const defaultMsg = { text: '您好！我是您的智能生活助手，有什么我可以帮您的吗？', sender: 'ai' };
-        appendMsg(defaultMsg.text, defaultMsg.sender, false);
-        saveHistory([defaultMsg]);
-    } else {
-        history.forEach(msg => {
-            const div = createMessageDiv(msg.text, msg.sender);
-            container.appendChild(div);
-        });
-        container.scrollTop = container.scrollHeight;
-    }
-}
-
-function toggleChat() {
-    var box = document.getElementById('ai-chat-box');
-    var icon = document.getElementById('ai-chat-icon');
-    if (box.style.display === 'none') {
-        box.style.display = 'flex';
-        icon.style.display = 'none';
-        document.getElementById('ai-msg').focus();
-    } else {
-        box.style.display = 'none';
-        icon.style.display = 'flex';
-    }
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-function sendMsg() {
-    var input = document.getElementById('ai-msg');
-    var text = input.value.trim();
-    if (!text) return;
-    appendMsg(text, 'user');
-    input.value = '';
-    var loadingId = 'loading-' + Date.now();
-    var msgs = document.getElementById('ai-chat-messages');
-    var div = document.createElement('div');
-    div.id = loadingId;
-    div.className = 'chat-msg msg-ai';
-    div.innerText = '正在思考中... 🤔（AI回复时请不要刷新以免丢失记录）';
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-    var formData = new FormData();
-    formData.append('user_input', text);
-    fetch('/ai-chat/', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById(loadingId).remove();
-        if (data.reply) appendMsg(data.reply, 'ai');
-        else if (data.error) appendMsg('❌ ' + data.error, 'ai');
-    })
-    .catch(error => {
-        document.getElementById(loadingId).remove();
-        appendMsg('❌ 连接失败，请检查网络或稍后再试。', 'ai');
-    });
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    renderHistory();
-});
 </script>
-</body>
-</html>
+{% endblock %}

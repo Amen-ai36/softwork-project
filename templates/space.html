@@ -1,1122 +1,830 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人中心 · Life Master</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "app_base.html" %}
 
-        body {
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: url('../static/images/background/2-nowatermark.png') no-repeat center center fixed;
-            background-size: cover;
-            background-color: #1a2a1a; /* 后备色 */
-            min-height: 100vh;
-            padding: 2rem;
-        }
+{% block title %}账户中心 · Life Master{% endblock %}
+{% block page_title %}个人中心{% endblock %}
 
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
-            pointer-events: none;
-            z-index: 0;
-        }
+{% block extra_head %}
+<style>
+    .btn-view-blog {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        padding: 5px 12px;
+        font-size: 12.5px;
+        font-weight: 500;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-color);
+        background-color: #ffffff;
+        color: var(--text-title);
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-sm);
+        font-family: inherit;
+        margin-right: 6px;
+    }
+    .btn-view-blog:hover {
+        border-color: var(--brand-primary-border);
+        background-color: var(--brand-primary-subtle);
+        color: var(--brand-primary);
+        transform: translateY(-1px);
+    }
+    .btn-view-blog.danger {
+        background-color: var(--danger-bg);
+        border-color: var(--danger-border);
+        color: #b91c1c;
+    }
+    .btn-view-blog.danger:hover {
+        background-color: #fee2e2;
+    }
+    .temp-num, .temp-addr {
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xs);
+        padding: 4px 8px;
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+    }
+    .temp-num:focus, .temp-addr:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 3px var(--brand-accent-glow);
+    }
+    .action-cell {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 28px;
-            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: #2d3e2b;
-            padding: 1.5rem 2rem;
-            color: white;
-        }
-
-        .header h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header h2::before {
-            content: "👤";
-            font-size: 1.8rem;
-        }
-
-        .content {
-            padding: 2rem;
-        }
-
-        .info-card {
-            background: #fef9e6;
-            border-radius: 20px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-
-        .info-card h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #2d3e2b;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #ffb347;
-            display: inline-block;
-        }
-
-        .form-group {
-            margin-bottom: 1.2rem;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .form-group label {
-            width: 90px;
-            font-weight: 600;
-            color: #3b5c38;
-        }
-
-        .form-group span, .form-group input {
-            flex: 1;
-            min-width: 200px;
-            padding: 0.6rem 1rem;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 1rem;
-            font-size: 0.95rem;
-            background: white;
-            transition: 0.2s;
-        }
-
-        .form-group input:focus {
-            border-color: #ffb347;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
-        }
-
-        .btn-submit {
-            background: #ffb347;
-            color: #2d3e2b;
-            border: none;
-            padding: 0.7rem 1.8rem;
-            border-radius: 2rem;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 0.5rem;
-        }
-
-        .btn-submit:hover {
-            background: #ff9f1c;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 159, 28, 0.3);
-        }
-
-        .orders-section, .blogs-section, .hotel-orders-section, .groupbuy-section, .merchant-groupbuy-section, .merchant-foods-section, .merchant-hotels-section,
-        .play-orders-section, .merchant-plays-section, .rider-active-section, .rider-done-section,
-        .merchant-current-orders-section, .merchant-done-orders-section {
-            margin-top: 2rem;
-        }
-
-        .orders-section h3, .blogs-section h3, .hotel-orders-section h3,
-        .groupbuy-section h3, .merchant-groupbuy-section h3,
-        .merchant-foods-section h3, .merchant-hotels-section h3,
-        .play-orders-section h3, .merchant-plays-section h3,
-        .rider-active-section h3, .rider-done-section h3,
-        .merchant-current-orders-section h3, .merchant-done-orders-section h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #2d3e2b;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .orders-section h3::before {
-            content: "📋";
-        }
-
-        .blogs-section h3::before {
-            content: "📝";
-        }
-
-        .temps-section h3::before {
-            content: "🛒";
-        }
-
-        .hotel-orders-section h3::before {
-            content: "🏨";
-        }
-
-        .groupbuy-section h3::before, .merchant-groupbuy-section h3::before {
-            content: "🎟️";
-        }
-
-        .play-orders-section h3::before {
-            content: "🎮";
-        }
-
-        .merchant-foods-section h3::before {
-            content: "🍜";
-        }
-
-        .merchant-hotels-section h3::before {
-            content: "🏨";
-        }
-
-        .merchant-plays-section h3::before {
-            content: "🎮";
-        }
-        .rider-active-section h3::before {
-            content: "🛵";
-        }
-        .rider-done-section h3::before {
-            content: "✅";
-        }
-        .merchant-current-orders-section h3::before {
-            content: "📋";
-        }
-        .merchant-done-orders-section h3::before {
-            content: "✅";
-        }
-
-        /* 公共表格容器：水平滚动 + 垂直滚动 */
-        .table-wrapper {
-            overflow-x: auto;
-            overflow-y: auto;
-            max-height: 400px;      /* 固定高度，超出滚动 */
-            border-radius: 20px;
-            border: 1px solid #edf2f7;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        th {
-            background-color: #f5f3ef;
-            color: #2d3e2b;
-            font-weight: 600;
-            padding: 0.9rem 0.8rem;
-            text-align: left;
-            border-bottom: 2px solid #e2e8f0;
-            position: sticky;
-            top: 0;                /* 表头粘性滚动（可选） */
-            background-color: #f5f3ef;
-            z-index: 1;
-        }
-
-        td {
-            padding: 0.8rem 0.8rem;
-            border-bottom: 1px solid #edf2f7;
-            color: #1f2937;
-        }
-
-        tr:hover td {
-            background-color: #fef9e6;
-        }
-
-        .empty-msg {
-            text-align: center;
-            padding: 2rem;
-            color: #94a3b8;
-            font-style: italic;
-            background: #faf9f7;
-            border-radius: 20px;
-        }
-
-        .btn-status, .btn-evaluate, .btn-view-blog {
-            background: #2d3e2b;
-            color: white;
-            border: none;
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn-status:hover, .btn-evaluate:hover, .btn-view-blog:hover {
-            background: #1f2e1d;
-            transform: translateY(-2px);
-        }
-        .btn-disabled {
-            background: #cbd5e0;
-            color: #4a5568;
-            border: none;
-            padding: 0.4rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            cursor: not-allowed;
-        }
-
-        .redeem-form {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-            background: #fef9e6;
-            border-radius: 20px;
-            padding: 1rem;
-            border-left: 5px solid #ffb347;
-        }
-
-        .redeem-form input {
-            flex: 1;
-            min-width: 220px;
-            padding: 0.7rem 1rem;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 1rem;
-            font-size: 0.95rem;
-            outline: none;
-            text-transform: uppercase;
-        }
-
-        .redeem-form input:focus {
-            border-color: #ffb347;
-            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
-        }
-
-        .back-btn {
-            display: inline-block;
-            background: #2d3e2b;
-            color: white;
-            text-decoration: none;
-            padding: 0.7rem 1.8rem;
-            border-radius: 2rem;
-            font-weight: 500;
-            transition: 0.2s;
-            margin-top: 1.5rem;
-            border: none;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-
-        .back-btn:hover {
-            background: #1f2e1d;
-            transform: translateY(-2px);
-        }
-
-        hr {
-            margin: 2rem 0 0.5rem;
-            border: none;
-            height: 1px;
-            background: #e2e8f0;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 1rem;
-            }
-            .content {
-                padding: 1.2rem;
-            }
-            .form-group {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .form-group label {
-                width: auto;
-            }
-            .form-group span, .form-group input {
-                width: 100%;
-            }
-            th, td {
-                padding: 0.5rem 0.4rem;
-                font-size: 0.8rem;
-            }
-            .table-wrapper {
-                max-height: 300px;
-            }
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h2>个人中心</h2>
+{% block content %}
+<!-- 个人信息修改 -->
+<div class="panel-card" style="max-width:640px;">
+    <div class="filter-header">
+        <div class="page-title-bar" style="margin:0;">
+            <h1 style="font-size:16px;">📝 编辑资料</h1>
+        </div>
     </div>
-    <div class="content">
-        <!-- 个人信息修改表单 -->
-        <div class="info-card">
-            <h3>📝 编辑资料</h3>
-            <form action="/space/" method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label>用户名：</label>
-                    <span>{{ user.username }}</span>
-                </div>
-                <div class="form-group">
-                    <label for="phone">手机号：</label>
-                    <input type="text" id="phone" name="phone" value="{{ user.phone }}">
-                </div>
-                <div class="form-group">
-                    <label for="word">个性签名：</label>
-                    <input type="text" id="word" name="word" value="{{ user.word }}">
-                </div>
-                <button type="submit" class="btn-submit">💾 提交（修改/新增）</button>
-            </form>
-        </div>
-
-        {% if is_rider %}
-        <!-- 骑手：已接订单栏 -->
-        <div class="rider-active-section">
-            <h3>已接订单</h3>
-            {% if rider_active_orders %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>订单ID</th>
-                                <th>美食名称</th>
-                                <th>顾客</th>
-                                <th>数量</th>
-                                <th>总价</th>
-                                <th>配送地址</th>
-                                <th>下单时间</th>
-                                <th>当前状态</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in rider_active_orders %}
-                            <tr>
-                                <td>#{{ order.id }}</td>
-                                <td>{{ order.food.name }}</td>
-                                <td>{{ order.user.username }}</td>
-                                <td>{{ order.num }} 份</td>
-                                <td>¥{{ order.cost }}</td>
-                                <td>{{ order.address }}</td>
-                                <td>{{ order.time|date:"m-d H:i" }}</td>
-                                <td>
-                                    {% if order.pos == 1 %}⏳ 待商家出餐
-                                    {% elif order.pos == 2 %}🍳 已出餐 · 待取餐
-                                    {% elif order.pos == 3 %}🍳 已取餐 · 配送中
-                                    {% elif order.pos == 4 %}📦 已送达 · 待评价
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if order.pos == 2 %}
-                                        <a href="/rider_get/?orderid={{ order.id }}" class="btn-evaluate">✅ 已取餐</a>
-                                    {% elif order.pos == 3 %}
-                                        <a href="/rider_deliver/?orderid={{ order.id }}" class="btn-evaluate">✅ 已送达</a>
-                                    {% else %}
-                                        <button type="button" class="btn-disabled" disabled>🚫 暂无操作</button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 暂无已接订单，去订单中心看看吧～</div>
-            {% endif %}
-        </div>
-
-        <!-- 骑手：已完成订单栏 -->
-        <div class="rider-done-section">
-            <h3>已完成订单</h3>
-            {% if rider_done_orders %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>订单ID</th>
-                                <th>美食名称</th>
-                                <th>顾客</th>
-                                <th>数量</th>
-                                <th>总价</th>
-                                <th>配送地址</th>
-                                <th>下单时间</th>
-                                <th>顾客评价</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in rider_done_orders %}
-                            <tr>
-                                <td>#{{ order.id }}</td>
-                                <td>{{ order.food.name }}</td>
-                                <td>{{ order.user.username }}</td>
-                                <td>{{ order.num }} 份</td>
-                                <td>¥{{ order.cost }}</td>
-                                <td>{{ order.address }}</td>
-                                <td>{{ order.time|date:"m-d H:i" }}</td>
-                                <td>
-                                    {% if order.scoretofood > 0 %}
-                                        ⭐{{ order.scoretofood }} (食物) ⭐{{ order.scoretodeliver }} (配送)
-                                    {% else %}
-                                        暂未评价
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 暂无已完成订单</div>
-            {% endif %}
-        </div>
-
-        {% elif is_merchant %}
-        <div class="merchant-revenue-section">
-            <h3>营业额概览</h3>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>业务</th>
-                            <th>订单/核销数</th>
-                            <th>营业额</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>外卖订单</td>
-                            <td>{{ merchant_revenue.food_orders }}</td>
-                            <td>¥{{ merchant_revenue.food|floatformat:2 }}</td>
-                        </tr>
-                        <tr>
-                            <td>酒店订单</td>
-                            <td>{{ merchant_revenue.hotel_orders }}</td>
-                            <td>¥{{ merchant_revenue.hotel|floatformat:2 }}</td>
-                        </tr>
-                        <tr>
-                            <td>娱乐订单</td>
-                            <td>{{ merchant_revenue.play_orders }}</td>
-                            <td>¥{{ merchant_revenue.play|floatformat:2 }}</td>
-                        </tr>
-                        <tr>
-                            <td>团购券核销</td>
-                            <td>{{ merchant_revenue.used_group_coupons }}</td>
-                            <td>¥{{ merchant_revenue.groupbuy|floatformat:2 }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>合计</strong></td>
-                            <td>-</td>
-                            <td><strong>¥{{ merchant_revenue.total|floatformat:2 }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
+    <div class="form-card-body">
+        <form action="/space/" method="post" style="display:flex; flex-direction:column; gap:16px;">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>用户名</label>
+                <div style="background:#f8fafc; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:8px 12px; font-weight:600; color:var(--text-title);">{{ user.username }}</div>
             </div>
-        </div>
-
-        <!-- 商家：已创建的食物 -->
-        <div class="merchant-foods-section">
-            <h3>已创建的食物</h3>
-            {% if merchant_foods %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>食物ID</th>
-                                <th>美食名称</th>
-                                <th>数量</th>
-                                <th>总价</th>
-                                <th>地址</th>
-                                <th>时间</th>
-                                <th>食物评分</th>
-                                <th>商品状态</th>
-                                <th>商品操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in merchant_foods %}
-                            <tr>
-                                <td>{{ item.food.id }}</td>
-                                <td>{{ item.food.name }}</td>
-                                <td>{{ item.total_num }}</td>
-                                <td>{{ item.total_cost }}</td>
-                                <td>{{ item.address }}</td>
-                                <td>{% if item.latest_time %}{{ item.latest_time|date:"Y-m-d H:i" }}{% else %}暂无订单{% endif %}</td>
-                                <td>{% if item.avg_score %}{{ item.avg_score|floatformat:1 }}{% else %}暂未评分{% endif %}</td>
-                                <td>
-                                    {% if item.food.is_off_shelf %}已下架
-                                    {% elif item.food.is_sold_out %}已售罄
-                                    {% else %}售卖中{% endif %}
-                                </td>
-                                <td>
-                                    <form action="/merchant/food/action/" method="post" style="display:inline-block; margin-right:6px;">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="food_id" value="{{ item.food.id }}">
-                                        <input type="hidden" name="action" value="toggle_sold_out">
-                                        <button type="submit" class="btn-status">
-                                            {% if item.food.is_sold_out %}恢复供应{% else %}标记售罄{% endif %}
-                                        </button>
-                                    </form>
-                                    <form action="/merchant/food/action/" method="post" style="display:inline-block;">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="food_id" value="{{ item.food.id }}">
-                                        <input type="hidden" name="action" value="toggle_off_shelf">
-                                        <button type="submit" class="btn-status">
-                                            {% if item.food.is_off_shelf %}重新上架{% else %}下架商品{% endif %}
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="phone">手机号</label>
+                    <input type="text" class="form-control" id="phone" name="phone" value="{{ user.phone }}">
                 </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有创建美食，去美食中心点击 ➕ 添加吧～</div>
-            {% endif %}
-        </div>
-
-        <!-- 商家：已开放的酒店 -->
-        <div class="merchant-hotels-section">
-            <h3>已开放的酒店</h3>
-            {% if merchant_hotels %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>酒店ID</th>
-                                <th>酒店名称</th>
-                                <th>地址</th>
-                                <th>评价</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for hotel in merchant_hotels %}
-                            <tr>
-                                <td>{{ hotel.id }}</td>
-                                <td>{{ hotel.name }}</td>
-                                <td>{{ hotel.addr }}</td>
-                                <td>{% if hotel.ratenum == 0 %}暂未评价{% else %}{{ hotel.rating }}{% endif %}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="form-group">
+                    <label for="word">个性签名</label>
+                    <input type="text" class="form-control" id="word" name="word" value="{{ user.word }}">
                 </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有开放酒店，去酒店民宿点击 ➕ 添加吧～</div>
-            {% endif %}
-        </div>
-
-        <!-- 商家：已开放的娱乐场所 -->
-        <div class="merchant-plays-section">
-            <h3>已开放的娱乐场所</h3>
-            {% if merchant_plays %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>场所ID</th>
-                                <th>场所名称</th>
-                                <th>地址</th>
-                                <th>开始营业</th>
-                                <th>运营时间</th>
-                                <th>评分</th>
-                                <th>简介</th>
-                                <th>详情</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for play in merchant_plays %}
-                            <tr>
-                                <td>{{ play.id }}</td>
-                                <td>{{ play.name }}</td>
-                                <td>{{ play.addr }}</td>
-                                <td>{{ play.start_time }}</td>
-                                <td>{{ play.open_time }}</td>
-                                <td>{% if play.ratenum == 0 %}暂未评价{% else %}{{ play.rating }}{% endif %}</td>
-                                <td>{{ play.inf|truncatechars:30 }}</td>
-                                <td>
-                                    <button type="button" class="btn-status"
-                                        onclick="location.href='/playdetails/?playid={{ play.id }}'">
-                                        🔍 查看详情
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有开放娱乐场所，去娱乐中心点击 ➕ 添加吧～</div>
-            {% endif %}
-        </div>
-
-        <!-- 商家：当前订单（骑手已接单，待出餐） -->
-        <div class="merchant-current-orders-section">
-            <h3>当前订单</h3>
-            {% if merchant_current_orders %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>订单ID</th>
-                                <th>美食名称</th>
-                                <th>顾客</th>
-                                <th>骑手</th>
-                                <th>数量</th>
-                                <th>总价</th>
-                                <th>配送地址</th>
-                                <th>下单时间</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in merchant_current_orders %}
-                            <tr>
-                                <td>#{{ order.id }}</td>
-                                <td>{{ order.food.name }}</td>
-                                <td>{{ order.user.username }}</td>
-                                <td>{{ order.rider.username|default:"未知" }}</td>
-                                <td>{{ order.num }} 份</td>
-                                <td>¥{{ order.cost }}</td>
-                                <td>{{ order.address }}</td>
-                                <td>{{ order.time|date:"m-d H:i" }}</td>
-                                
-                                <td>
-                                    {% if order.pos == 1 %}
-                                        <a href="/merchant_prepare/?orderid={{ order.id }}" class="btn-evaluate">🍳 完成备餐</a>
-                                    {% else %}
-                                        <button type="button" class="btn-disabled" disabled>🚫 暂无操作</button>
-                                    {% endif %}
-                                    
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 暂无待处理的订单</div>
-            {% endif %}
-        </div>
-
-        <!-- 商家：已完成订单（已出餐/已送达/已评价） -->
-        <div class="merchant-done-orders-section">
-            <h3>已完成订单</h3>
-            {% if merchant_done_orders %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>订单ID</th>
-                                <th>美食名称</th>
-                                <th>顾客</th>
-                                <th>骑手</th>
-                                <th>数量</th>
-                                <th>总价</th>
-                                <th>状态</th>
-                                <th>顾客评价</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in merchant_done_orders %}
-                            <tr>
-                                <td>#{{ order.id }}</td>
-                                <td>{{ order.food.name }}</td>
-                                <td>{{ order.user.username }}</td>
-                                <td>{{ order.rider.username|default:"未知" }}</td>
-                                <td>{{ order.num }} 份</td>
-                                <td>¥{{ order.cost }}</td>
-                                <td>
-                                    {% if order.pos == 2 %}🍳 已出餐
-                                    {% elif order.pos == 4 %}📦 已送达
-                                    {% elif order.pos == 5 %}✅ 已评价
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if order.scoretofood > 0 %}
-                                        ⭐{{ order.scoretofood }} (食物) ⭐{{ order.scoretodeliver }} (配送)
-                                    {% else %}
-                                        暂未评价
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 暂无已完成的订单</div>
-            {% endif %}
-        </div>
-
-        <div class="merchant-groupbuy-section">
-            <h3>团购券核销</h3>
-            <form class="redeem-form" action="/groupbuy/redeem/" method="post">
-                {% csrf_token %}
-                <input type="text" name="code" placeholder="输入顾客出示的核销码" required>
-                <button type="submit" class="btn-submit">核销团购券</button>
-            </form>
-            {% if merchant_group_coupons %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>券ID</th>
-                                <th>美食名称</th>
-                                <th>顾客</th>
-                                <th>数量</th>
-                                <th>金额</th>
-                                <th>核销码</th>
-                                <th>状态</th>
-                                <th>购买时间</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for coupon in merchant_group_coupons %}
-                            <tr>
-                                <td>#{{ coupon.id }}</td>
-                                <td>{{ coupon.food.name }}</td>
-                                <td>{{ coupon.user.username }}</td>
-                                <td>{{ coupon.num }}</td>
-                                <td>¥{{ coupon.cost }}</td>
-                                <td>{{ coupon.code }}</td>
-                                <td>
-                                    {% if coupon.status == 0 %}待使用
-                                    {% elif coupon.status == 1 %}已使用
-                                    {% else %}已取消
-                                    {% endif %}
-                                </td>
-                                <td>{{ coupon.time|date:"m-d H:i" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 暂无团购券</div>
-            {% endif %}
-        </div>
-        {% else %}
-        <!-- 订单记录（可滚动表格） -->
-        <div class="orders-section">
-            <h3>我的订单记录</h3>
-            {% if orders %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>订单ID</th>
-                                <th>美食名称</th>
-                                <th>数量</th>
-                                <th>总价</th>
-                                <th>地址</th>
-                                <th>时间</th>
-                                <th>食物评分</th>
-                                <th>配送评分</th>
-                                <th>评价</th>
-                                <th>查看状态</th>
-                                <th>评价操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in orders %}
-                            <tr>
-                                <td>{{ order.id }}</td>
-                                <td>{{ order.food.name }}</td>
-                                <td>{{ order.num }}</td>
-                                <td>{{ order.cost }}</td>
-                                <td>{{ order.address }}</td>
-                                <td>{{ order.time|date:"Y-m-d H:i" }}</td>
-                                <td>{% if order.scoretofood == 0.0 %}暂未评分{% else %}{{ order.scoretofood }}{% endif %}</td>
-                                <td>{% if order.scoretodeliver == 0.0 %}暂未评分{% else %}{{ order.scoretodeliver }}{% endif %}</td>
-                                <td>{{ order.comment }}</td>
-                                <td>
-                                    <button type="button" class="btn-status" 
-                                        onclick="location.href='/orderpos/?orderid={{ order.id }}'">
-                                        📋 查看状态
-                                    </button>
-                                </td>
-                                <td>
-                                    {% if order.pos == 4 %}
-                                        <button type="button" class="btn-evaluate"
-                                            onclick="location.href='/ordercomment/?orderid={{ order.id }}'">
-                                            ✍️ 去评价
-                                        </button>
-                                    {% elif order.pos == 5 %}
-                                        <button type="button" class="btn-disabled" disabled>
-                                            ✅ 已评价
-                                        </button>
-                                    {% else %}
-                                        <button type="button" class="btn-disabled" disabled>
-                                            🚫 不可评价
-                                        </button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有订单记录哦～ 快去点餐吧！</div>
-            {% endif %}
-        </div>
-
-        <!-- 订房记录（可滚动表格） -->
-        <div class="hotel-orders-section">
-            <h3>我的订房记录</h3>
-            {% if hotel_orders %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>订单ID</th>
-                                <th>预定时间</th>
-                                <th>预计入住时间</th>
-                                <th>入住评价</th>
-                                <th>查看状态</th>
-                                <th>评价操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in hotel_orders %}
-                            <tr>
-                                <td>{{ order.id }}</td>
-                                <td>{{ order.time|date:"Y-m-d H:i" }}</td>
-                                <td>{{ order.checkin_time|date:"Y-m-d H:i" }}</td>
-                                <td>{% if order.score == 0.0 %}暂未评价{% else %}{{ order.score }}{% endif %}</td>
-                                <td>
-                                    <button type="button" class="btn-status"
-                                        onclick="location.href='/hotelorderpos/?orderid={{ order.id }}'">
-                                        📋 查看状态
-                                    </button>
-                                </td>
-                                <td>
-                                    {% if order.pos == 4 %}
-                                        <button type="button" class="btn-evaluate"
-                                            onclick="location.href='/hotelorderpos/?orderid={{ order.id }}'">
-                                            ✍️ 去评价
-                                        </button>
-                                    {% elif order.pos == 5 %}
-                                        <button type="button" class="btn-disabled" disabled>
-                                            ✅ 已评价
-                                        </button>
-                                    {% else %}
-                                        <button type="button" class="btn-disabled" disabled>
-                                            🚫 不可评价
-                                        </button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有订房记录哦～ 快去预订酒店吧！</div>
-            {% endif %}
-        </div>
-
-        <!-- 购票记录（可滚动表格） -->
-        <div class="play-orders-section">
-            <h3>我的购票记录</h3>
-            {% if play_orders %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>订单ID</th>
-                                <th>场所名称</th>
-                                <th>地址</th>
-                                <th>预定游玩</th>
-                                <th>票数</th>
-                                <th>总价</th>
-                                <th>评分</th>
-                                <th>评价</th>
-                                <th>查看状态</th>
-                                <th>评价操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for order in play_orders %}
-                            <tr>
-                                <td>{{ order.id }}</td>
-                                <td>{{ order.play.name }}</td>
-                                <td>{{ order.play.addr }}</td>
-                                <td>{{ order.visit_time|date:"Y-m-d H:i" }}</td>
-                                <td>{{ order.num }}</td>
-                                <td>{{ order.cost }}</td>
-                                <td>{% if order.score == 0.0 %}暂未评分{% else %}{{ order.score }}{% endif %}</td>
-                                <td>{{ order.comment }}</td>
-                                <td>
-                                    <button type="button" class="btn-status"
-                                        onclick="location.href='/playorderpos/?orderid={{ order.id }}'">
-                                        📋 查看状态
-                                    </button>
-                                </td>
-                                <td>
-                                    {% if order.pos == 4 %}
-                                        <button type="button" class="btn-evaluate"
-                                            onclick="location.href='/playorderpos/?orderid={{ order.id }}'">
-                                            ✍️ 去评价
-                                        </button>
-                                    {% elif order.pos == 5 %}
-                                        <button type="button" class="btn-disabled" disabled>
-                                            ✅ 已评价
-                                        </button>
-                                    {% else %}
-                                        <button type="button" class="btn-disabled" disabled>
-                                            🚫 不可评价
-                                        </button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有购票记录哦～ 快去娱乐中心看看吧！</div>
-            {% endif %}
-        </div>
-
-        <div class="groupbuy-section">
-            <h3>我的团购券</h3>
-            {% if group_coupons %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>券ID</th>
-                                <th>美食名称</th>
-                                <th>数量</th>
-                                <th>金额</th>
-                                <th>核销码</th>
-                                <th>状态</th>
-                                <th>购买时间</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for coupon in group_coupons %}
-                            <tr>
-                                <td>#{{ coupon.id }}</td>
-                                <td>{{ coupon.food.name }}</td>
-                                <td>{{ coupon.num }}</td>
-                                <td>¥{{ coupon.cost }}</td>
-                                <td>{{ coupon.code }}</td>
-                                <td>
-                                    {% if coupon.status == 0 %}待使用
-                                    {% elif coupon.status == 1 %}已使用
-                                    {% else %}已取消
-                                    {% endif %}
-                                </td>
-                                <td>{{ coupon.time|date:"m-d H:i" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有团购券，去美食详情页看看吧！</div>
-            {% endif %}
-        </div>
-
-        <!-- 博客记录（可滚动表格） -->
-        <div class="blogs-section">
-            <h3>我的博客记录</h3>
-            {% if blogs %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>博客标题</th>
-                                <th>发布时间</th>
-                                <th>内容摘要</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for blog in blogs %}
-                            <tr>
-                                <td>{{ blog.title }}</td>
-                                <td>{{ blog.created_at|date:"Y-m-d H:i:s" }}</td>
-                                <td>{{ blog.content|truncatechars:50 }}</td>
-                                <td>
-                                    <button type="button" class="btn-view-blog" 
-                                        onclick="location.href='/blogsdetails/?blogid={{ blog.id }}&userid={{ user.id }}'">
-                                        🔍 查看详情
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 还没有发布过博客，去写一篇吧～</div>
-            {% endif %}
-        </div>
-
-        <div class="blogs-section" id="cart-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3>我的购物车（目前仅支持外卖购物车）</h3>
-                {% if temps %}
-                    <button type="button" class="btn-submit" id="clearCartBtn" style="background-color: #dc3545;">🧹 清空购物车</button>
-                {% endif %}
             </div>
-            {% if temps %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>美食名称</th>
-                                <th>下单数量</th>
-                                <th>地址</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                    <tbody>
-                    {% for temp in temps %}
-                    <tr id="cart-row-{{ temp.id }}">
-                        <td>{{ temp.food.name }}</td>
-                        <td class="cart-num" data-value="{{ temp.num }}">{{ temp.num }}</td>
-                        <td class="cart-addr" data-value="{{ temp.address }}">{{ temp.address }}</td>
-                        <td class="action-cell">
-                            <button type="button" class="btn-view-blog edit-btn" onclick="editItem({{ temp.id }}, this)">🔍 编辑</button>
-                            <button type="button" class="btn-view-blog delete-btn" onclick="deleteItem({{ temp.id }}, this)">🗑️ 删除</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-msg">📭 购物车空空如也，赶紧添加购物车吧～</div>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <hr>
-        {% if is_rider %}
-        <a href="/rider/" class="back-btn">🛵 返回订单列表</a>
-        {% else %}
-        <a href="/food/" class="back-btn">🍜 返回美食列表</a>
-        {% endif %}
-        <a href="/logout/" class="back-btn">↪️ 退出登录</a>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 提交（修改/新增）</button>
+            </div>
+        </form>
     </div>
 </div>
 
+{% if is_rider %}
+<!-- 骑手：已接订单栏 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🛵 已接订单</div>
+    </div>
+    {% if rider_active_orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>美食名称</th>
+                    <th>顾客</th>
+                    <th>数量</th>
+                    <th>总价</th>
+                    <th>配送地址</th>
+                    <th>下单时间</th>
+                    <th>当前状态</th>
+                    <th style="text-align:right;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in rider_active_orders %}
+                <tr>
+                    <td><span class="td-name">#{{ order.id }}</span></td>
+                    <td>{{ order.food.name }}</td>
+                    <td class="td-sub">{{ order.user.username }}</td>
+                    <td>{{ order.num }} 份</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ order.cost }}</td>
+                    <td class="td-sub">{{ order.address }}</td>
+                    <td class="td-sub">{{ order.time|date:"m-d H:i" }}</td>
+                    <td>
+                        {% if order.pos == 1 %}<span class="tag tag-amber">⏳ 待商家出餐</span>
+                        {% elif order.pos == 2 %}<span class="tag tag-blue">🍳 已出餐 · 待取餐</span>
+                        {% elif order.pos == 3 %}<span class="tag tag-blue">🍳 已取餐 · 配送中</span>
+                        {% elif order.pos == 4 %}<span class="tag tag-green">📦 已送达 · 待评价</span>
+                        {% endif %}
+                    </td>
+                    <td class="td-action">
+                        {% if order.pos == 2 %}
+                            <a href="/rider_get/?orderid={{ order.id }}" class="btn-table-action success">✅ 已取餐</a>
+                        {% elif order.pos == 3 %}
+                            <a href="/rider_deliver/?orderid={{ order.id }}" class="btn-table-action success">✅ 已送达</a>
+                        {% else %}
+                            <span class="btn-table-action disabled">🚫 暂无操作</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>暂无已接订单，去订单中心看看吧～</div></div>
+    {% endif %}
+</div>
+
+<!-- 骑手：已完成订单栏 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">✅ 已完成订单</div>
+    </div>
+    {% if rider_done_orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>美食名称</th>
+                    <th>顾客</th>
+                    <th>数量</th>
+                    <th>总价</th>
+                    <th>配送地址</th>
+                    <th>下单时间</th>
+                    <th>顾客评价</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in rider_done_orders %}
+                <tr>
+                    <td><span class="td-name">#{{ order.id }}</span></td>
+                    <td>{{ order.food.name }}</td>
+                    <td class="td-sub">{{ order.user.username }}</td>
+                    <td>{{ order.num }} 份</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ order.cost }}</td>
+                    <td class="td-sub">{{ order.address }}</td>
+                    <td class="td-sub">{{ order.time|date:"m-d H:i" }}</td>
+                    <td>
+                        {% if order.scoretofood > 0 %}
+                            <span class="rating-pill"><span class="star-icon">★</span>{{ order.scoretofood }}</span> (食物)
+                            <span class="rating-pill" style="margin-left:6px;"><span class="star-icon">★</span>{{ order.scoretodeliver }}</span> (配送)
+                        {% else %}
+                            <span class="tag tag-gray">暂未评价</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>暂无已完成订单</div></div>
+    {% endif %}
+</div>
+
+{% elif is_merchant %}
+<!-- 商家：营业额概览 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">💰 营业额概览</div>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>业务</th>
+                    <th>订单/核销数</th>
+                    <th>营业额</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>外卖订单</td>
+                    <td>{{ merchant_revenue.food_orders }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ merchant_revenue.food|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td>酒店订单</td>
+                    <td>{{ merchant_revenue.hotel_orders }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ merchant_revenue.hotel|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td>娱乐订单</td>
+                    <td>{{ merchant_revenue.play_orders }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ merchant_revenue.play|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td>团购券核销</td>
+                    <td>{{ merchant_revenue.used_group_coupons }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ merchant_revenue.groupbuy|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td><strong>合计</strong></td>
+                    <td>-</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ merchant_revenue.total|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 商家：已创建的食物 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🍜 已创建的食物</div>
+    </div>
+    {% if merchant_foods %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>食物ID</th>
+                    <th>美食名称</th>
+                    <th>数量</th>
+                    <th>总价</th>
+                    <th>地址</th>
+                    <th>时间</th>
+                    <th>食物评分</th>
+                    <th>商品状态</th>
+                    <th style="text-align:right;">商品操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in merchant_foods %}
+                <tr>
+                    <td><span class="td-name">#{{ item.food.id }}</span></td>
+                    <td>{{ item.food.name }}</td>
+                    <td>{{ item.total_num }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ item.total_cost }}</td>
+                    <td class="td-sub">{{ item.address }}</td>
+                    <td class="td-sub">{% if item.latest_time %}{{ item.latest_time|date:"Y-m-d H:i" }}{% else %}暂无订单{% endif %}</td>
+                    <td>{% if item.avg_score %}{{ item.avg_score|floatformat:1 }}{% else %}<span class="tag tag-gray">暂未评分</span>{% endif %}</td>
+                    <td>
+                        {% if item.food.is_off_shelf %}<span class="tag tag-gray">已下架</span>
+                        {% elif item.food.is_sold_out %}<span class="tag tag-red">已售罄</span>
+                        {% else %}<span class="tag tag-green">售卖中</span>{% endif %}
+                    </td>
+                    <td class="td-action">
+                        <form action="/merchant/food/action/" method="post" style="display:inline-block; margin-right:6px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="food_id" value="{{ item.food.id }}">
+                            <input type="hidden" name="action" value="toggle_sold_out">
+                            <button type="submit" class="btn-table-action">
+                                {% if item.food.is_sold_out %}恢复供应{% else %}标记售罄{% endif %}
+                            </button>
+                        </form>
+                        <form action="/merchant/food/action/" method="post" style="display:inline-block;">
+                            {% csrf_token %}
+                            <input type="hidden" name="food_id" value="{{ item.food.id }}">
+                            <input type="hidden" name="action" value="toggle_off_shelf">
+                            <button type="submit" class="btn-table-action danger">
+                                {% if item.food.is_off_shelf %}重新上架{% else %}下架商品{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有创建美食，去美食中心点击 ➕ 添加吧～</div></div>
+    {% endif %}
+</div>
+
+<!-- 商家：已开放的酒店 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🏨 已开放的酒店</div>
+    </div>
+    {% if merchant_hotels %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>酒店ID</th>
+                    <th>酒店名称</th>
+                    <th>地址</th>
+                    <th>评价</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hotel in merchant_hotels %}
+                <tr>
+                    <td><span class="td-name">#{{ hotel.id }}</span></td>
+                    <td>{{ hotel.name }}</td>
+                    <td class="td-sub">{{ hotel.addr }}</td>
+                    <td>{% if hotel.ratenum == 0 %}<span class="tag tag-gray">暂未评价</span>{% else %}<span class="rating-pill"><span class="star-icon">★</span>{{ hotel.rating }}</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有开放酒店，去酒店民宿点击 ➕ 添加吧～</div></div>
+    {% endif %}
+</div>
+
+<!-- 商家：已开放的娱乐场所 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🎮 已开放的娱乐场所</div>
+    </div>
+    {% if merchant_plays %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>场所ID</th>
+                    <th>场所名称</th>
+                    <th>地址</th>
+                    <th>开始营业</th>
+                    <th>运营时间</th>
+                    <th>评分</th>
+                    <th>简介</th>
+                    <th style="text-align:right;">详情</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for play in merchant_plays %}
+                <tr>
+                    <td><span class="td-name">#{{ play.id }}</span></td>
+                    <td>{{ play.name }}</td>
+                    <td class="td-sub">{{ play.addr }}</td>
+                    <td class="td-sub">{{ play.start_time }}</td>
+                    <td class="td-sub">{{ play.open_time }}</td>
+                    <td>{% if play.ratenum == 0 %}<span class="tag tag-gray">暂未评价</span>{% else %}<span class="rating-pill"><span class="star-icon">★</span>{{ play.rating }}</span>{% endif %}</td>
+                    <td class="td-sub">{{ play.inf|truncatechars:30 }}</td>
+                    <td class="td-action">
+                        <button type="button" class="btn-table-action" onclick="location.href='/playdetails/?playid={{ play.id }}'">🔍 查看详情</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有开放娱乐场所，去娱乐中心点击 ➕ 添加吧～</div></div>
+    {% endif %}
+</div>
+
+<!-- 商家：当前订单（骑手已接单，待出餐） -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🕐 当前订单</div>
+    </div>
+    {% if merchant_current_orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>美食名称</th>
+                    <th>顾客</th>
+                    <th>骑手</th>
+                    <th>数量</th>
+                    <th>总价</th>
+                    <th>配送地址</th>
+                    <th>下单时间</th>
+                    <th style="text-align:right;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in merchant_current_orders %}
+                <tr>
+                    <td><span class="td-name">#{{ order.id }}</span></td>
+                    <td>{{ order.food.name }}</td>
+                    <td class="td-sub">{{ order.user.username }}</td>
+                    <td class="td-sub">{{ order.rider.username|default:"未知" }}</td>
+                    <td>{{ order.num }} 份</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ order.cost }}</td>
+                    <td class="td-sub">{{ order.address }}</td>
+                    <td class="td-sub">{{ order.time|date:"m-d H:i" }}</td>
+                    <td class="td-action">
+                        {% if order.pos == 1 %}
+                            <a href="/merchant_prepare/?orderid={{ order.id }}" class="btn-table-action success">🍳 完成备餐</a>
+                        {% else %}
+                            <span class="btn-table-action disabled">🚫 暂无操作</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>暂无待处理的订单</div></div>
+    {% endif %}
+</div>
+
+<!-- 商家：已完成订单（已出餐/已送达/已评价） -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">✅ 已完成订单</div>
+    </div>
+    {% if merchant_done_orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>美食名称</th>
+                    <th>顾客</th>
+                    <th>骑手</th>
+                    <th>数量</th>
+                    <th>总价</th>
+                    <th>状态</th>
+                    <th>顾客评价</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in merchant_done_orders %}
+                <tr>
+                    <td><span class="td-name">#{{ order.id }}</span></td>
+                    <td>{{ order.food.name }}</td>
+                    <td class="td-sub">{{ order.user.username }}</td>
+                    <td class="td-sub">{{ order.rider.username|default:"未知" }}</td>
+                    <td>{{ order.num }} 份</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ order.cost }}</td>
+                    <td>
+                        {% if order.pos == 2 %}<span class="tag tag-blue">🍳 已出餐</span>
+                        {% elif order.pos == 4 %}<span class="tag tag-blue">📦 已送达</span>
+                        {% elif order.pos == 5 %}<span class="tag tag-green">✅ 已评价</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.scoretofood > 0 %}
+                            <span class="rating-pill"><span class="star-icon">★</span>{{ order.scoretofood }}</span> (食物)
+                            <span class="rating-pill" style="margin-left:6px;"><span class="star-icon">★</span>{{ order.scoretodeliver }}</span> (配送)
+                        {% else %}
+                            <span class="tag tag-gray">暂未评价</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>暂无已完成的订单</div></div>
+    {% endif %}
+</div>
+
+<!-- 商家：团购券核销 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🎟️ 团购券核销</div>
+        <form class="search-form-row" action="/groupbuy/redeem/" method="post">
+            {% csrf_token %}
+            <input type="text" class="search-input" name="code" placeholder="输入顾客出示的核销码" required style="max-width:320px;">
+            <button type="submit" class="btn btn-primary">核销团购券</button>
+        </form>
+    </div>
+    {% if merchant_group_coupons %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>券ID</th>
+                    <th>美食名称</th>
+                    <th>顾客</th>
+                    <th>数量</th>
+                    <th>金额</th>
+                    <th>核销码</th>
+                    <th>状态</th>
+                    <th>购买时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for coupon in merchant_group_coupons %}
+                <tr>
+                    <td><span class="td-name">#{{ coupon.id }}</span></td>
+                    <td>{{ coupon.food.name }}</td>
+                    <td class="td-sub">{{ coupon.user.username }}</td>
+                    <td>{{ coupon.num }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ coupon.cost }}</td>
+                    <td class="info-value mono" style="font-size:12.5px;">{{ coupon.code }}</td>
+                    <td>
+                        {% if coupon.status == 0 %}<span class="tag tag-amber">待使用</span>
+                        {% elif coupon.status == 1 %}<span class="tag tag-green">已使用</span>
+                        {% else %}<span class="tag tag-gray">已取消</span>
+                        {% endif %}
+                    </td>
+                    <td class="td-sub">{{ coupon.time|date:"m-d H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>暂无团购券</div></div>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- 普通用户：我的订单记录 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🍜 我的订单记录</div>
+    </div>
+    {% if orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>美食名称</th>
+                    <th>数量</th>
+                    <th>总价</th>
+                    <th>地址</th>
+                    <th>时间</th>
+                    <th>食物评分</th>
+                    <th>配送评分</th>
+                    <th>评价</th>
+                    <th>查看状态</th>
+                    <th>评价操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><span class="td-name">#{{ order.id }}</span></td>
+                    <td>{{ order.food.name }}</td>
+                    <td>{{ order.num }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ order.cost }}</td>
+                    <td class="td-sub">{{ order.address }}</td>
+                    <td class="td-sub">{{ order.time|date:"Y-m-d H:i" }}</td>
+                    <td>{% if order.scoretofood == 0.0 %}<span class="tag tag-gray">暂未评分</span>{% else %}{{ order.scoretofood }}{% endif %}</td>
+                    <td>{% if order.scoretodeliver == 0.0 %}<span class="tag tag-gray">暂未评分</span>{% else %}{{ order.scoretodeliver }}{% endif %}</td>
+                    <td class="td-sub">{{ order.comment }}</td>
+                    <td class="td-action">
+                        <button type="button" class="btn-table-action" onclick="location.href='/orderpos/?orderid={{ order.id }}'">📋 查看状态</button>
+                    </td>
+                    <td class="td-action">
+                        {% if order.pos == 4 %}
+                            <button type="button" class="btn-table-action success" onclick="location.href='/ordercomment/?orderid={{ order.id }}'">✍️ 去评价</button>
+                        {% elif order.pos == 5 %}
+                            <span class="btn-table-action disabled">✅ 已评价</span>
+                        {% else %}
+                            <span class="btn-table-action disabled">🚫 不可评价</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有订单记录哦～ 快去点餐吧！</div></div>
+    {% endif %}
+</div>
+
+<!-- 我的订房记录 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🏨 我的订房记录</div>
+    </div>
+    {% if hotel_orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>预定时间</th>
+                    <th>预计入住时间</th>
+                    <th>入住评价</th>
+                    <th>查看状态</th>
+                    <th>评价操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in hotel_orders %}
+                <tr>
+                    <td><span class="td-name">#{{ order.id }}</span></td>
+                    <td class="td-sub">{{ order.time|date:"Y-m-d H:i" }}</td>
+                    <td class="td-sub">{{ order.checkin_time|date:"Y-m-d H:i" }}</td>
+                    <td>{% if order.score == 0.0 %}<span class="tag tag-gray">暂未评价</span>{% else %}{{ order.score }}{% endif %}</td>
+                    <td class="td-action">
+                        <button type="button" class="btn-table-action" onclick="location.href='/hotelorderpos/?orderid={{ order.id }}'">📋 查看状态</button>
+                    </td>
+                    <td class="td-action">
+                        {% if order.pos == 4 %}
+                            <button type="button" class="btn-table-action success" onclick="location.href='/hotelorderpos/?orderid={{ order.id }}'">✍️ 去评价</button>
+                        {% elif order.pos == 5 %}
+                            <span class="btn-table-action disabled">✅ 已评价</span>
+                        {% else %}
+                            <span class="btn-table-action disabled">🚫 不可评价</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有订房记录哦～ 快去预订酒店吧！</div></div>
+    {% endif %}
+</div>
+
+<!-- 我的购票记录 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🎫 我的购票记录</div>
+    </div>
+    {% if play_orders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>订单ID</th>
+                    <th>场所名称</th>
+                    <th>地址</th>
+                    <th>预定游玩</th>
+                    <th>票数</th>
+                    <th>总价</th>
+                    <th>评分</th>
+                    <th>评价</th>
+                    <th>查看状态</th>
+                    <th>评价操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in play_orders %}
+                <tr>
+                    <td><span class="td-name">#{{ order.id }}</span></td>
+                    <td>{{ order.play.name }}</td>
+                    <td class="td-sub">{{ order.play.addr }}</td>
+                    <td class="td-sub">{{ order.visit_time|date:"Y-m-d H:i" }}</td>
+                    <td>{{ order.num }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ order.cost }}</td>
+                    <td>{% if order.score == 0.0 %}<span class="tag tag-gray">暂未评分</span>{% else %}{{ order.score }}{% endif %}</td>
+                    <td class="td-sub">{{ order.comment }}</td>
+                    <td class="td-action">
+                        <button type="button" class="btn-table-action" onclick="location.href='/playorderpos/?orderid={{ order.id }}'">📋 查看状态</button>
+                    </td>
+                    <td class="td-action">
+                        {% if order.pos == 4 %}
+                            <button type="button" class="btn-table-action success" onclick="location.href='/playorderpos/?orderid={{ order.id }}'">✍️ 去评价</button>
+                        {% elif order.pos == 5 %}
+                            <span class="btn-table-action disabled">✅ 已评价</span>
+                        {% else %}
+                            <span class="btn-table-action disabled">🚫 不可评价</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有购票记录哦～ 快去娱乐中心看看吧！</div></div>
+    {% endif %}
+</div>
+
+<!-- 我的团购券 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">🎟️ 我的团购券</div>
+    </div>
+    {% if group_coupons %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>券ID</th>
+                    <th>美食名称</th>
+                    <th>数量</th>
+                    <th>金额</th>
+                    <th>核销码</th>
+                    <th>状态</th>
+                    <th>购买时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for coupon in group_coupons %}
+                <tr>
+                    <td><span class="td-name">#{{ coupon.id }}</span></td>
+                    <td>{{ coupon.food.name }}</td>
+                    <td>{{ coupon.num }}</td>
+                    <td class="td-price"><span class="td-price-symbol">¥</span>{{ coupon.cost }}</td>
+                    <td class="info-value mono" style="font-size:12.5px;">{{ coupon.code }}</td>
+                    <td>
+                        {% if coupon.status == 0 %}<span class="tag tag-amber">待使用</span>
+                        {% elif coupon.status == 1 %}<span class="tag tag-green">已使用</span>
+                        {% else %}<span class="tag tag-gray">已取消</span>
+                        {% endif %}
+                    </td>
+                    <td class="td-sub">{{ coupon.time|date:"m-d H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有团购券，去美食详情页看看吧！</div></div>
+    {% endif %}
+</div>
+
+<!-- 我的博客记录 -->
+<div class="panel-card">
+    <div class="filter-header">
+        <div class="section-title" style="margin:0;">📰 我的博客记录</div>
+    </div>
+    {% if blogs %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>博客标题</th>
+                    <th>发布时间</th>
+                    <th>内容摘要</th>
+                    <th style="text-align:right;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for blog in blogs %}
+                <tr>
+                    <td><span class="td-name">{{ blog.title }}</span></td>
+                    <td class="td-sub">{{ blog.created_at|date:"Y-m-d H:i:s" }}</td>
+                    <td class="td-sub">{{ blog.content|truncatechars:50 }}</td>
+                    <td class="td-action">
+                        <button type="button" class="btn-table-action" onclick="location.href='/blogsdetails/?blogid={{ blog.id }}&userid={{ user.id }}'">🔍 查看详情</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>还没有发布过博客，去写一篇吧～</div></div>
+    {% endif %}
+</div>
+
+<!-- 我的购物车 -->
+<div class="panel-card" id="cart-section">
+    <div class="filter-header">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div class="section-title" style="margin:0;">🛒 我的购物车（目前仅支持外卖购物车）</div>
+            {% if temps %}
+            <button type="button" class="btn btn-danger btn-sm" id="clearCartBtn">🧹 清空购物车</button>
+            {% endif %}
+        </div>
+    </div>
+    {% if temps %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>美食名称</th>
+                    <th>下单数量</th>
+                    <th>地址</th>
+                    <th style="text-align:right;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for temp in temps %}
+            <tr id="cart-row-{{ temp.id }}">
+                <td><span class="td-name">{{ temp.food.name }}</span></td>
+                <td class="cart-num" data-value="{{ temp.num }}">{{ temp.num }}</td>
+                <td class="cart-addr" data-value="{{ temp.address }}">{{ temp.address }}</td>
+                <td class="td-action action-cell">
+                    <button type="button" class="btn-view-blog edit-btn" onclick="editItem({{ temp.id }}, this)">🔍 编辑</button>
+                    <button type="button" class="btn-view-blog danger delete-btn" onclick="deleteItem({{ temp.id }}, this)">🗑️ 删除</button>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon">📭</div><div>购物车空空如也，赶紧添加购物车吧～</div></div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="form-actions">
+    {% if is_rider %}
+    <a href="/rider/" class="btn btn-default">🛵 返回订单列表</a>
+    {% else %}
+    <a href="/food/" class="btn btn-default">🍜 返回美食列表</a>
+    {% endif %}
+    <a href="/logout/" class="btn btn-danger">↪️ 退出登录</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
 // 获取 CSRF Token
 function getCSRFToken() {
@@ -1165,10 +873,9 @@ function deleteItem(itemId, btn) {
     .then(data => {
         if (data.status === 'ok') {
             row.remove();
-            // 如果表格变空，刷新页面显示空状态（或动态生成空提示）
-            const tbody = document.querySelector('.blogs-section tbody');
+            const tbody = document.querySelector('#cart-section tbody');
             if (tbody && tbody.children.length === 0) {
-                location.reload(); // 简单刷新，也可自行替换HTML
+                location.reload();
             }
             showMsg('删除成功');
         } else {
@@ -1188,17 +895,14 @@ function editItem(itemId, btn) {
     const addrTd = row.querySelector('.cart-addr');
     const actionTd = row.querySelector('.action-cell');
 
-    // 如果已经在编辑状态，不做处理
     if (numTd.querySelector('input')) return;
 
     const oldNum = numTd.dataset.value;
     const oldAddr = addrTd.dataset.value;
 
-    // 替换为输入框
     numTd.innerHTML = `<input type="number" class="temp-num" value="${oldNum}" min="1" style="width:70px;">`;
     addrTd.innerHTML = `<input type="text" class="temp-addr" value="${oldAddr}" style="width:200px;">`;
 
-    // 保存原按钮并替换为保存/取消
     const editBtn = btn;
     const deleteBtn = row.querySelector('.delete-btn');
     editBtn.style.display = 'none';
@@ -1215,7 +919,6 @@ function editItem(itemId, btn) {
     actionTd.appendChild(saveBtn);
     actionTd.appendChild(cancelBtn);
 
-    // 保存逻辑
     saveBtn.onclick = () => {
         const newNum = numTd.querySelector('.temp-num').value;
         const newAddr = addrTd.querySelector('.temp-addr').value;
@@ -1239,7 +942,6 @@ function editItem(itemId, btn) {
         .then(res => res.json())
         .then(data => {
             if (data.status === 'ok') {
-                // 恢复显示模式
                 numTd.dataset.value = data.num;
                 numTd.innerHTML = data.num;
                 addrTd.dataset.value = data.address;
@@ -1259,7 +961,6 @@ function editItem(itemId, btn) {
         });
     };
 
-    // 取消逻辑
     cancelBtn.onclick = () => {
         numTd.innerHTML = oldNum;
         addrTd.innerHTML = oldAddr;
@@ -1274,7 +975,7 @@ const clearCartBtn = document.getElementById('clearCartBtn');
 if (clearCartBtn) {
     clearCartBtn.addEventListener('click', function() {
         if (!confirm('⚠️ 清空购物车会将所有商品移至历史记录，确定要清空吗？')) return;
-        
+
         fetch('/cart/clear/', {
             method: 'POST',
             headers: { 'X-CSRFToken': getCSRFToken() }
@@ -1285,8 +986,10 @@ if (clearCartBtn) {
                 showMsg('购物车已清空');
                 const cartSection = document.getElementById('cart-section');
                 cartSection.innerHTML = `
-                    <h3>我的购物车（目前仅支持外卖购物车）</h3>
-                    <div class="empty-msg">📭 购物车空空如也，赶紧添加购物车吧～</div>
+                    <div class="filter-header">
+                        <div class="section-title" style="margin:0;">🛒 我的购物车（目前仅支持外卖购物车）</div>
+                    </div>
+                    <div class="empty-state"><div class="empty-icon">📭</div><div>购物车空空如也，赶紧添加购物车吧～</div></div>
                 `;
             } else {
                 showMsg('清空失败：' + (data.msg || '未知错误'), true);
@@ -1300,14 +1003,9 @@ if (clearCartBtn) {
 }
 
 window.addEventListener('pageshow', function(event) {
-        // 如果页面是从 bfcache 恢复的（即用户按后退/前进按钮）
         if (event.persisted) {
-            // 强制重新加载页面，此时会重新请求服务器，后端校验未登录就会重定向到 /index/
             window.location.reload();
         }
 });
-
 </script>
-
-</body>
-</html>
+{% endblock %}

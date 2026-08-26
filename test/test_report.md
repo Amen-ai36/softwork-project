@@ -1,6 +1,6 @@
 # 自动化测试报告
 
-- 生成时间：2026-08-25 14:46:33
+- 生成时间：2026-08-26 13:58:51
 - 运行环境：Windows-10-10.0.26200-SP0
 - Python：3.10.10 / Django：5.2.14
 - 数据库：SQLite（food_master.test_settings）
@@ -10,9 +10,9 @@
 | 项目 | 数量 |
 | --- | --- |
 | 测试总数 | 104 |
-| 通过数 | 103 |
+| 通过数 | 104 |
 | 失败数 | 0 |
-| 跳过数（环境原因） | 1 |
+| 跳过数（环境原因） | 0 |
 | 结果 | OK |
 
 > 说明：任一测试失败时，`run_tests.py` 会返回非 0 退出码，
@@ -276,15 +276,15 @@ test_invalid_passwords_rejected (test.test_unit.PasswordBusinessRuleTest)
 异常分支：无字母 / 无数字 / 长度越界均不匹配 ... ok
 test_valid_passwords_match (test.test_unit.PasswordBusinessRuleTest) ... ok
 test_imported_mysql_database_has_required_tables (test.test_database_config.DatabaseConfigTest)
-真实环境检查：MySQL 中存在项目核心表（无法连接时跳过） ... skipped "无法连接 MySQL（ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)）。如需检查真实库，请设置 FOOD_DELIVER_DB_PASSWORD 后重试"
+真实环境检查：MySQL 中存在项目核心表（无法连接时跳过） ... ok
 test_settings_defaults_missing_password_are_allowed_in_tests (test.test_database_config.DatabaseConfigTest)
 配置可用性：若通过 test_settings 运行，SQLite 配置应可加载 ... ok
 test_settings_match_sql_dump_database (test.test_database_config.DatabaseConfigTest)
 配置一致性：settings 数据库名应与 data_hex2.sql 声明的数据库一致 ... ok
 
 ----------------------------------------------------------------------
-Ran 104 tests in 0.809s
+Ran 104 tests in 0.956s
 
-OK (skipped=1)
+OK
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
 ```

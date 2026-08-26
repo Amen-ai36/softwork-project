@@ -1,65 +1,78 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title>AI 美食助手</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; }
-        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-        button { padding: 8px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        #reply { margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; white-space: pre-wrap; }
-        .loading { color: gray; }
-        .error { color: red; }
-    </style>
-</head>
-<body>
-    <h1>🍜 AI 美食助手</h1>
-    <textarea id="userInput" placeholder="请输入您的问题，例如：鱼香肉丝怎么做？"></textarea>
-    <button id="sendBtn">提问</button>
+{% extends "app_base.html" %}
 
-    <div id="reply"></div>
+{% block title %}AI 美食助手 · Life Master{% endblock %}
+{% block page_title %}AI 美食助手{% endblock %}
 
-    <script>
-        const sendBtn = document.getElementById('sendBtn');
-        const userInput = document.getElementById('userInput');
-        const replyDiv = document.getElementById('reply');
+{% block content %}
+<div class="page-title-bar">
+    <div>
+        <h1>🍜 AI 美食助手</h1>
+        <div class="page-sub">向智能助理提问，获取美食灵感与建议</div>
+    </div>
+</div>
 
-        sendBtn.addEventListener('click', async () => {
-            const input = userInput.value.trim();
-            if (!input) {
-                replyDiv.innerHTML = '<p class="error">请输入内容</p>';
-                return;
-            }
+<div class="panel-card" style="max-width:760px; width:100%;">
+    <div class="filter-header">
+        <span style="font-size:13px; color:var(--text-secondary);">输入您的问题，AI 将为您生成回答</span>
+    </div>
+    <div class="form-card-body">
+        <div class="form-group">
+            <label for="userInput">您的问题</label>
+            <textarea class="form-control" id="userInput" rows="5" placeholder="请输入您的问题，例如：鱼香肉丝怎么做？"></textarea>
+        </div>
+        <div class="form-actions">
+            <button id="sendBtn" class="btn btn-primary">🤖 提问</button>
+        </div>
+        <hr class="divider" style="margin:6px 0 12px;">
+        <div id="reply" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+</div>
+{% endblock %}
 
-            replyDiv.innerHTML = '<p class="loading">AI 正在思考中...</p>';
-            try {
-                const formData = new FormData();
-                formData.append('user_input', input);
-                const response = await fetch('', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: formData
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    replyDiv.innerHTML = `<p><strong>AI 回复：</strong></p><p>${data.reply.replace(/\n/g, '<br>')}</p>`;
-                } else {
-                    replyDiv.innerHTML = `<p class="error">错误：${data.error}</p>`;
-                }
-            } catch (err) {
-                replyDiv.innerHTML = '<p class="error">网络错误，请稍后重试</p>';
-            }
-        });
+{% block scripts %}
+<script>
+    const sendBtn = document.getElementById('sendBtn');
+    const userInput = document.getElementById('userInput');
+    const replyDiv = document.getElementById('reply');
 
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return '';
+    function setReply(html, isError = false) {
+        const box = document.createElement('div');
+        box.className = 'chat-msg ' + (isError ? 'msg-ai' : 'msg-ai');
+        box.style.borderLeft = isError ? '3px solid var(--danger-color)' : '3px solid var(--brand-primary)';
+        box.innerHTML = html;
+        replyDiv.appendChild(box);
+    }
+
+    sendBtn.addEventListener('click', async () => {
+        const input = userInput.value.trim();
+        if (!input) {
+            setReply('<p style="color:#b91c1c;">请输入内容</p>', true);
+            return;
         }
-    </script>
-</body>
-</html>
+
+        replyDiv.innerHTML = '<p class="form-hint">AI 正在思考中...</p>';
+        try {
+            const formData = new FormData();
+            formData.append('user_input', input);
+            const response = await fetch('', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: formData
+            });
+            const data = await response.json();
+            if (response.ok) {
+                replyDiv.innerHTML = '';
+                setReply(`<p><strong>AI 回复：</strong></p><p style="white-space:pre-wrap;">${data.reply.replace(/\n/g, '<br>')}</p>`);
+            } else {
+                replyDiv.innerHTML = '';
+                setReply(`<p style="color:#b91c1c;">错误：${data.error}</p>`, true);
+            }
+        } catch (err) {
+            replyDiv.innerHTML = '';
+            setReply('<p style="color:#b91c1c;">网络错误，请稍后重试</p>', true);
+        }
+    });
+</script>
+{% endblock %}

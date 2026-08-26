@@ -1,601 +1,78 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博客日志 · Life Master</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "app_base.html" %}
 
-        body {
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&h=1080&fit=crop&q=85') no-repeat center center fixed;
-            background-size: cover;
-            background-color: #1a2a1a; /* 后备色 */
-            min-height: 100vh;
-            padding: 2rem;
-        }
+{% block title %}动态资讯 · Life Master{% endblock %}
+{% block page_title %}博客中心{% endblock %}
 
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 30%, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.2) 100%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 28px;
-            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            transition: all 0.2s;
-        }
-
-        /* header 使用 flex 布局，让标题和按钮在同一行 */
-        .header {
-            background: #2d3e2b;
-            padding: 1.5rem 2rem;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .header h2 {
-            font-size: 1.8rem;
-            font-weight: 600;
-            letter-spacing: -0.3px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header h2::before {
-            content: "📝";
-            font-size: 1.8rem;
-        }
-
-        /* 个人中心按钮样式 */
-        .user-btn {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(4px);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 0.5rem 1.2rem;
-            border-radius: 40px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .user-btn:hover {
-            background: #ffb347;
-            color: #2d3e2b;
-            border-color: #ffb347;
-            transform: translateY(-2px);
-        }
-
-        .search-bar {
-            padding: 1.2rem 1rem 0.5rem 1rem;
-        }
-
-        .search-form {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-            flex-wrap: wrap;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 0.75rem;
-        }
-
-        .search-input {
-            flex: 1;
-            min-width: 220px;
-            border: 1px solid #d7dde6;
-            border-radius: 12px;
-            padding: 0.7rem 0.9rem;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .search-input:focus {
-            border-color: #ffb347;
-            box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.18);
-        }
-
-        .search-btn,
-        .clear-btn {
-            border: none;
-            border-radius: 12px;
-            padding: 0.7rem 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .search-btn {
-            background: #2d3e2b;
-            color: white;
-        }
-
-        .clear-btn {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .search-summary {
-            width: 100%;
-            color: #64748b;
-            font-size: 0.88rem;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            padding: 0 1rem 1.5rem 1rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }
-
-        th {
-            background-color: #f5f3ef;
-            color: #2d3e2b;
-            font-weight: 600;
-            padding: 1rem 0.8rem;
-            text-align: left;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        td {
-            padding: 0.9rem 0.8rem;
-            border-bottom: 1px solid #edf2f7;
-            color: #1f2937;
-        }
-
-        tr:hover td {
-            background-color: #fef9e6;
-            transition: 0.1s;
-        }
-
-        td:nth-child(2) {
-            font-weight: 600;
-            color: #e67e22;
-        }
-
-        .detail-btn {
-            background: #ffb347;
-            color: #2d3e2b;
-            border: none;
-            padding: 0.4rem 1rem;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: 0.2s;
-        }
-
-        .detail-btn:hover {
-            background: #ff9f1c;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .empty-row td {
-            text-align: center;
-            color: #94a3b8;
-            font-style: italic;
-            padding: 2rem;
-        }
-
-        @media (max-width: 640px) {
-            body {
-                padding: 1rem;
-            }
-            th, td {
-                padding: 0.6rem 0.4rem;
-                font-size: 0.85rem;
-            }
-            .header h2 {
-                font-size: 1.4rem;
-            }
-            .user-btn {
-                font-size: 0.85rem;
-                padding: 0.4rem 1rem;
-            }
-            .detail-btn {
-                padding: 0.2rem 0.8rem;
-                font-size: 0.75rem;
-            }
-        }
-
-        #send-blogs {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 500;
-        }
-
-        #plus-button {
-            width: 60px;
-            height: 60px;
-            background: #ffb347;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: #2d3e2b;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: fixed;
-            bottom: calc(2rem + 80px);
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        #plus-button:hover {
-            transform: scale(1.1);
-            background: #ff9f1c;
-        }
-
-        /* AI Chat Widget */
-        #ai-chat-widget {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
-        }
-
-        #ai-chat-icon {
-            background: #ffb347;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        #ai-chat-icon:hover {
-            transform: scale(1.1);
-        }
-
-        #ai-chat-box {
-            position: absolute;
-            bottom: 75px;
-            right: 0;
-            width: 320px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            overflow: hidden;
-            border: 1px solid #edf2f7;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #ai-chat-header {
-            background: #2d3e2b;
-            color: white;
-            padding: 1rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        #ai-chat-close {
-            cursor: pointer;
-            font-size: 1.2rem;
-            opacity: 0.8;
-            user-select: none;
-        }
-
-        #ai-chat-close:hover {
-            opacity: 1;
-        }
-
-        #ai-chat-messages {
-            height: 350px;
-            padding: 1rem;
-            overflow-y: auto;
-            background: #f8f9fc;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .chat-msg {
-            max-width: 85%;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .msg-user {
-            align-self: flex-end;
-            background: #ffb347;
-            color: #2d3e2b;
-            border-bottom-right-radius: 4px;
-        }
-
-        .msg-ai {
-            align-self: flex-start;
-            background: white;
-            color: #1f2937;
-            border: 1px solid #e2e8f0;
-            border-bottom-left-radius: 4px;
-        }
-
-        #ai-chat-input {
-            padding: 1rem;
-            background: white;
-            border-top: 1px solid #edf2f7;
-            display: flex;
-            gap: 8px;
-        }
-
-        #ai-chat-input input {
-            flex: 1;
-            padding: 0.6rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            outline: none;
-        }
-
-        #ai-chat-input input:focus {
-            border-color: #ffb347;
-        }
-
-        #ai-chat-input button {
-            background: #2d3e2b;
-            color: white;
-            border: none;
-            padding: 0 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-
-        #ai-chat-input button:hover {
-            background: #3a5038;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h2>博客中心</h2>
-        <a href="/food" class="user-btn">🍜 美食中心</a>
-        <a href="/play" class="user-btn">🎮 娱乐中心</a>
-        <a href="/hotel" class="user-btn">🏨 酒店民宿</a>
-        <a href="/space" class="user-btn">👤 个人中心</a>
+{% block content %}
+<div class="page-title-bar">
+    <div>
+        <h1>📰 动态资讯</h1>
+        <div class="page-sub">发现生活灵感，分享每一次美好记录</div>
     </div>
-    <div class="search-bar">
-        <form class="search-form" action="/blog/" method="get">
-            <input class="search-input" type="search" name="q" value="{{ keyword }}" placeholder="搜索博客标题、内容或作者">
-            <button class="search-btn" type="submit">搜索</button>
+    <div class="page-actions">
+        <a href="/blogsend/?userid={{ user_id }}" class="btn btn-primary">➕ 发布博客</a>
+    </div>
+</div>
+
+<div class="panel-card">
+    <!-- 检索过滤区 -->
+    <div class="filter-header">
+        <form class="search-form-row" action="/blog/" method="get">
+            <div class="input-group">
+                <span class="search-icon-inside">🔍</span>
+                <input id="mainSearchInput" class="search-input" type="search" name="q" value="{{ keyword }}" placeholder="搜索博客标题、内容或作者...">
+                <span class="shortcut-badge">/</span>
+            </div>
+            <button class="btn btn-primary" type="submit">查询数据</button>
             {% if keyword %}
-            <a class="clear-btn" href="/blog/">清空</a>
-            <div class="search-summary">正在搜索：{{ keyword }}，共 {{ blogs|length }} 条结果</div>
+            <a class="btn btn-default" href="/blog/">重置筛选</a>
+            <div class="search-meta-text">
+                正在检索关键词：“<strong>{{ keyword }}</strong>”，共筛选出 <strong>{{ blogs|length }}</strong> 条记录
+            </div>
             {% endif %}
         </form>
     </div>
-    <div class="table-wrapper">
+
+    <!-- 数据表格 -->
+    <div class="table-responsive">
         <table>
             <thead>
                 <tr>
-                    <th>博客标题</th>
-                    <th>博客内容</th>
-                    <th>作者</th>
-                    <th>创建时间</th>
-                    <th></th>
+                    <th style="width: 25%;">博客标题</th>
+                    <th style="width: 35%;">博客内容</th>
+                    <th style="width: 15%;">作者</th>
+                    <th style="width: 15%;">创建时间</th>
+                    <th style="width: 10%; text-align: right;">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for blog in blogs %}
                 <tr>
-                    <td>{{ blog.title }}</td>
-                    <td>{{ blog.content|slice:":30" }}{% if blog.content|length > 35 %}...{% endif %}</td>
-                    <td>{{ blog.authorid.username }}</td>
-                    <td>{{ blog.created_at }}</td>
-                    <td>
-                        <a href="/blogsdetails/?blogid={{ blog.id }}&userid={{ user_id }}" class="detail-btn">入帖发言</a>
+                    <td><span class="td-name">{{ blog.title }}</span></td>
+                    <td class="td-sub">{{ blog.content|slice:":30" }}{% if blog.content|length > 35 %}...{% endif %}</td>
+                    <td class="td-sub">{{ blog.authorid.username }}</td>
+                    <td class="td-sub">{{ blog.created_at }}</td>
+                    <td class="td-action">
+                        <a href="/blogsdetails/?blogid={{ blog.id }}&userid={{ user_id }}" class="btn-table-action">入帖发言</a>
                     </td>
                 </tr>
                 {% empty %}
-                <tr class="empty-row">
-                    <td colspan="4">✨ 暂无博客数据，快去添加吧~</td>
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #94a3b8; padding: 48px 0;">
+                        <div style="font-size: 24px; margin-bottom: 6px;">✨</div>
+                        <div>暂无博客数据，快去添加吧~</div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endblock %}
 
-<!-- 新增的“+”按钮，独立定位 -->
-<div id="plus-button" onclick="location.href='/blogsend/?userid={{ user_id }}'">➕</div>
-
-<!-- AI Chat Widget -->
-<div id="ai-chat-widget">
-    <div id="ai-chat-icon" onclick="toggleChat()">🤖</div>
-    <div id="ai-chat-box" style="display:none;">
-        <div id="ai-chat-header">智能生活助手 <span id="ai-chat-close" onclick="toggleChat()">✖</span></div>
-        <div id="ai-chat-messages"></div>
-        <div id="ai-chat-input">
-            <input type="text" id="ai-msg" placeholder="输入你的问题..." onkeypress="if(event.keyCode==13) sendMsg()">
-            <button onclick="sendMsg()">发送</button>
-        </div>
-    </div>
-</div>
-
-<script>
-// ---------- 聊天记录持久化 ----------
-const STORAGE_KEY = 'ai_chat_history';
-
-// 获取历史消息
-function loadHistory() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-}
-
-// 保存历史消息（每次更新后调用）
-function saveHistory(messages) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-}
-
-// 渲染历史消息到界面（清空现有内容后重新生成）
-function renderHistory() {
-    const container = document.getElementById('ai-chat-messages');
-    const history = loadHistory();
-    container.innerHTML = '';           // 清空现有内容
-    if (history.length === 0) {
-        // 如果没有历史，显示默认欢迎消息（同时保存，避免重复保存问题）
-        const defaultMsg = { text: '您好！我是您的智能生活助手，有什么我可以帮您的吗？', sender: 'ai' };
-        appendMsg(defaultMsg.text, defaultMsg.sender, false); // 第三个参数表示不重复保存
-        saveHistory([defaultMsg]);
-    } else {
-        // 逐条渲染历史消息（不会重复保存）
-        history.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'chat-msg ' + (msg.sender === 'user' ? 'msg-user' : 'msg-ai');
-            div.innerText = msg.text;
-            container.appendChild(div);
-        });
-        container.scrollTop = container.scrollHeight;
-    }
-}
-
-// 追加一条新消息（同时保存到 localStorage）
-// 参数 saveToHistory: 是否保存到 localStorage（防止重复保存）
-function appendMsg(text, sender, saveToHistory = true) {
-    const msgs = document.getElementById('ai-chat-messages');
-    const div = document.createElement('div');
-    div.className = 'chat-msg ' + (sender === 'user' ? 'msg-user' : 'msg-ai');
-    div.innerText = text;
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-
-    if (saveToHistory) {
-        const history = loadHistory();
-        history.push({ text: text, sender: sender });
-        saveHistory(history);
-    }
-}
-
-// ---------- 原有功能保持不变 ----------
-function toggleChat() {
-    var box = document.getElementById('ai-chat-box');
-    var icon = document.getElementById('ai-chat-icon');
-    if (box.style.display === 'none') {
-        box.style.display = 'flex';
-        icon.style.display = 'none';
-        document.getElementById('ai-msg').focus();
-    } else {
-        box.style.display = 'none';
-        icon.style.display = 'flex';
-    }
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-function sendMsg() {
-    var input = document.getElementById('ai-msg');
-    var text = input.value.trim();
-    if (!text) return;
-    
-    appendMsg(text, 'user');
-    input.value = '';
-    
-    // 加载动画
-    var loadingId = 'loading-' + Date.now();
-    var msgs = document.getElementById('ai-chat-messages');
-    var div = document.createElement('div');
-    div.id = loadingId;
-    div.className = 'chat-msg msg-ai';
-    div.innerText = '正在思考中... 🤔（AI回复时请不要刷新以免丢失记录）';
-    msgs.appendChild(div);
-    msgs.scrollTop = msgs.scrollHeight;
-
-    var formData = new FormData();
-    formData.append('user_input', text);
-    
-    fetch('/ai-chat/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById(loadingId).remove();
-        if (data.reply) {
-            appendMsg(data.reply, 'ai');
-        } else if (data.error) {
-            appendMsg(data.error, 'ai');
-        }
-    })
-    .catch(error => {
-        document.getElementById(loadingId).remove();
-        appendMsg('连接失败了，请检查网络或稍后再试。', 'ai');
-    });
-}
-
-// ---------- 页面加载时恢复聊天记录 ----------
-window.addEventListener('DOMContentLoaded', () => {
-    renderHistory();
-});
-</script>
-
-</body>
-</html>
+{% block extra_fab %}
+<a href="/blogsend/?userid={{ user_id }}" class="fab-button" title="发布博客">
+    <span>➕</span>
+    <span>发布博客</span>
+</a>
+{% endblock %}
