@@ -33,9 +33,6 @@ jobs:
           name: test-report
           path: test/test_report.md
 
-  # 注意：以下发布/部署步骤都带 if: success()。
-  # 当上面“运行全部测试”失败（run_tests.py 返回非 0）时，这些步骤不会执行，
-  # 从而保证“测试失败 → 流水线停止，不发布镜像、不部署”。
   publish:
     name: 构建并发布镜像（测试通过后才会执行）
     needs: [test]
@@ -43,7 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 示例：构建 Docker 镜像
-        run: echo "TODO: docker build -t your-image . && docker push your-image"
+        run: |
+          echo "TODO: docker build -t your-image . && docker push your-image"
 
   deploy:
     name: 部署（测试通过后才会执行）
@@ -52,4 +50,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 示例：部署
-        run: echo "TODO: 部署到目标环境（仅在测试全部通过时执行）"
+        run: |
+          echo "TODO: 部署到目标环境（仅在测试全部通过时执行）"
