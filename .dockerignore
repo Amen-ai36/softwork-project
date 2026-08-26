@@ -4,9 +4,14 @@
 .vscode
 .env
 dist
-docs
-k8s
-scripts
+tmp
+02_docs
+04_tests
+05_management
+06_defense
+03_devops/deployment
+03_devops/k8s
+03_devops/scripts
 __pycache__/
 *.py[cod]
 node_modules/
