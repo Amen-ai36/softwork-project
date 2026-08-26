@@ -17,6 +17,8 @@ COPY . .
 RUN sed -i 's/\r$//' /app/docker/entrypoint.sh \
     && chmod +x /app/docker/entrypoint.sh
 
+WORKDIR /app/src
+
 EXPOSE 8000
 
 CMD ["sh", "/app/docker/entrypoint.sh"]

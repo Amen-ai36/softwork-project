@@ -6,6 +6,13 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    src_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(src_dir)
+    # Ensure packages under src/ resolve, and sibling test/ at repo root is importable.
+    for path in (src_dir, repo_root):
+        if path not in sys.path:
+            sys.path.insert(0, path)
+
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'food_master.settings')
     try:
         from django.core.management import execute_from_command_line

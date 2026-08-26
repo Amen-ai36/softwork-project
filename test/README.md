@@ -4,16 +4,24 @@
 
 ## 怎么运行
 
-在项目根目录运行：
+在 `src/` 目录运行（`manage.py` 已把仓库根加入路径，可发现并列的 `test` 包）：
 
 ```powershell
-.\.venv\Scripts\python.exe manage.py test test -v 2
+cd src
+..\.venv\Scripts\python.exe manage.py test test -v 2
 ```
 
-项目根目录指的是这个目录：
+若已在仓库根激活虚拟环境：
+
+```powershell
+cd src
+python manage.py test test -v 2
+```
+
+仓库根目录示例：
 
 ```text
-C:\Users\20674\Documents\food_deliver
+D:\software_engineering\mini
 ```
 
 测试运行时，Django 会自动创建一个临时测试数据库：

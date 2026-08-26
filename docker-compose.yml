@@ -42,7 +42,7 @@ services:
       ALIYUN_BASE_URL: ${ALIYUN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
     volumes:
       - staticfiles:/app/staticfiles
-      - ./static:/app/static
+      - ./src/static:/app/src/static
 
   nginx:
     image: nginx:1.27-alpine
@@ -54,7 +54,7 @@ services:
     volumes:
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - staticfiles:/app/staticfiles:ro
-      - ./static:/app/static:ro
+      - ./src/static:/app/src/static:ro
 
 volumes:
   mysql_data:

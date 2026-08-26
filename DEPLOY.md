@@ -2,6 +2,8 @@
 
 这套部署方案使用 Docker Compose 启动 3 个服务：Django/Gunicorn、MySQL 8、Nginx。
 
+应用源码位于仓库的 `src/` 目录（`manage.py`、`food_master`、`myapp`、`templates`、`static`）；容器工作目录为 `/app/src`，初始数据仍使用仓库根目录的 `data_hex2.sql`。
+
 ## 1. 准备服务器
 
 推荐使用 Ubuntu 22.04 或 24.04 云服务器，放通安全组/防火墙的 80 端口。登录服务器后安装 Docker：

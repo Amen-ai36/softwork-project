@@ -1,19 +1,34 @@
 # 功能介绍
 
+## 仓库结构（课程汇报）
+
+```text
+docs/        需求、设计、用例追溯
+src/         应用源码（manage.py、food_master、myapp、templates、static）
+test/        自动化测试
+docker/      容器与 Nginx 配置
+data_hex2.sql  初始 MySQL 数据
+```
+
 ## 首先项目运行方式
-1. 安装依赖：
+1. 安装依赖（在仓库根目录）：
 pip install -r requirements.txt
 
 2. 安装数据库：
-先创建数据库
-  mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS the_food_master DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+先创建数据库（库名与代码一致，使用 `the_food_mas2`）
+  mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS the_food_mas2 DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 然后导入sql脚本：
 导入SQL脚本（记得用cmd执行，如果不行尝试重新下载，并且不要用vscode打开该sql语句）
-  mysql -u root -p --binary-mode the_food_master < data_hex2.sql
+  mysql -u root -p --binary-mode the_food_mas2 < data_hex2.sql
 
-3. 设置好你的settings.py里数据库的用户名和密码
+3. 设置好 `src/food_master/settings.py` 里数据库的用户名和密码（或用环境变量）
 
-这个根目录`food_master`下运行`python manage.py runserver`即可
+4. 进入源码目录启动：
+```powershell
+cd src
+python manage.py runserver
+```
+浏览器打开 http://127.0.0.1:8000/
 
 ## 已经实现的功能
 
@@ -185,7 +200,7 @@ pos=0(待接单) ──骑手接单──▶ pos=1(骑手已接单) ──商家
 ```
 class是前端css代码渲染格式，href是跳转链接，userid和hotelid是传递给后端的参数
 
-- 然后`food_master/urls.py`里设置对应的路径和函数
+- 然后`src/food_master/urls.py`里设置对应的路径和函数
 ```
 path('hotelorder/', views1.hotelorder, name='hotelorder'),
 ```
@@ -210,13 +225,13 @@ def hotelorder(request):
 ```
 context是一个字典，里面是你要传递给前端的数据，前端可以通过`{{ }}`的方式获取到这些数据进行渲染
 
-- 最后在`templates/hotel/hotelorder.html`里设计订单详情页面的前端展示
+- 最后在`src/templates/hotel/hotelorder.html`里设计订单详情页面的前端展示
 
 ### 导入类
 
 如果要导入某个关系（某类对象），
 
-- 在`myapp/models.py`里写这个类，比如
+- 在`src/myapp/models.py`里写这个类，比如
 ```
 class Hotel(models.Model):
     name = models.CharField(max_length=20) # 酒店名称
@@ -225,9 +240,9 @@ class Hotel(models.Model):
     # 别的属性自定义
 ```
 
-- 然后在根目录`food_master`下运行`python manage.py makemigrations`，和`python manage.py migrate`即可
+- 然后在 `src/` 下运行 `python manage.py makemigrations` 和 `python manage.py migrate` 即可
 
-如果要为一个Class追加属性，直接在`myapp/models.py`里这个类追加属性即可，比如为Hotel追加一个评分属性
+如果要为一个Class追加属性，直接在`src/myapp/models.py`里这个类追加属性即可，比如为Hotel追加一个评分属性
 ```
 class Hotel(models.Model):
     name = models.CharField(max_length=20) # 酒店名称

@@ -56,15 +56,8 @@ ALIYUN_MODEL = os.environ.get('ALIYUN_MODEL', 'qwen-plus')
 DEBUG = env_bool('DJANGO_DEBUG', True)
 
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', '*')
-railway_public_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-if railway_public_domain and '*' not in ALLOWED_HOSTS and railway_public_domain not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(railway_public_domain)
 
 CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
-if railway_public_domain:
-    railway_origin = f'https://{railway_public_domain}'
-    if railway_origin not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True

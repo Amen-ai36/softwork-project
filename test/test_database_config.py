@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SETTINGS_PATH = ROOT / "food_master" / "settings.py"
+SETTINGS_PATH = ROOT / "src" / "food_master" / "settings.py"
 SQL_PATH = ROOT / "data_hex2.sql"
 COMMON_MYSQL = Path(r"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe")
 
