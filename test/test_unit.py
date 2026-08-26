@@ -15,7 +15,7 @@
 8. 外部 AI 客户端方法         call_aliyun_llm（成功、无 key、网络异常、非 200）
 9. 管理员权限装饰器           admin_required（未登录 / 非管理员 / 管理员）
 
-追溯编号映射（详见 追溯表.md）：
+追溯编号映射（详见 docs/追溯表.pdf）：
 - UNIT-TC01：PasswordBusinessRuleTest、UserHelperRuleTest
 - UNIT-TC03：GroupBuyCodeRuleTest
 - UNIT-TC04：HotelPriceRuleTest、HotelReviewRuleTest

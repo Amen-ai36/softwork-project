@@ -1,54 +1,203 @@
-name: CI - 自动化测试门禁
+name: CI/CD - test, image, Kubernetes
 
 on:
   push:
     branches: [main, master]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: food-master-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+  packages: write
 
 jobs:
-  test:
-    name: 自动化测试（单元/集成/端到端）
-    runs-on: ubuntu-latest
+  portable-test:
+    name: Test - ${{ matrix.os }} / Python 3.10
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
+      - name: Check out source
+        uses: actions/checkout@v6
 
-      - name: 安装 Python
-        uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
           python-version: "3.10"
+          cache: pip
 
-      - name: 安装依赖
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
 
-      - name: 运行全部测试并生成报告
+      - name: Compile Python source
+        run: python -m compileall -q food_master myapp test
+
+      - name: Run Django deployment checks
+        run: python manage.py check --deploy --settings=food_master.test_settings
+        env:
+          DJANGO_ALLOWED_HOSTS: localhost
+          DJANGO_CSRF_COOKIE_SECURE: "True"
+          DJANGO_DEBUG: "False"
+          DJANGO_SECRET_KEY: ci-check-only-not-a-production-secret-0123456789-abcdef
+          DJANGO_SECURE_HSTS_SECONDS: "3600"
+          DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS: "True"
+          DJANGO_SECURE_HSTS_PRELOAD: "True"
+          DJANGO_SECURE_SSL_REDIRECT: "True"
+          DJANGO_SESSION_COOKIE_SECURE: "True"
+
+      - name: Run unit, integration/API, and end-to-end tests
         run: python test/run_tests.py
 
-      - name: 上传测试报告
+      - name: Upload test evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: test-report
-          path: test/test_report.md
+          name: test-report-${{ matrix.os }}
+          path: |
+            test/test_report.md
+            test/test_report.json
+          if-no-files-found: warn
+          retention-days: 30
 
-  publish:
-    name: 构建并发布镜像（测试通过后才会执行）
-    needs: [test]
-    if: success()
+  image:
+    name: Build and publish versioned image
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [portable-test]
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image-name.outputs.image }}
     steps:
-      - name: 示例：构建 Docker 镜像
-        run: |
-          echo "TODO: docker build -t your-image . && docker push your-image"
+      - name: Check out source
+        uses: actions/checkout@v6
 
-  deploy:
-    name: 部署（测试通过后才会执行）
-    needs: [test]
-    if: success()
+      - name: Normalize image name
+        id: image-name
+        shell: bash
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          build-args: APP_VERSION=${{ github.sha }}
+          tags: |
+            ${{ steps.image-name.outputs.image }}:${{ github.sha }}
+            ${{ steps.image-name.outputs.image }}:${{ github.ref_name }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-kind:
+    name: Deploy exact image to Kubernetes and health-check
+    needs: [image]
     runs-on: ubuntu-latest
+    environment: kubernetes-ci
     steps:
-      - name: 示例：部署
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull the image produced by this workflow
+        env:
+          VERSIONED_IMAGE: ${{ needs.image.outputs.image }}:${{ github.sha }}
         run: |
-          echo "TODO: 部署到目标环境（仅在测试全部通过时执行）"
+          docker pull "$VERSIONED_IMAGE"
+          docker tag "$VERSIONED_IMAGE" food-master:dev
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: food-master-ci
+          wait: 120s
+
+      - name: Load versioned image into Kind
+        run: kind load docker-image food-master:dev --name food-master-ci
+
+      - name: Create runtime secrets
+        shell: bash
+        run: |
+          kubectl apply -f k8s/base/namespace.yaml
+          DB_PASSWORD="$(openssl rand -hex 16)"
+          DJANGO_SECRET="$(openssl rand -hex 32)"
+          kubectl -n food-master create secret generic food-master-secrets \
+            --from-literal="DJANGO_SECRET_KEY=$DJANGO_SECRET" \
+            --from-literal="MYSQL_ROOT_PASSWORD=$DB_PASSWORD" \
+            --from-literal="FOOD_DELIVER_DB_PASSWORD=$DB_PASSWORD"
+
+      - name: Deploy frontend, backend, and database
+        run: |
+          kubectl apply -k k8s/base
+          kubectl -n food-master set env deployment/food-master-web APP_VERSION=${{ github.sha }}
+          kubectl -n food-master rollout status deployment/food-master-db --timeout=240s
+          kubectl -n food-master rollout status deployment/food-master-web --timeout=360s
+          kubectl -n food-master rollout status deployment/food-master-nginx --timeout=180s
+
+      - name: Run health and version checks through Nginx
+        shell: bash
+        run: |
+          kubectl -n food-master port-forward service/food-master-nginx 18080:80 >port-forward.log 2>&1 &
+          PORT_FORWARD_PID=$!
+          trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:18080/health/ready/ >health-ready.json; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              cat port-forward.log
+              exit 1
+            fi
+            sleep 2
+          done
+          curl --fail --silent --show-error http://127.0.0.1:18080/health/live/ >health-live.json
+          curl --fail --silent --show-error http://127.0.0.1:18080/health/version/ >health-version.json
+          grep --fixed-strings '"version": "${{ github.sha }}"' health-version.json
+          cat health-ready.json
+          cat health-version.json
+
+      - name: Collect Kubernetes evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p deployment-evidence
+          kubectl -n food-master get all,pvc -o wide >deployment-evidence/resources.txt 2>&1 || true
+          kubectl -n food-master describe pods >deployment-evidence/pods.txt 2>&1 || true
+          kubectl -n food-master logs deployment/food-master-db --tail=500 >deployment-evidence/database.log 2>&1 || true
+          kubectl -n food-master logs deployment/food-master-web --tail=500 >deployment-evidence/web.log 2>&1 || true
+          kubectl -n food-master logs deployment/food-master-nginx --tail=500 >deployment-evidence/nginx.log 2>&1 || true
+          cp health-*.json deployment-evidence/ 2>/dev/null || true
+          cp port-forward.log deployment-evidence/ 2>/dev/null || true
+
+      - name: Upload deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kubernetes-deployment-${{ github.sha }}
+          path: deployment-evidence/
+          if-no-files-found: warn
+          retention-days: 30

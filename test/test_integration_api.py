@@ -11,7 +11,7 @@
 - 使用独立测试数据库（默认 SQLite，见 food_master/test_settings.py），
   不会污染真实业务数据。
 
-追溯编号映射（详见 追溯表.md）：
+追溯编号映射（详见 docs/追溯表.pdf）：
 - INT-TC01：AuthApiTest
 - INT-TC02：FoodApiTest、CrossModuleIntegrationTest
 - INT-TC03：GroupBuyApiTest
@@ -37,7 +37,7 @@ from unittest.mock import patch
 
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase, override_settings
+from django.test import Client, TestCase
 from django.utils import timezone
 
 from myapp.models import (
@@ -53,6 +53,26 @@ from myapp.models import (
     Temp,
     User,
 )
+
+
+class HealthApiTest(TestCase):
+    """Deployment probes stay public and return machine-readable state."""
+
+    def test_liveness_endpoint(self):
+        response = self.client.get("/health/live/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "ok")
+
+    def test_readiness_endpoint_checks_database(self):
+        response = self.client.get("/health/ready/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "ready")
+
+    def test_version_endpoint_uses_environment(self):
+        with patch.dict(os.environ, {"APP_VERSION": "test-sha"}):
+            response = self.client.get("/health/version/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["version"], "test-sha")
 
 
 class ApiTestCase(TestCase):

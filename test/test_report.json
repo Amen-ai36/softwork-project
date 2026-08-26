@@ -1,18 +1,18 @@
 {
   "environment": {
-    "timestamp": "2026-08-26 15:55:40",
-    "os": "Windows-10-10.0.26200-SP0",
-    "python": "3.10.10",
+    "timestamp": "2026-08-26 16:45:08",
+    "os": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.2",
     "django": "3.2.11",
-    "db_backend": "MySQL（通过 FOOD_DELIVER_DB_PASSWORD 环境变量）",
-    "project_root": "D:\\rgproject\\final_work"
+    "db_backend": "SQLite（food_master.test_settings）",
+    "project_root": "C:\\Users\\20674\\Desktop\\学业\\大二\\大二下\\软件工程\\soft_ware"
   },
   "summary": {
-    "total": 106,
-    "passed": 106,
+    "total": 109,
+    "passed": 108,
     "failed": 0,
     "errors": 0,
-    "skipped": 0,
+    "skipped": 1,
     "reasons": [],
     "status": "OK"
   }

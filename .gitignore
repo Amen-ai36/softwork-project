@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 .env
 staticfiles/
+dist/
+tmp/
 *.log
 test_*.sqlite3
 test_food_master.sqlite3
