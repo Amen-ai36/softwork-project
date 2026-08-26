@@ -46,6 +46,13 @@ DETAIL_RE = re.compile(r"^(FAIL|ERROR):\s+(.+)$")
 RAN_RE = re.compile(r"^Ran (\d+) tests? in ([\d.]+)s$", re.MULTILINE)
 
 
+def configure_stdio():
+    """Use UTF-8 even when the host Windows locale defaults to a legacy code page."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def detect_db_backend():
     if os.environ.get("FOOD_DELIVER_DB_PASSWORD"):
         return "MySQL（通过 FOOD_DELIVER_DB_PASSWORD 环境变量）"
@@ -182,6 +189,7 @@ def write_reports(summary, environment, output):
 
 
 def main():
+    configure_stdio()
     environment = collect_environment()
     proc, output = run_tests()
     summary, output = parse_output(output)

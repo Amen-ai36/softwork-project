@@ -1,6 +1,6 @@
 # 自动化测试报告
 
-- 生成时间：2026-08-26 16:45:08
+- 生成时间：2026-08-26 17:02:59
 - 运行环境：Windows-11-10.0.26200-SP0
 - Python：3.13.2 / Django：3.2.11
 - 数据库：SQLite（food_master.test_settings）
@@ -267,7 +267,7 @@ test_settings_match_sql_dump_database (test.test_database_config.DatabaseConfigT
 配置一致性：settings 数据库名应与 data_hex2.sql 声明的数据库一致 ... ok
 
 ----------------------------------------------------------------------
-Ran 109 tests in 0.751s
+Ran 109 tests in 0.887s
 
 OK (skipped=1)
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
