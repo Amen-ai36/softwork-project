@@ -18,6 +18,7 @@ services:
       retries: 10
 
   web:
+    image: food-master:${APP_VERSION:-local}
     build:
       context: ..
       dockerfile: 03_devops/Dockerfile
