@@ -160,12 +160,30 @@ class AccountRegistrationE2ETest(E2EBase):
         cases = [
             (
                 {
-                    "username": "u_weak1",
+                    "username": "u_weak_digits",
                     "password": "12345678",
                     "phone": "13800000207",
                     "usertype": "0",
                 },
-                "密码必须在8-16位之间",
+                "密码必须在8-16位之间，且同时包含英文字母和数字",
+            ),
+            (
+                {
+                    "username": "u_weak_letters",
+                    "password": "abcdefgh",
+                    "phone": "13800000207",
+                    "usertype": "0",
+                },
+                "密码必须在8-16位之间，且同时包含英文字母和数字",
+            ),
+            (
+                {
+                    "username": "u_weak_short",
+                    "password": "abc12",
+                    "phone": "13800000207",
+                    "usertype": "0",
+                },
+                "密码必须在8-16位之间，且同时包含英文字母和数字",
             ),
             (
                 {
@@ -200,7 +218,15 @@ class AccountRegistrationE2ETest(E2EBase):
                 response = Client().post("/account/register/", payload)
                 self.assertContains(response, expect)
         self.assertFalse(
-            User.objects.filter(username__in=["u_hackadmin", "u_badrole"]).exists()
+            User.objects.filter(
+                username__in=[
+                    "u_weak_digits",
+                    "u_weak_letters",
+                    "u_weak_short",
+                    "u_hackadmin",
+                    "u_badrole",
+                ]
+            ).exists()
         )
 
         # 登录异常：用户不存在 / 密码错误 / 身份不匹配 / 账号停用
