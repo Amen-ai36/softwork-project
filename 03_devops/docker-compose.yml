@@ -1,3 +1,18 @@
+x-service-environment: &service-environment
+  DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-this-django-secret-key}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+  SERVICE_DB_HOST: db
+  SERVICE_DB_PORT: 3306
+  SERVICE_DB_USER: ${FOOD_DELIVER_DB_USER:-foodapp}
+  SERVICE_DB_PASSWORD: ${FOOD_DELIVER_DB_PASSWORD:-change-this-database-password}
+  USER_DB_NAME: ${USER_DB_NAME:-user_db}
+  TRADE_DB_NAME: ${TRADE_DB_NAME:-trade_db}
+  LIFESTYLE_DB_NAME: ${LIFESTYLE_DB_NAME:-life_db}
+  JWT_SECRET: ${JWT_SECRET:-change-this-jwt-secret}
+  INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-this-internal-token}
+  APP_VERSION: ${APP_VERSION:-compose-dev}
+
 services:
   db:
     image: mysql:8.0
@@ -17,8 +32,26 @@ services:
       timeout: 5s
       retries: 10
 
+  schema-init:
+    image: mysql:8.0
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-this-mysql-root-password}
+      MYSQL_USER: ${FOOD_DELIVER_DB_USER:-foodapp}
+      MYSQL_PASSWORD: ${FOOD_DELIVER_DB_PASSWORD:-change-this-database-password}
+      USER_DB_NAME: ${USER_DB_NAME:-user_db}
+      TRADE_DB_NAME: ${TRADE_DB_NAME:-trade_db}
+      LIFESTYLE_DB_NAME: ${LIFESTYLE_DB_NAME:-life_db}
+    volumes:
+      - ./data/init-microservice-schemas.sh:/scripts/init-microservice-schemas.sh:ro
+    entrypoint: ["sh", "/scripts/init-microservice-schemas.sh"]
+
   web:
-    image: food-master:${APP_VERSION:-local}
+    image: food-master-bff:${APP_VERSION:-local}
     build:
       context: ..
       dockerfile: 03_devops/Dockerfile
@@ -50,23 +83,95 @@ services:
       - staticfiles:/app/staticfiles
       - ../01_source/static:/app/static
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready/', timeout=3)",
-        ]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready/', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 60s
+
+  user-service:
+    image: food-master-user:${APP_VERSION:-local}
+    build:
+      context: ..
+      dockerfile: 03_devops/services/Dockerfile
+      args:
+        SERVICE_MODULE: user_service
+        SERVICE_PORT: 8001
+        APP_VERSION: ${APP_VERSION:-compose-dev}
+    restart: unless-stopped
+    depends_on:
+      schema-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-environment
+      SERVICE_MODULE: user_service
+      SERVICE_PORT: 8001
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  trade-service:
+    image: food-master-trade:${APP_VERSION:-local}
+    build:
+      context: ..
+      dockerfile: 03_devops/services/Dockerfile
+      args:
+        SERVICE_MODULE: trade_service
+        SERVICE_PORT: 8002
+        APP_VERSION: ${APP_VERSION:-compose-dev}
+    restart: unless-stopped
+    depends_on:
+      schema-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-environment
+      SERVICE_MODULE: trade_service
+      SERVICE_PORT: 8002
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  lifestyle-service:
+    image: food-master-lifestyle:${APP_VERSION:-local}
+    build:
+      context: ..
+      dockerfile: 03_devops/services/Dockerfile
+      args:
+        SERVICE_MODULE: lifestyle_service
+        SERVICE_PORT: 8003
+        APP_VERSION: ${APP_VERSION:-compose-dev}
+    restart: unless-stopped
+    depends_on:
+      schema-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *service-environment
+      SERVICE_MODULE: lifestyle_service
+      SERVICE_PORT: 8003
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
     depends_on:
       web:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      trade-service:
+        condition: service_healthy
+      lifestyle-service:
         condition: service_healthy
     ports:
       - "80:80"

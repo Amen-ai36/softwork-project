@@ -1,0 +1,29 @@
+#!/bin/sh
+set -eu
+
+: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}"
+: "${MYSQL_USER:?MYSQL_USER is required}"
+: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+
+DB_HOST="${DB_HOST:-db}"
+USER_DB_NAME="${USER_DB_NAME:-user_db}"
+TRADE_DB_NAME="${TRADE_DB_NAME:-trade_db}"
+LIFESTYLE_DB_NAME="${LIFESTYLE_DB_NAME:-life_db}"
+
+case "${USER_DB_NAME}${TRADE_DB_NAME}${LIFESTYLE_DB_NAME}${MYSQL_USER}" in
+  *[!a-zA-Z0-9_]*) echo "Database and user names may only contain letters, digits, and underscores" >&2; exit 2 ;;
+esac
+
+MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -h "$DB_HOST" -uroot <<SQL
+CREATE DATABASE IF NOT EXISTS \`${USER_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS \`${TRADE_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS \`${LIFESTYLE_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+ALTER USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${USER_DB_NAME}\`.* TO '${MYSQL_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`${TRADE_DB_NAME}\`.* TO '${MYSQL_USER}'@'%';
+GRANT ALL PRIVILEGES ON \`${LIFESTYLE_DB_NAME}\`.* TO '${MYSQL_USER}'@'%';
+FLUSH PRIVILEGES;
+SQL
+
+echo "Microservice schemas are ready."

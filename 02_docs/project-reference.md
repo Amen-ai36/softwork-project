@@ -2,7 +2,7 @@
 
 本文件保留项目的详细数据库字段、订单状态流转和组内实现说明。项目入口、启动和 CI/CD 信息以仓库根目录 `README.md` 为准。
 
-本仓库是课程单体基线版本。统一运行基线为 Python 3.10、Django 3.2.11、MySQL 8.0；Docker Compose 和 Kubernetes 均使用 Linux 容器，因此 Windows、macOS、Linux 的启动过程一致。
+本仓库以原课程单体作为页面/BFF 兼容层，并按 `微服务拆分方案.md` 增加三个独立业务服务。统一运行基线为 Python 3.10、Django 3.2.11、MySQL 8.0；Docker Compose 和 Kubernetes 均使用 Linux 容器，因此 Windows、macOS、Linux 的启动过程一致。
 
 ## 仓库结构
 

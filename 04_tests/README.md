@@ -14,6 +14,7 @@
 | `test_e2e.py` | 端到端测试 | 覆盖用例清单全部 9 个用例（UC01-UC09）：账号注册与角色工作台、美食外卖全链路、购物车备选流程、到店团购、酒店预订+评价、娱乐购票+评价、商家服务供给发布与维护（含图片上传/状态维护/用户侧限制）、博客发布+互动、后台管理、AI 助手；每个用例均含主流程与备选/异常流程 |
 | `test_database_config.py` | 数据库环境检查 | settings 与 `03_devops/data/seed.sql` 一致性；MySQL 可达时检查核心表是否存在（不可达则跳过，不阻塞流水线） |
 | `run_tests.py` | 测试运行器 | 统一运行以上全部测试，生成报告，失败时返回非 0 退出码 |
+| `run_service_tests.py` | 微服务测试运行器 | 分别启动三个服务的 SQLite 隔离测试并生成独立报告 |
 
 | 用例编号 | 需求编号 | 用例名称 | 参与者 | 业务目标 |
 | --- | --- | --- | --- | --- |
@@ -34,8 +35,10 @@
 推荐在项目根目录执行（自动选择数据库、生成报告）：
 
 ```powershell
-python 04_tests/tests/run_tests.py
+powershell -NoProfile -ExecutionPolicy Bypass -File .\04_tests\run.ps1
 ```
+
+该命令先运行 109 项兼容层测试，再运行三个微服务的 API、状态机和数据边界测试。
 
 - 不指定 `--settings` 时默认使用生产数据库配置（MySQL），需要先配置 `FOOD_DELIVER_DB_PASSWORD` 等环境变量；
 - 指定 `food_master.test_settings` 时使用 SQLite 内存测试库，无需任何数据库配置，适合 CI / 本机快速验证。
@@ -54,6 +57,7 @@ python 04_tests/tests/run_tests.py
 
 - `04_tests/tests/test_report.md`：人读报告，包含测试总数、通过数、失败数、跳过数、失败原因、运行环境（操作系统 / Python / Django 版本 / 数据库后端 / 生成时间）及完整输出。
 - `04_tests/tests/test_report.json`：机器可读报告（`environment` + `summary`），便于 CI 解析。
+- `04_tests/tests/microservice_test_report.md/.json`：三个微服务的测试数、状态和完整输出。
 
 报告中的统计口径：
 

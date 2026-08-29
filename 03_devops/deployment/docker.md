@@ -1,6 +1,6 @@
 # 公网部署说明
 
-这套部署方案使用 Docker Compose 启动 3 个服务：Django/Gunicorn、MySQL 8、Nginx。
+这套部署方案使用 Docker Compose 启动 Nginx 网关、Django BFF、三个业务微服务、MySQL 8，以及一个幂等 schema 初始化任务。
 
 ## 1. 准备服务器
 
@@ -37,6 +37,7 @@ nano 03_devops/.env
 - `DJANGO_ALLOWED_HOSTS`：填写你的域名或公网 IP，多个用英文逗号分隔。
 - `DJANGO_CSRF_TRUSTED_ORIGINS`：填写 `http://域名` 或 `http://公网IP`。
 - `MYSQL_ROOT_PASSWORD` 和 `FOOD_DELIVER_DB_PASSWORD`：改成强密码。
+- `JWT_SECRET` 和 `INTERNAL_SERVICE_TOKEN`：分别用于服务鉴权和内部调用，必须改成不同的长随机值。
 - `ALIYUN_API_KEY`：如果需要 AI 聊天功能，在这里填写；不需要可留空。
 
 ## 4. 启动
@@ -48,6 +49,7 @@ docker compose --env-file 03_devops/.env -f 03_devops/docker-compose.yml up -d -
 首次启动会自动：
 
 - 创建 MySQL 数据库 `the_food_mas2`。
+- 幂等创建 `user_db`、`trade_db`、`life_db` 三个业务 schema。
 - 导入 `03_devops/data/seed.sql`。
 - 收集 Django 静态文件。
 - 执行数据库迁移。
@@ -73,6 +75,7 @@ docker compose --env-file 03_devops/.env -f 03_devops/docker-compose.yml ps
 docker compose --env-file 03_devops/.env -f 03_devops/docker-compose.yml logs -f web
 docker compose --env-file 03_devops/.env -f 03_devops/docker-compose.yml logs -f nginx
 docker compose --env-file 03_devops/.env -f 03_devops/docker-compose.yml logs -f db
+docker compose --env-file 03_devops/.env -f 03_devops/docker-compose.yml logs -f user-service trade-service lifestyle-service
 ```
 
 重启：

@@ -1,11 +1,11 @@
 {
   "environment": {
-    "timestamp": "2026-08-29 11:09:55",
+    "timestamp": "2026-08-29 14:55:22",
     "os": "Windows-11-10.0.26200-SP0",
-    "python": "3.13.12",
+    "python": "3.13.2",
     "django": "3.2.11",
     "db_backend": "SQLite（food_master.test_settings）",
-    "project_root": "D:\\rgproject\\final_work\\01_source"
+    "project_root": "C:\\Users\\20674\\Desktop\\学业\\大二\\大二下\\软件工程\\soft_ware\\01_source"
   },
   "summary": {
     "total": 109,

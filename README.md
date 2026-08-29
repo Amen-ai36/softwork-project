@@ -21,12 +21,28 @@ docker compose --env-file 03_devops\.env -f 03_devops\docker-compose.yml up -d -
 docker compose --env-file 03_devops\.env -f 03_devops\docker-compose.yml ps
 ```
 
-Linux/macOS 将路径分隔符改为 `/`。首次启动会创建 MySQL 数据库、导入 `03_devops/data/seed.sql`、执行迁移并收集静态文件。
+Linux/macOS 将路径分隔符改为 `/`。首次启动会创建兼容层数据库和三个独立 schema，导入 `03_devops/data/seed.sql`、执行各服务迁移并收集静态文件。
 
 - 应用入口：<http://localhost/>
 - 存活检查：<http://localhost/health/live/>
 - 就绪检查：<http://localhost/health/ready/>
 - 版本信息：<http://localhost/health/version/>
+- 用户服务：<http://localhost/api/users/health/ready>
+- 交易服务：<http://localhost/api/trade/health/ready>
+- 本地生活服务：<http://localhost/api/lifestyle/health/ready>
+
+## 微服务架构
+
+现有页面由 Django BFF 兼容层继续提供，新增业务 API 已按
+`02_docs/微服务拆分方案.md` 落到三个独立进程：
+
+| 网关路径 | 服务 | 独立 schema |
+| --- | --- | --- |
+| `/api/users/` | `user-service` | `user_db` |
+| `/api/trade/` | `trade-service` | `trade_db` |
+| `/api/lifestyle/` | `lifestyle-service` | `life_db` |
+
+跨服务用户引用使用 JWT 中的用户声明和裸整数 ID，不建立跨 schema 外键。
 
 ## 本地测试
 
@@ -36,7 +52,7 @@ Linux/macOS 将路径分隔符改为 `/`。首次启动会创建 MySQL 数据库
 powershell -NoProfile -ExecutionPolicy Bypass -File .\04_tests\run.ps1
 ```
 
-Linux/macOS 使用 `./04_tests/run.sh`。测试报告生成到 `04_tests/tests/test_report.md` 和 `04_tests/tests/test_report.json`。
+Linux/macOS 使用 `./04_tests/run.sh`。兼容层报告生成到 `test_report.*`，三个微服务的隔离测试报告生成到 `microservice_test_report.*`。
 
 ## 本地开发
 
@@ -52,7 +68,7 @@ Set-Location 01_source
 
 ## CI/CD
 
-向 `main` 或 `master` 推送后，`.github/workflows/ci.yml` 自动执行格式检查、Windows/Ubuntu/macOS 三平台测试、版本化 GHCR 镜像构建、Kind Kubernetes 部署和健康检查。任何阶段失败都会阻止后续发布或部署。
+向 `main` 或 `master` 推送后，`.github/workflows/ci.yml` 自动执行格式检查、Windows/Ubuntu/macOS 三平台测试，分别构建 BFF、用户、交易、本地生活四个版本化 GHCR 镜像，并在 Kind 中完成多服务部署和网关健康检查。任何阶段失败都会阻止后续发布或部署。
 
 Kubernetes 使用及回滚说明见 `03_devops/k8s/README.md`，公网和 Railway 部署说明见 `03_devops/deployment/`。
 

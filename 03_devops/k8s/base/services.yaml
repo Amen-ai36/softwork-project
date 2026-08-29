@@ -1,0 +1,206 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: food-master-user
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: food-master-user
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: business-service
+        app.kubernetes.io/name: food-master-user
+    spec:
+      containers:
+        - name: user-service
+          image: food-master-user:dev
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: food-master-config
+          env:
+            - name: SERVICE_MODULE
+              value: user_service
+            - name: SERVICE_PORT
+              value: "8001"
+            - name: SERVICE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: FOOD_DELIVER_DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: INTERNAL_SERVICE_TOKEN
+          ports:
+            - name: http
+              containerPort: 8001
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {cpu: 300m, memory: 256Mi}
+          startupProbe:
+            httpGet: {path: /health/live, port: http}
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: food-master-user
+spec:
+  selector:
+    app.kubernetes.io/name: food-master-user
+  ports:
+    - {name: http, port: 8001, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: food-master-trade
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: food-master-trade
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: business-service
+        app.kubernetes.io/name: food-master-trade
+    spec:
+      containers:
+        - name: trade-service
+          image: food-master-trade:dev
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: food-master-config
+          env:
+            - name: SERVICE_MODULE
+              value: trade_service
+            - name: SERVICE_PORT
+              value: "8002"
+            - name: SERVICE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: FOOD_DELIVER_DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: INTERNAL_SERVICE_TOKEN
+          ports:
+            - name: http
+              containerPort: 8002
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {cpu: 500m, memory: 384Mi}
+          startupProbe:
+            httpGet: {path: /health/live, port: http}
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: food-master-trade
+spec:
+  selector:
+    app.kubernetes.io/name: food-master-trade
+  ports:
+    - {name: http, port: 8002, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: food-master-lifestyle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: food-master-lifestyle
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: business-service
+        app.kubernetes.io/name: food-master-lifestyle
+    spec:
+      containers:
+        - name: lifestyle-service
+          image: food-master-lifestyle:dev
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: food-master-config
+          env:
+            - name: SERVICE_MODULE
+              value: lifestyle_service
+            - name: SERVICE_PORT
+              value: "8003"
+            - name: SERVICE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: FOOD_DELIVER_DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: JWT_SECRET
+            - name: INTERNAL_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: food-master-secrets
+                  key: INTERNAL_SERVICE_TOKEN
+          ports:
+            - name: http
+              containerPort: 8003
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {cpu: 400m, memory: 320Mi}
+          startupProbe:
+            httpGet: {path: /health/live, port: http}
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health/live, port: http}
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: food-master-lifestyle
+spec:
+  selector:
+    app.kubernetes.io/name: food-master-lifestyle
+  ports:
+    - {name: http, port: 8003, targetPort: http}

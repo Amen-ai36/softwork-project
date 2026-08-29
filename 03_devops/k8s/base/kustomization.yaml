@@ -5,7 +5,9 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - database.yaml
+  - schema-init.yaml
   - web.yaml
+  - services.yaml
   - nginx.yaml
 labels:
   - pairs:

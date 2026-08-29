@@ -1,4 +1,4 @@
-name: CI/CD - test, image, Kubernetes
+name: CI/CD - microservices test, images, Kubernetes
 
 on:
   push:
@@ -22,25 +22,23 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           cache: pip
           cache-dependency-path: 01_source/requirements-dev.txt
-
       - name: Install formatting tools
         run: python -m pip install -r 01_source/requirements-dev.txt
-
       - name: Check Python formatting
         run: >-
           python -m black --check --config 01_source/pyproject.toml
           01_source/manage.py 01_source/food_master 01_source/myapp
-          04_tests/tests 03_devops/scripts/package_submission.py
+          01_source/services 04_tests/tests
+          03_devops/scripts/package_submission.py
 
-  portable-test:
-    name: Test - ${{ matrix.os }} / Python 3.10
+  legacy-test:
+    name: Legacy/BFF - ${{ matrix.os }} / Python 3.10
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -49,20 +47,16 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           cache: pip
           cache-dependency-path: 01_source/requirements.txt
-
       - name: Install dependencies
         run: python -m pip install -r 01_source/requirements.txt
-
       - name: Compile Python source
-        run: python -m compileall -q 01_source/food_master 01_source/myapp 04_tests/tests
-
+        run: python -m compileall -q 01_source/food_master 01_source/myapp 01_source/services 04_tests/tests
       - name: Run Django deployment checks
         run: python manage.py check --deploy --settings=food_master.test_settings
         working-directory: 01_source
@@ -76,48 +70,113 @@ jobs:
           DJANGO_SECURE_HSTS_PRELOAD: "True"
           DJANGO_SECURE_SSL_REDIRECT: "True"
           DJANGO_SESSION_COOKIE_SECURE: "True"
-
-      - name: Run unit, integration/API, and end-to-end tests
+      - name: Run legacy unit, integration/API, and end-to-end tests
         run: python 04_tests/tests/run_tests.py
-
-      - name: Upload test evidence
+      - name: Upload legacy test evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: test-report-${{ matrix.os }}
+          name: legacy-test-report-${{ matrix.os }}
           path: |
             04_tests/tests/test_report.md
             04_tests/tests/test_report.json
           if-no-files-found: warn
           retention-days: 30
 
-  image:
-    name: Build and publish versioned image
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    needs: [format-check, portable-test]
-    runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.image-name.outputs.image }}
+  service-test:
+    name: ${{ matrix.name }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: user-service
+            settings: services.user_service.config.settings
+            tests: services.user_service.users
+            app: user_service_users
+          - os: windows-latest
+            name: user-service
+            settings: services.user_service.config.settings
+            tests: services.user_service.users
+            app: user_service_users
+          - os: macos-latest
+            name: user-service
+            settings: services.user_service.config.settings
+            tests: services.user_service.users
+            app: user_service_users
+          - os: ubuntu-latest
+            name: trade-service
+            settings: services.trade_service.config.settings
+            tests: services.trade_service.trade
+            app: trade_service_trade
+          - os: windows-latest
+            name: trade-service
+            settings: services.trade_service.config.settings
+            tests: services.trade_service.trade
+            app: trade_service_trade
+          - os: macos-latest
+            name: trade-service
+            settings: services.trade_service.config.settings
+            tests: services.trade_service.trade
+            app: trade_service_trade
+          - os: ubuntu-latest
+            name: lifestyle-service
+            settings: services.lifestyle_service.config.settings
+            tests: services.lifestyle_service.lifestyle
+            app: lifestyle_service_lifestyle
+          - os: windows-latest
+            name: lifestyle-service
+            settings: services.lifestyle_service.config.settings
+            tests: services.lifestyle_service.lifestyle
+            app: lifestyle_service_lifestyle
+          - os: macos-latest
+            name: lifestyle-service
+            settings: services.lifestyle_service.config.settings
+            tests: services.lifestyle_service.lifestyle
+            app: lifestyle_service_lifestyle
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: 01_source/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r 01_source/requirements.txt
+      - name: Check committed migrations
+        run: python -m django makemigrations ${{ matrix.app }} --check --dry-run --settings=${{ matrix.settings }}
+        working-directory: 01_source
+        env:
+          SERVICE_USE_SQLITE: "true"
+      - name: Run isolated service API tests
+        run: python -m django test ${{ matrix.tests }} --settings=${{ matrix.settings }} -v 2
+        working-directory: 01_source
+        env:
+          SERVICE_USE_SQLITE: "true"
+          DJANGO_SECRET_KEY: ci-service-secret
+          JWT_SECRET: ci-shared-jwt-secret
 
-      - name: Normalize image name
-        id: image-name
+  bff-image:
+    name: Build BFF image
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [format-check, legacy-test, service-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Normalize registry path
+        id: registry
         shell: bash
-        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
+        run: echo "base=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build and publish image
+      - uses: docker/setup-buildx-action@v4
+      - name: Build and publish BFF
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -125,87 +184,144 @@ jobs:
           push: true
           build-args: APP_VERSION=${{ github.sha }}
           tags: |
-            ${{ steps.image-name.outputs.image }}:${{ github.sha }}
-            ${{ steps.image-name.outputs.image }}:${{ github.ref_name }}
+            ${{ steps.registry.outputs.base }}-bff:${{ github.sha }}
+            ${{ steps.registry.outputs.base }}-bff:${{ github.ref_name }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=bff
+          cache-to: type=gha,mode=max,scope=bff
 
-  deploy-kind:
-    name: Deploy exact image to Kubernetes and health-check
-    needs: [image]
+  service-images:
+    name: Build ${{ matrix.name }} image
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [format-check, legacy-test, service-test]
     runs-on: ubuntu-latest
-    environment: kubernetes-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: user-service
+            image: user
+            module: user_service
+            port: 8001
+          - name: trade-service
+            image: trade
+            module: trade_service
+            port: 8002
+          - name: lifestyle-service
+            image: lifestyle
+            module: lifestyle_service
+            port: 8003
     steps:
-      - name: Check out source
-        uses: actions/checkout@v6
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
+      - uses: actions/checkout@v6
+      - name: Normalize registry path
+        id: registry
+        shell: bash
+        run: echo "base=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v4
+      - name: Build and publish ${{ matrix.name }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./03_devops/services/Dockerfile
+          push: true
+          build-args: |
+            SERVICE_MODULE=${{ matrix.module }}
+            SERVICE_PORT=${{ matrix.port }}
+            APP_VERSION=${{ github.sha }}
+          tags: |
+            ${{ steps.registry.outputs.base }}-${{ matrix.image }}:${{ github.sha }}
+            ${{ steps.registry.outputs.base }}-${{ matrix.image }}:${{ github.ref_name }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
-      - name: Pull the image produced by this workflow
-        env:
-          VERSIONED_IMAGE: ${{ needs.image.outputs.image }}:${{ github.sha }}
+  deploy-kind:
+    name: Deploy four exact images to Kubernetes
+    needs: [bff-image, service-images]
+    runs-on: ubuntu-latest
+    environment: kubernetes-ci
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull images produced by this workflow
+        shell: bash
         run: |
-          docker pull "$VERSIONED_IMAGE"
-          docker tag "$VERSIONED_IMAGE" food-master:dev
-
+          REPOSITORY_LOWER="${GITHUB_REPOSITORY,,}"
+          for component in bff user trade lifestyle; do
+            docker pull "ghcr.io/${REPOSITORY_LOWER}-${component}:${GITHUB_SHA}"
+            docker tag "ghcr.io/${REPOSITORY_LOWER}-${component}:${GITHUB_SHA}" "food-master-${component}:dev"
+          done
       - name: Create Kind cluster
         uses: helm/kind-action@v1
         with:
           cluster_name: food-master-ci
           wait: 120s
-
-      - name: Load versioned image into Kind
-        run: kind load docker-image food-master:dev --name food-master-ci
-
+      - name: Load exact images into Kind
+        run: |
+          kind load docker-image food-master-bff:dev --name food-master-ci
+          kind load docker-image food-master-user:dev --name food-master-ci
+          kind load docker-image food-master-trade:dev --name food-master-ci
+          kind load docker-image food-master-lifestyle:dev --name food-master-ci
       - name: Create runtime secrets
         shell: bash
         run: |
           kubectl apply -f 03_devops/k8s/base/namespace.yaml
           DB_PASSWORD="$(openssl rand -hex 16)"
           DJANGO_SECRET="$(openssl rand -hex 32)"
+          JWT_SECRET="$(openssl rand -hex 32)"
+          INTERNAL_TOKEN="$(openssl rand -hex 32)"
           kubectl -n food-master create secret generic food-master-secrets \
             --from-literal="DJANGO_SECRET_KEY=$DJANGO_SECRET" \
             --from-literal="MYSQL_ROOT_PASSWORD=$DB_PASSWORD" \
-            --from-literal="FOOD_DELIVER_DB_PASSWORD=$DB_PASSWORD"
-
-      - name: Deploy frontend, backend, and database
+            --from-literal="FOOD_DELIVER_DB_PASSWORD=$DB_PASSWORD" \
+            --from-literal="JWT_SECRET=$JWT_SECRET" \
+            --from-literal="INTERNAL_SERVICE_TOKEN=$INTERNAL_TOKEN"
+      - name: Deploy gateway, BFF, services, and database
         run: |
           kubectl apply -k 03_devops/k8s/base
-          kubectl -n food-master set env deployment/food-master-web APP_VERSION=${{ github.sha }}
+          for deployment in food-master-web food-master-user food-master-trade food-master-lifestyle; do
+            kubectl -n food-master set env "deployment/${deployment}" APP_VERSION=${{ github.sha }}
+          done
           kubectl -n food-master rollout status deployment/food-master-db --timeout=240s
+          kubectl -n food-master wait --for=condition=complete job/food-master-schema-init --timeout=240s
           kubectl -n food-master rollout status deployment/food-master-web --timeout=360s
+          kubectl -n food-master rollout status deployment/food-master-user --timeout=240s
+          kubectl -n food-master rollout status deployment/food-master-trade --timeout=240s
+          kubectl -n food-master rollout status deployment/food-master-lifestyle --timeout=240s
           kubectl -n food-master rollout status deployment/food-master-nginx --timeout=180s
-
-      - name: Run health and version checks through Nginx
+      - name: Run gateway, service, and version checks
         shell: bash
         run: |
           kubectl -n food-master port-forward service/food-master-nginx 18080:80 >port-forward.log 2>&1 &
           PORT_FORWARD_PID=$!
           trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
           for attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error http://127.0.0.1:18080/health/ready/ >health-ready.json; then
-              break
-            fi
-            if [ "$attempt" -eq 30 ]; then
-              cat port-forward.log
-              exit 1
-            fi
+            if curl --fail --silent http://127.0.0.1:18080/health/ready/ >health-bff.json; then break; fi
+            if [ "$attempt" -eq 30 ]; then cat port-forward.log; exit 1; fi
             sleep 2
           done
-          curl --fail --silent --show-error http://127.0.0.1:18080/health/live/ >health-live.json
-          curl --fail --silent --show-error http://127.0.0.1:18080/health/version/ >health-version.json
-          grep --fixed-strings '"version": "${{ github.sha }}"' health-version.json
-          cat health-ready.json
-          cat health-version.json
-
+          curl --fail --silent http://127.0.0.1:18080/api/users/health/ready >health-user.json
+          curl --fail --silent http://127.0.0.1:18080/api/trade/health/ready >health-trade.json
+          curl --fail --silent http://127.0.0.1:18080/api/lifestyle/health/ready >health-lifestyle.json
+          curl --fail --silent http://127.0.0.1:18080/health/version/ >version-bff.json
+          curl --fail --silent http://127.0.0.1:18080/api/users/health/version >version-user.json
+          curl --fail --silent http://127.0.0.1:18080/api/trade/health/version >version-trade.json
+          curl --fail --silent http://127.0.0.1:18080/api/lifestyle/health/version >version-lifestyle.json
+          grep --fixed-strings '"version": "${{ github.sha }}"' version-*.json
+          cat health-*.json
       - name: Collect Kubernetes evidence
         if: always()
         shell: bash
@@ -213,17 +329,15 @@ jobs:
           mkdir -p deployment-evidence
           kubectl -n food-master get all,pvc -o wide >deployment-evidence/resources.txt 2>&1 || true
           kubectl -n food-master describe pods >deployment-evidence/pods.txt 2>&1 || true
-          kubectl -n food-master logs deployment/food-master-db --tail=500 >deployment-evidence/database.log 2>&1 || true
-          kubectl -n food-master logs deployment/food-master-web --tail=500 >deployment-evidence/web.log 2>&1 || true
-          kubectl -n food-master logs deployment/food-master-nginx --tail=500 >deployment-evidence/nginx.log 2>&1 || true
-          cp health-*.json deployment-evidence/ 2>/dev/null || true
-          cp port-forward.log deployment-evidence/ 2>/dev/null || true
-
+          for component in db web user trade lifestyle nginx; do
+            kubectl -n food-master logs "deployment/food-master-${component}" --tail=500 >"deployment-evidence/${component}.log" 2>&1 || true
+          done
+          cp health-*.json version-*.json port-forward.log deployment-evidence/ 2>/dev/null || true
       - name: Upload deployment evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: kubernetes-deployment-${{ github.sha }}
+          name: microservices-deployment-${{ github.sha }}
           path: deployment-evidence/
           if-no-files-found: warn
           retention-days: 30

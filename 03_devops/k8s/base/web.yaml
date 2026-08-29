@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: food-master:dev
+          image: food-master-bff:dev
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

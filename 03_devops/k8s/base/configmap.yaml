@@ -13,3 +13,9 @@ data:
   FOOD_DELIVER_DB_PORT: "3306"
   FOOD_DELIVER_DB_USER: root
   IMPORT_SQL_ON_START: "true"
+  SERVICE_DB_HOST: food-master-db
+  SERVICE_DB_PORT: "3306"
+  SERVICE_DB_USER: root
+  USER_DB_NAME: user_db
+  TRADE_DB_NAME: trade_db
+  LIFESTYLE_DB_NAME: life_db
