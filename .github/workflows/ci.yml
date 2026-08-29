@@ -146,6 +146,9 @@ jobs:
           cache-dependency-path: 01_source/requirements.txt
       - name: Install dependencies
         run: python -m pip install -r 01_source/requirements.txt
+      - name: Check MySQL driver compatibility
+        run: python -c "import services; import MySQLdb"
+        working-directory: 01_source
       - name: Check committed migrations
         run: python -m django makemigrations ${{ matrix.app }} --check --dry-run --settings=${{ matrix.settings }}
         working-directory: 01_source
@@ -290,7 +293,22 @@ jobs:
             --from-literal="JWT_SECRET=$JWT_SECRET" \
             --from-literal="INTERNAL_SERVICE_TOKEN=$INTERNAL_TOKEN"
       - name: Deploy gateway, BFF, services, and database
+        shell: bash
         run: |
+          diagnose() {
+            echo "::group::Kubernetes resources"
+            kubectl -n food-master get all,pvc -o wide || true
+            echo "::endgroup::"
+            echo "::group::Kubernetes events"
+            kubectl -n food-master get events --sort-by=.lastTimestamp || true
+            echo "::endgroup::"
+            for component in db web user trade lifestyle nginx; do
+              echo "::group::${component} logs"
+              kubectl -n food-master logs "deployment/food-master-${component}" --tail=200 || true
+              echo "::endgroup::"
+            done
+          }
+          trap diagnose ERR
           kubectl apply -k 03_devops/k8s/base
           for deployment in food-master-web food-master-user food-master-trade food-master-lifestyle; do
             kubectl -n food-master set env "deployment/${deployment}" APP_VERSION=${{ github.sha }}
