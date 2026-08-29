@@ -1,8 +1,12 @@
 import json
+from urllib.parse import urlsplit
 
 from django.test import TestCase
+from django.urls import resolve
 
 from services.common.auth import issue_token
+from services.common.contracts import PUBLIC_API_CONTRACTS, route_patterns
+from services.trade_service.config.urls import urlpatterns
 from services.trade_service.trade.models import Food, Order
 
 
@@ -150,3 +154,137 @@ class TradeApiTests(TestCase):
         rider_field = Order._meta.get_field("rider_id")
         self.assertIsNone(user_field.remote_field)
         self.assertIsNone(rider_field.remote_field)
+
+    def test_all_exposed_api_methods_match_contract(self):
+        contract = set(PUBLIC_API_CONTRACTS["trade-service"])
+        self.assertEqual(
+            route_patterns(urlpatterns), {path for _method, path in contract}
+        )
+        covered = set()
+
+        def call(method, path, payload=None, user_id=None, role=None):
+            headers = {}
+            if user_id is not None:
+                headers["HTTP_AUTHORIZATION"] = f"Bearer {issue_token(user_id, role)}"
+            request = getattr(self.client, method.lower())
+            if payload is None:
+                response = request(path, **headers)
+            else:
+                response = request(
+                    path,
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                    **headers,
+                )
+            route = f"/{resolve(urlsplit(path).path).route}"
+            covered.add((method, route))
+            self.assertLess(response.status_code, 400, f"{method} {path}")
+            return response
+
+        call("GET", "/health/live")
+        call("GET", "/health/ready")
+        call("GET", "/health/version")
+        call("GET", "/foods?q=测试")
+        created_food = call(
+            "POST",
+            "/foods",
+            {"name": "契约菜品", "price": 20, "providor": "契约商家"},
+            self.merchant_id,
+            2,
+        )
+        food_id = created_food.json()["food"]["id"]
+        call("GET", f"/foods/{food_id}")
+        call(
+            "PATCH",
+            f"/foods/{food_id}/status",
+            {"is_sold_out": False},
+            self.merchant_id,
+            2,
+        )
+        created_order = call(
+            "POST",
+            "/orders",
+            {"food_id": food_id, "num": 2, "address": "契约地址"},
+            self.user_id,
+            0,
+        )
+        order_id = created_order.json()["order"]["id"]
+        call("GET", f"/orders/{order_id}", user_id=self.user_id, role=0)
+        call("GET", "/rider/orders", user_id=self.rider_id, role=1)
+        call(
+            "POST",
+            f"/orders/{order_id}/accept",
+            {},
+            self.rider_id,
+            1,
+        )
+        call(
+            "POST",
+            f"/orders/{order_id}/prepare",
+            {},
+            self.merchant_id,
+            2,
+        )
+        call(
+            "POST",
+            f"/orders/{order_id}/pickup",
+            {},
+            self.rider_id,
+            1,
+        )
+        call(
+            "POST",
+            f"/orders/{order_id}/deliver",
+            {},
+            self.rider_id,
+            1,
+        )
+        call(
+            "POST",
+            f"/orders/{order_id}/comment",
+            {"scoretofood": 4.8, "scoretodeliver": 4.6, "comment": "很好"},
+            self.user_id,
+            0,
+        )
+
+        cart_item = call(
+            "POST",
+            "/cart",
+            {"food_id": food_id, "num": 1, "address": "购物车地址"},
+            self.user_id,
+            0,
+        )
+        item_id = cart_item.json()["item_id"]
+        call("GET", "/cart", user_id=self.user_id, role=0)
+        call(
+            "PATCH",
+            f"/cart/{item_id}",
+            {"num": 2},
+            self.user_id,
+            0,
+        )
+        call("DELETE", f"/cart/{item_id}", {}, self.user_id, 0)
+        call(
+            "POST",
+            "/cart",
+            {"food_id": food_id, "num": 1},
+            self.user_id,
+            0,
+        )
+        call("POST", "/cart/checkout", {}, self.user_id, 0)
+
+        coupon = call(
+            "POST",
+            "/groupbuy",
+            {"food_id": food_id, "num": 1},
+            self.user_id,
+            0,
+        )
+        call(
+            "POST",
+            "/groupbuy/redeem",
+            {"code": coupon.json()["coupon"]["code"]},
+            self.merchant_id,
+            2,
+        )
+        self.assertEqual(covered, contract)

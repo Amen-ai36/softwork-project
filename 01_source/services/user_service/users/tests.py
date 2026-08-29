@@ -1,8 +1,12 @@
 import json
+from urllib.parse import urlsplit
 
 from django.test import TestCase
+from django.urls import resolve
 
 from services.common.auth import issue_token
+from services.common.contracts import PUBLIC_API_CONTRACTS, route_patterns
+from services.user_service.config.urls import urlpatterns
 from services.user_service.users.models import User
 
 
@@ -92,3 +96,84 @@ class UserApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["users"][0]["id"], user.id)
+
+    def test_all_exposed_api_methods_match_contract(self):
+        contract = set(PUBLIC_API_CONTRACTS["user-service"])
+        self.assertEqual(
+            route_patterns(urlpatterns), {path for _method, path in contract}
+        )
+        covered = set()
+
+        def call(method, path, payload=None, token=None, **headers):
+            kwargs = dict(headers)
+            if token:
+                kwargs["HTTP_AUTHORIZATION"] = f"Bearer {token}"
+            request = getattr(self.client, method.lower())
+            if payload is None:
+                response = request(path, **kwargs)
+            else:
+                response = request(
+                    path,
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                    **kwargs,
+                )
+            route = f"/{resolve(urlsplit(path).path).route}"
+            covered.add((method, route))
+            self.assertLess(response.status_code, 400, f"{method} {path}")
+            return response
+
+        call("GET", "/health/live")
+        call("GET", "/health/ready")
+        call("GET", "/health/version")
+        registered = call(
+            "POST",
+            "/register",
+            {
+                "username": "contract-user",
+                "password": "secret123",
+                "phone": "13800138100",
+                "usertype": 0,
+            },
+        )
+        user_id = registered.json()["user"]["id"]
+        logged_in = call(
+            "POST",
+            "/login",
+            {"username": "contract-user", "password": "secret123"},
+        )
+        user_token = logged_in.json()["access_token"]
+        admin = User.objects.create(
+            username="contract-admin",
+            password="unused",
+            phone="13800138101",
+            usertype=3,
+        )
+        admin_token = issue_token(admin.id, 3)
+
+        call("POST", "/logout", {}, user_token)
+        call("GET", f"/users/{user_id}", token=user_token)
+        call(
+            "PATCH",
+            f"/users/{user_id}/profile",
+            {"phone": "13800138102", "word": "updated"},
+            user_token,
+        )
+        call(
+            "PATCH",
+            f"/users/{user_id}/status",
+            {"is_active": False},
+            admin_token,
+        )
+        call(
+            "PATCH",
+            f"/users/{user_id}/role",
+            {"usertype": 1},
+            admin_token,
+        )
+        call(
+            "GET",
+            f"/internal/users?ids={admin.id}",
+            HTTP_X_INTERNAL_TOKEN="dev-internal-token",
+        )
+        self.assertEqual(covered, contract)

@@ -31,12 +31,16 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from acceptance_cases import USE_CASES
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SOURCE_ROOT = REPO_ROOT / "01_source"
 TEST_DIR = Path(__file__).resolve().parent
 TEST_PACKAGE_ROOT = TEST_DIR.parent
 REPORT_MD = TEST_DIR / "test_report.md"
 REPORT_JSON = TEST_DIR / "test_report.json"
+ACCEPTANCE_MD = TEST_DIR / "acceptance_report.md"
+ACCEPTANCE_JSON = TEST_DIR / "acceptance_report.json"
 
 TEST_LABELS = [
     "tests.test_unit",
@@ -170,7 +174,101 @@ def parse_output(output):
     }, output
 
 
-def write_reports(summary, environment, output):
+def extract_test_status(output, test_id):
+    marker = f"({test_id})"
+    start = output.find(marker)
+    if start < 0:
+        return "MISSING"
+    remaining = output[start + len(marker) :]
+    next_test = re.search(r"\r?\ntest_[A-Za-z0-9_]+ \(", remaining)
+    block = remaining[: next_test.start()] if next_test else remaining
+    if re.search(r"\.\.\. ok\s*$", block, re.MULTILINE):
+        return "PASSED"
+    if re.search(r"\.\.\. skipped\b", block):
+        return "SKIPPED"
+    if re.search(r"\.\.\. (FAIL|ERROR)\s*$", block, re.MULTILINE):
+        return "FAILED"
+    return "UNKNOWN"
+
+
+def build_acceptance(output):
+    cases = []
+    for case in USE_CASES:
+        evidence = [
+            {"test": test_id, "status": extract_test_status(output, test_id)}
+            for test_id in case["tests"]
+        ]
+        cases.append(
+            {
+                "id": case["id"],
+                "title": case["title"],
+                "representative": case["representative"],
+                "status": (
+                    "PASSED"
+                    if all(item["status"] == "PASSED" for item in evidence)
+                    else "FAILED"
+                ),
+                "evidence": evidence,
+            }
+        )
+    passed = sum(case["status"] == "PASSED" for case in cases)
+    return {
+        "total": len(cases),
+        "passed": passed,
+        "status": "OK" if passed == len(cases) else "FAILED",
+        "cases": cases,
+    }
+
+
+def write_acceptance_reports(acceptance, environment):
+    payload = {"generated_at": environment["timestamp"], **acceptance}
+    ACCEPTANCE_JSON.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    lines = [
+        "# 业务用例端到端验收报告",
+        "",
+        f"- 生成时间：{environment['timestamp']}",
+        f"- 用例清单：UC01-UC{acceptance['total']:02d}",
+        f"- 通过用例：{acceptance['passed']}/{acceptance['total']}",
+        f"- 总体结果：{acceptance['status']}",
+        "",
+        "## 代表性用例",
+        "",
+        "| 用例 | 业务场景 | 自动化证据数 | 结果 |",
+        "| --- | --- | ---: | --- |",
+    ]
+    for case in acceptance["cases"]:
+        if case["representative"]:
+            lines.append(
+                f"| {case['id']} | {case['title']} | {len(case['evidence'])} | "
+                f"{case['status']} |"
+            )
+    lines.extend(
+        [
+            "",
+            "## 全部业务用例",
+            "",
+            "| 用例 | 业务场景 | 主流程/异常流程证据 | 结果 |",
+            "| --- | --- | ---: | --- |",
+        ]
+    )
+    for case in acceptance["cases"]:
+        lines.append(
+            f"| {case['id']} | {case['title']} | {len(case['evidence'])} | "
+            f"{case['status']} |"
+        )
+    lines.extend(["", "## 测试证据", ""])
+    for case in acceptance["cases"]:
+        lines.append(f"### {case['id']} {case['title']}")
+        lines.append("")
+        for item in case["evidence"]:
+            lines.append(f"- `{item['test']}`：{item['status']}")
+        lines.append("")
+    ACCEPTANCE_MD.write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_reports(summary, environment, acceptance, output):
     md = [
         "# 自动化测试报告",
         "",
@@ -188,6 +286,7 @@ def write_reports(summary, environment, output):
         f"| 失败数 | {summary['failed']} |",
         f"| 跳过数（环境原因） | {summary['skipped']} |",
         f"| 结果 | {summary['status']} |",
+        f"| 业务用例回归 | {acceptance['passed']}/{acceptance['total']} |",
         "",
     ]
     if summary["reasons"]:
@@ -206,7 +305,11 @@ def write_reports(summary, environment, output):
     md.append("```")
 
     REPORT_MD.write_text("\n".join(md), encoding="utf-8")
-    payload = {"environment": environment, "summary": summary}
+    payload = {
+        "environment": environment,
+        "summary": summary,
+        "acceptance": acceptance,
+    }
     REPORT_JSON.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -217,6 +320,7 @@ def main():
     environment = collect_environment()
     proc, output = run_tests()
     summary, output = parse_output(output)
+    acceptance = build_acceptance(output)
     # 兜底：进程非 0 退出（如语法错误、收集失败）也判定为失败并记录原因
     if proc.returncode != 0 and summary["status"] == "OK":
         summary["status"] = "FAILED"
@@ -240,17 +344,33 @@ def main():
             {"test": "(测试收集/启动失败)", "kind": "ERROR", "reason": reason}
         ]
         summary["failed"] += 1
-    write_reports(summary, environment, output)
+    if acceptance["status"] != "OK":
+        summary["status"] = "FAILED"
+        summary["reasons"].append(
+            {
+                "test": "UC01-UC09 端到端验收",
+                "kind": "ERROR",
+                "reason": "一个或多个业务用例缺少通过的自动化证据",
+            }
+        )
+    write_reports(summary, environment, acceptance, output)
+    write_acceptance_reports(acceptance, environment)
 
     print()
     print("=" * 60)
     print("测试报告已生成：")
     print(f"  {REPORT_MD}")
     print(f"  {REPORT_JSON}")
+    print(f"  {ACCEPTANCE_MD}")
+    print(f"  {ACCEPTANCE_JSON}")
     print("-" * 60)
     print(
         f"总数: {summary['total']}  通过: {summary['passed']}  "
         f"失败: {summary['failed']}  跳过: {summary['skipped']}  结果: {summary['status']}"
+    )
+    print(
+        f"业务用例: {acceptance['passed']}/{acceptance['total']}  "
+        f"结果: {acceptance['status']}"
     )
     if summary["reasons"]:
         for item in summary["reasons"]:

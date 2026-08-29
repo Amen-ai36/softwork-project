@@ -1,28 +1,257 @@
 {
-  "generated_at": "2026-08-29T15:23:28",
-  "total": 21,
+  "generated_at": "2026-08-29T15:57:43",
+  "total": 24,
+  "api_method_total": 54,
   "status": "OK",
   "services": [
     {
       "service": "user-service",
-      "tests": 6,
+      "tests": 7,
       "status": "OK",
+      "api_methods": 11,
+      "api_coverage": "OK",
+      "api_contract": [
+        {
+          "method": "GET",
+          "path": "/health/live"
+        },
+        {
+          "method": "GET",
+          "path": "/health/ready"
+        },
+        {
+          "method": "GET",
+          "path": "/health/version"
+        },
+        {
+          "method": "POST",
+          "path": "/register"
+        },
+        {
+          "method": "POST",
+          "path": "/login"
+        },
+        {
+          "method": "POST",
+          "path": "/logout"
+        },
+        {
+          "method": "GET",
+          "path": "/users/<int:user_id>"
+        },
+        {
+          "method": "PATCH",
+          "path": "/users/<int:user_id>/profile"
+        },
+        {
+          "method": "PATCH",
+          "path": "/users/<int:user_id>/status"
+        },
+        {
+          "method": "PATCH",
+          "path": "/users/<int:user_id>/role"
+        },
+        {
+          "method": "GET",
+          "path": "/internal/users"
+        }
+      ],
       "returncode": 0,
-      "output": "Operations to perform:\n  Apply all migrations: user_service_users\nRunning migrations:\n  Applying user_service_users.0001_initial... OK\nSystem check identified no issues (0 silenced).\nCreating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\ntest_admin_can_disable_user_and_change_role (services.user_service.users.tests.UserApiTests.test_admin_can_disable_user_and_change_role) ... ok\ntest_duplicate_username_is_rejected (services.user_service.users.tests.UserApiTests.test_duplicate_username_is_rejected) ... Conflict: /register\nok\ntest_internal_batch_lookup (services.user_service.users.tests.UserApiTests.test_internal_batch_lookup) ... ok\ntest_register_login_and_read_profile (services.user_service.users.tests.UserApiTests.test_register_login_and_read_profile) ... ok\ntest_registration_rejects_weak_password (services.user_service.users.tests.UserApiTests.test_registration_rejects_weak_password) ... Bad Request: /register\nok\ntest_user_cannot_read_another_profile (services.user_service.users.tests.UserApiTests.test_user_cannot_read_another_profile) ... Forbidden: /users/2\nok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.332s\n\nOK\nDestroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\n"
+      "output": "Operations to perform:\n  Apply all migrations: user_service_users\nRunning migrations:\n  Applying user_service_users.0001_initial... OK\nSystem check identified no issues (0 silenced).\nCreating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\ntest_admin_can_disable_user_and_change_role (services.user_service.users.tests.UserApiTests.test_admin_can_disable_user_and_change_role) ... ok\ntest_all_exposed_api_methods_match_contract (services.user_service.users.tests.UserApiTests.test_all_exposed_api_methods_match_contract) ... ok\ntest_duplicate_username_is_rejected (services.user_service.users.tests.UserApiTests.test_duplicate_username_is_rejected) ... Conflict: /register\nok\ntest_internal_batch_lookup (services.user_service.users.tests.UserApiTests.test_internal_batch_lookup) ... ok\ntest_register_login_and_read_profile (services.user_service.users.tests.UserApiTests.test_register_login_and_read_profile) ... ok\ntest_registration_rejects_weak_password (services.user_service.users.tests.UserApiTests.test_registration_rejects_weak_password) ... Bad Request: /register\nok\ntest_user_cannot_read_another_profile (services.user_service.users.tests.UserApiTests.test_user_cannot_read_another_profile) ... Forbidden: /users/2\nok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.501s\n\nOK\nDestroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\n"
     },
     {
       "service": "trade-service",
-      "tests": 9,
+      "tests": 10,
       "status": "OK",
+      "api_methods": 22,
+      "api_coverage": "OK",
+      "api_contract": [
+        {
+          "method": "GET",
+          "path": "/health/live"
+        },
+        {
+          "method": "GET",
+          "path": "/health/ready"
+        },
+        {
+          "method": "GET",
+          "path": "/health/version"
+        },
+        {
+          "method": "GET",
+          "path": "/foods"
+        },
+        {
+          "method": "POST",
+          "path": "/foods"
+        },
+        {
+          "method": "GET",
+          "path": "/foods/<int:food_id>"
+        },
+        {
+          "method": "PATCH",
+          "path": "/foods/<int:food_id>/status"
+        },
+        {
+          "method": "POST",
+          "path": "/orders"
+        },
+        {
+          "method": "GET",
+          "path": "/orders/<int:order_id>"
+        },
+        {
+          "method": "POST",
+          "path": "/orders/<int:order_id>/comment"
+        },
+        {
+          "method": "POST",
+          "path": "/orders/<int:order_id>/accept"
+        },
+        {
+          "method": "POST",
+          "path": "/orders/<int:order_id>/prepare"
+        },
+        {
+          "method": "POST",
+          "path": "/orders/<int:order_id>/pickup"
+        },
+        {
+          "method": "POST",
+          "path": "/orders/<int:order_id>/deliver"
+        },
+        {
+          "method": "GET",
+          "path": "/cart"
+        },
+        {
+          "method": "POST",
+          "path": "/cart"
+        },
+        {
+          "method": "PATCH",
+          "path": "/cart/<int:item_id>"
+        },
+        {
+          "method": "DELETE",
+          "path": "/cart/<int:item_id>"
+        },
+        {
+          "method": "POST",
+          "path": "/cart/checkout"
+        },
+        {
+          "method": "POST",
+          "path": "/groupbuy"
+        },
+        {
+          "method": "POST",
+          "path": "/groupbuy/redeem"
+        },
+        {
+          "method": "GET",
+          "path": "/rider/orders"
+        }
+      ],
       "returncode": 0,
-      "output": "Operations to perform:\n  Apply all migrations: trade_service_trade\nRunning migrations:\n  Applying trade_service_trade.0001_initial... OK\nSystem check identified no issues (0 silenced).\nCreating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\ntest_cart_checkout_creates_orders_atomically (services.trade_service.trade.tests.TradeApiTests.test_cart_checkout_creates_orders_atomically) ... ok\ntest_cross_service_user_references_are_plain_ids (services.trade_service.trade.tests.TradeApiTests.test_cross_service_user_references_are_plain_ids) ... ok\ntest_delivery_transition_rejects_wrong_state (services.trade_service.trade.tests.TradeApiTests.test_delivery_transition_rejects_wrong_state) ... Conflict: /orders/1/pickup\nok\ntest_food_listing_is_public (services.trade_service.trade.tests.TradeApiTests.test_food_listing_is_public) ... ok\ntest_groupbuy_can_only_be_redeemed_by_owner_merchant (services.trade_service.trade.tests.TradeApiTests.test_groupbuy_can_only_be_redeemed_by_owner_merchant) ... Forbidden: /groupbuy/redeem\nok\ntest_merchant_creates_and_updates_food (services.trade_service.trade.tests.TradeApiTests.test_merchant_creates_and_updates_food) ... ok\ntest_order_delivery_state_machine (services.trade_service.trade.tests.TradeApiTests.test_order_delivery_state_machine) ... ok\ntest_regular_user_cannot_create_food (services.trade_service.trade.tests.TradeApiTests.test_regular_user_cannot_create_food) ... Forbidden: /foods\nok\ntest_sold_out_food_cannot_be_ordered (services.trade_service.trade.tests.TradeApiTests.test_sold_out_food_cannot_be_ordered) ... Conflict: /orders\nok\n\n----------------------------------------------------------------------\nRan 9 tests in 0.019s\n\nOK\nDestroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\n"
+      "output": "Operations to perform:\n  Apply all migrations: trade_service_trade\nRunning migrations:\n  Applying trade_service_trade.0001_initial... OK\nSystem check identified no issues (0 silenced).\nCreating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\ntest_all_exposed_api_methods_match_contract (services.trade_service.trade.tests.TradeApiTests.test_all_exposed_api_methods_match_contract) ... ok\ntest_cart_checkout_creates_orders_atomically (services.trade_service.trade.tests.TradeApiTests.test_cart_checkout_creates_orders_atomically) ... ok\ntest_cross_service_user_references_are_plain_ids (services.trade_service.trade.tests.TradeApiTests.test_cross_service_user_references_are_plain_ids) ... ok\ntest_delivery_transition_rejects_wrong_state (services.trade_service.trade.tests.TradeApiTests.test_delivery_transition_rejects_wrong_state) ... Conflict: /orders/1/pickup\nok\ntest_food_listing_is_public (services.trade_service.trade.tests.TradeApiTests.test_food_listing_is_public) ... ok\ntest_groupbuy_can_only_be_redeemed_by_owner_merchant (services.trade_service.trade.tests.TradeApiTests.test_groupbuy_can_only_be_redeemed_by_owner_merchant) ... Forbidden: /groupbuy/redeem\nok\ntest_merchant_creates_and_updates_food (services.trade_service.trade.tests.TradeApiTests.test_merchant_creates_and_updates_food) ... ok\ntest_order_delivery_state_machine (services.trade_service.trade.tests.TradeApiTests.test_order_delivery_state_machine) ... ok\ntest_regular_user_cannot_create_food (services.trade_service.trade.tests.TradeApiTests.test_regular_user_cannot_create_food) ... Forbidden: /foods\nok\ntest_sold_out_food_cannot_be_ordered (services.trade_service.trade.tests.TradeApiTests.test_sold_out_food_cannot_be_ordered) ... Conflict: /orders\nok\n\n----------------------------------------------------------------------\nRan 10 tests in 0.038s\n\nOK\nDestroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\n"
     },
     {
       "service": "lifestyle-service",
-      "tests": 6,
+      "tests": 7,
       "status": "OK",
+      "api_methods": 21,
+      "api_coverage": "OK",
+      "api_contract": [
+        {
+          "method": "GET",
+          "path": "/health/live"
+        },
+        {
+          "method": "GET",
+          "path": "/health/ready"
+        },
+        {
+          "method": "GET",
+          "path": "/health/version"
+        },
+        {
+          "method": "GET",
+          "path": "/hotels"
+        },
+        {
+          "method": "POST",
+          "path": "/hotels"
+        },
+        {
+          "method": "GET",
+          "path": "/hotels/<int:hotel_id>"
+        },
+        {
+          "method": "POST",
+          "path": "/hotel-orders"
+        },
+        {
+          "method": "GET",
+          "path": "/hotel-orders/<int:order_id>"
+        },
+        {
+          "method": "POST",
+          "path": "/hotel-orders/<int:order_id>/comment"
+        },
+        {
+          "method": "GET",
+          "path": "/plays"
+        },
+        {
+          "method": "POST",
+          "path": "/plays"
+        },
+        {
+          "method": "GET",
+          "path": "/plays/<int:play_id>"
+        },
+        {
+          "method": "POST",
+          "path": "/play-orders"
+        },
+        {
+          "method": "GET",
+          "path": "/play-orders/<int:order_id>"
+        },
+        {
+          "method": "POST",
+          "path": "/play-orders/<int:order_id>/comment"
+        },
+        {
+          "method": "GET",
+          "path": "/blogs"
+        },
+        {
+          "method": "POST",
+          "path": "/blogs"
+        },
+        {
+          "method": "GET",
+          "path": "/blogs/<int:blog_id>"
+        },
+        {
+          "method": "DELETE",
+          "path": "/blogs/<int:blog_id>"
+        },
+        {
+          "method": "POST",
+          "path": "/blogs/<int:blog_id>/comments"
+        },
+        {
+          "method": "DELETE",
+          "path": "/comments/<int:comment_id>"
+        }
+      ],
       "returncode": 0,
-      "output": "Operations to perform:\n  Apply all migrations: lifestyle_service_lifestyle\nRunning migrations:\n  Applying lifestyle_service_lifestyle.0001_initial... OK\nSystem check identified no issues (0 silenced).\nCreating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\ntest_blog_and_comment_lifecycle (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_blog_and_comment_lifecycle) ... ok\ntest_cross_service_references_are_plain_ids (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_cross_service_references_are_plain_ids) ... ok\ntest_hotel_create_book_and_review (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_hotel_create_book_and_review) ... ok\ntest_other_user_cannot_delete_blog (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_other_user_cannot_delete_blog) ... Forbidden: /blogs/1\nok\ntest_play_booking (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_play_booking) ... ok\ntest_regular_user_cannot_publish_hotel (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_regular_user_cannot_publish_hotel) ... Forbidden: /hotels\nok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.010s\n\nOK\nDestroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\n"
+      "output": "Operations to perform:\n  Apply all migrations: lifestyle_service_lifestyle\nRunning migrations:\n  Applying lifestyle_service_lifestyle.0001_initial... OK\nSystem check identified no issues (0 silenced).\nCreating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\ntest_all_exposed_api_methods_match_contract (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_all_exposed_api_methods_match_contract) ... ok\ntest_blog_and_comment_lifecycle (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_blog_and_comment_lifecycle) ... ok\ntest_cross_service_references_are_plain_ids (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_cross_service_references_are_plain_ids) ... ok\ntest_hotel_create_book_and_review (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_hotel_create_book_and_review) ... ok\ntest_other_user_cannot_delete_blog (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_other_user_cannot_delete_blog) ... Forbidden: /blogs/1\nok\ntest_play_booking (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_play_booking) ... ok\ntest_regular_user_cannot_publish_hotel (services.lifestyle_service.lifestyle.tests.LifestyleApiTests.test_regular_user_cannot_publish_hotel) ... Forbidden: /hotels\nok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.020s\n\nOK\nDestroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...\n\n"
     }
   ]
 }

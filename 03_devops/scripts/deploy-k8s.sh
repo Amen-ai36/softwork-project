@@ -40,9 +40,13 @@ kubectl -n "$NAMESPACE" rollout status deployment/food-master-user --timeout=240
 kubectl -n "$NAMESPACE" rollout status deployment/food-master-trade --timeout=240s
 kubectl -n "$NAMESPACE" rollout status deployment/food-master-lifestyle --timeout=240s
 kubectl -n "$NAMESPACE" rollout status deployment/food-master-nginx --timeout=180s
-kubectl -n "$NAMESPACE" exec deployment/food-master-nginx -- \
-  wget -qO- http://127.0.0.1/health/ready/
-for service in users trade lifestyle; do
+for probe in live ready version; do
   kubectl -n "$NAMESPACE" exec deployment/food-master-nginx -- \
-    wget -qO- "http://127.0.0.1/api/$service/health/ready"
+    wget -qO- "http://127.0.0.1/health/$probe/"
+done
+for service in users trade lifestyle; do
+  for probe in live ready version; do
+    kubectl -n "$NAMESPACE" exec deployment/food-master-nginx -- \
+      wget -qO- "http://127.0.0.1/api/$service/health/$probe"
+  done
 done

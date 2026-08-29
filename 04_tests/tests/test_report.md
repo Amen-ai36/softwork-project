@@ -1,6 +1,6 @@
 # 自动化测试报告
 
-- 生成时间：2026-08-29 15:23:23
+- 生成时间：2026-08-29 15:57:38
 - 运行环境：Windows-11-10.0.26200-SP0
 - Python：3.13.2 / Django：3.2.11
 - 数据库：SQLite（food_master.test_settings）
@@ -14,6 +14,7 @@
 | 失败数 | 0 |
 | 跳过数（环境原因） | 1 |
 | 结果 | OK |
+| 业务用例回归 | 9/9 |
 
 > 说明：任一测试失败时，`run_tests.py` 会返回非 0 退出码，
 > CI/CD 流水线中后续的构建、发布镜像、部署步骤将不会执行。
@@ -267,7 +268,7 @@ test_settings_match_sql_dump_database (tests.test_database_config.DatabaseConfig
 配置一致性：settings 数据库名应与 03_devops/data/seed.sql 一致 ... ok
 
 ----------------------------------------------------------------------
-Ran 109 tests in 0.730s
+Ran 109 tests in 0.748s
 
 OK (skipped=1)
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...

@@ -52,7 +52,7 @@ Linux/macOS 将路径分隔符改为 `/`。首次启动会创建兼容层数据�
 powershell -NoProfile -ExecutionPolicy Bypass -File .\04_tests\run.ps1
 ```
 
-Linux/macOS 使用 `./04_tests/run.sh`。兼容层报告生成到 `test_report.*`，三个微服务的隔离测试报告生成到 `microservice_test_report.*`。
+Linux/macOS 使用 `./04_tests/run.sh`。兼容层报告生成到 `test_report.*`，UC01-UC09 结果生成到 `acceptance_report.*`，三个微服务的 54 个公开 API 方法覆盖结果生成到 `microservice_test_report.*`。
 
 ## 本地开发
 
@@ -68,9 +68,9 @@ Set-Location 01_source
 
 ## CI/CD
 
-向 `main` 或 `master` 推送后，`.github/workflows/ci.yml` 自动执行格式检查、Windows/Ubuntu/macOS 三平台测试，分别构建 BFF、用户、交易、本地生活四个版本化 GHCR 镜像，并在 Kind 中完成多服务部署和网关健康检查。任何阶段失败都会阻止后续发布或部署。
+向 `main` 或 `master` 推送后，`.github/workflows/ci.yml` 按 `01 Quality -> 02 Test -> 03 Build -> 04 Deploy -> 05 Verify` 执行：在 Windows/Ubuntu/macOS 上运行测试，构建 BFF、用户、交易、本地生活四个版本化 GHCR 镜像，并在 Kind 中完成部署、存活/就绪/版本检查和证据上传。任何阶段失败都会阻止后续发布或部署。
 
-Kubernetes 使用及回滚说明见 `03_devops/k8s/README.md`，公网和 Railway 部署说明见 `03_devops/deployment/`。
+Kubernetes 使用及回滚说明见 `03_devops/k8s/README.md`，真实部署失败的定位过程见 `02_docs/CI-CD故障排查记录.md`，公网和 Railway 部署说明见 `03_devops/deployment/`。
 
 ## 最终提交包
 

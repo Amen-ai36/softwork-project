@@ -1,4 +1,5 @@
 name: CI/CD - microservices test, images, Kubernetes
+run-name: CI/CD | ${{ github.ref_name }} | ${{ github.sha }}
 
 on:
   push:
@@ -17,7 +18,7 @@ permissions:
 
 jobs:
   format-check:
-    name: Python formatting
+    name: 01 Quality - formatting and static checks
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -38,7 +39,8 @@ jobs:
           03_devops/scripts/package_submission.py
 
   legacy-test:
-    name: Legacy/BFF - ${{ matrix.os }} / Python 3.10
+    name: 02 Test - BFF on ${{ matrix.os }}
+    needs: format-check
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -72,6 +74,10 @@ jobs:
           DJANGO_SESSION_COOKIE_SECURE: "True"
       - name: Run legacy unit, integration/API, and end-to-end tests
         run: python 04_tests/tests/run_tests.py
+      - name: Publish representative acceptance cases
+        if: always() && matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: cat 04_tests/tests/acceptance_report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload legacy test evidence
         if: always()
         uses: actions/upload-artifact@v7
@@ -80,11 +86,14 @@ jobs:
           path: |
             04_tests/tests/test_report.md
             04_tests/tests/test_report.json
+            04_tests/tests/acceptance_report.md
+            04_tests/tests/acceptance_report.json
           if-no-files-found: warn
           retention-days: 30
 
   service-test:
-    name: ${{ matrix.name }} - ${{ matrix.os }}
+    name: 02 Test - ${{ matrix.name }} on ${{ matrix.os }}
+    needs: format-check
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -162,10 +171,42 @@ jobs:
           DJANGO_SECRET_KEY: ci-service-secret
           JWT_SECRET: ci-shared-jwt-secret
 
+  test-gate:
+    name: 02 Test gate - all regression suites passed
+    needs: [legacy-test, service-test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: 01_source/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r 01_source/requirements.txt
+      - name: Generate consolidated API contract evidence
+        run: python 04_tests/tests/run_service_tests.py
+      - name: Publish API contract summary
+        if: always()
+        shell: bash
+        run: cat 04_tests/tests/microservice_test_report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload API contract evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: microservice-api-contract-report
+          path: |
+            04_tests/tests/microservice_test_report.md
+            04_tests/tests/microservice_test_report.json
+          if-no-files-found: error
+          retention-days: 30
+
   bff-image:
-    name: Build BFF image
+    name: 03 Build - BFF image
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    needs: [format-check, legacy-test, service-test]
+    needs: test-gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -196,9 +237,9 @@ jobs:
           cache-to: type=gha,mode=max,scope=bff
 
   service-images:
-    name: Build ${{ matrix.name }} image
+    name: 03 Build - ${{ matrix.name }} image
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    needs: [format-check, legacy-test, service-test]
+    needs: test-gate
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -248,7 +289,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
   deploy-kind:
-    name: Deploy four exact images to Kubernetes
+    name: 04 Deploy + 05 Verify - Kubernetes
     needs: [bff-image, service-images]
     runs-on: ubuntu-latest
     environment: kubernetes-ci
@@ -323,14 +364,29 @@ jobs:
       - name: Run gateway, service, and version checks
         shell: bash
         run: |
+          diagnose() {
+            cat port-forward.log 2>/dev/null || true
+            kubectl -n food-master get deployments,pods -o wide || true
+            kubectl -n food-master get events --sort-by=.lastTimestamp || true
+            for component in web user trade lifestyle nginx; do
+              echo "::group::${component} verification logs"
+              kubectl -n food-master logs "deployment/food-master-${component}" --tail=200 || true
+              echo "::endgroup::"
+            done
+          }
           kubectl -n food-master port-forward service/food-master-nginx 18080:80 >port-forward.log 2>&1 &
           PORT_FORWARD_PID=$!
           trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
+          trap diagnose ERR
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:18080/health/ready/ >health-bff.json; then break; fi
             if [ "$attempt" -eq 30 ]; then cat port-forward.log; exit 1; fi
             sleep 2
           done
+          curl --fail --silent http://127.0.0.1:18080/health/live/ >live-bff.json
+          curl --fail --silent http://127.0.0.1:18080/api/users/health/live >live-user.json
+          curl --fail --silent http://127.0.0.1:18080/api/trade/health/live >live-trade.json
+          curl --fail --silent http://127.0.0.1:18080/api/lifestyle/health/live >live-lifestyle.json
           curl --fail --silent http://127.0.0.1:18080/api/users/health/ready >health-user.json
           curl --fail --silent http://127.0.0.1:18080/api/trade/health/ready >health-trade.json
           curl --fail --silent http://127.0.0.1:18080/api/lifestyle/health/ready >health-lifestyle.json
@@ -339,7 +395,15 @@ jobs:
           curl --fail --silent http://127.0.0.1:18080/api/trade/health/version >version-trade.json
           curl --fail --silent http://127.0.0.1:18080/api/lifestyle/health/version >version-lifestyle.json
           grep --fixed-strings '"version": "${{ github.sha }}"' version-*.json
-          cat health-*.json
+          cat live-*.json health-*.json version-*.json
+          {
+            echo "## 05 Verify - deployment accepted"
+            echo
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Images: BFF, user, trade, lifestyle"
+            echo "- Probes: 4 live + 4 ready + 4 version checks passed"
+            echo "- Version match: all applications report the deployed commit"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Collect Kubernetes evidence
         if: always()
         shell: bash
@@ -350,7 +414,7 @@ jobs:
           for component in db web user trade lifestyle nginx; do
             kubectl -n food-master logs "deployment/food-master-${component}" --tail=500 >"deployment-evidence/${component}.log" 2>&1 || true
           done
-          cp health-*.json version-*.json port-forward.log deployment-evidence/ 2>/dev/null || true
+          cp live-*.json health-*.json version-*.json port-forward.log deployment-evidence/ 2>/dev/null || true
       - name: Upload deployment evidence
         if: always()
         uses: actions/upload-artifact@v7

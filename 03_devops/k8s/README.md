@@ -41,6 +41,27 @@ curl http://127.0.0.1:8080/api/trade/health/ready
 curl http://127.0.0.1:8080/api/lifestyle/health/ready
 ```
 
+## 日志、健康和版本
+
+一条命令查看所有 Deployment/Pod、六个组件的最近日志，以及四个应用的存活、就绪和版本响应：
+
+```powershell
+.\03_devops\scripts\inspect-k8s.ps1
+```
+
+```bash
+./03_devops/scripts/inspect-k8s.sh
+```
+
+也可以单独查看某个服务：
+
+```bash
+kubectl -n food-master logs deployment/food-master-trade --tail=200
+kubectl -n food-master get pods -o wide
+```
+
+实际发生过的部署失败、日志证据、根因和修复过程见 [`02_docs/CI-CD故障排查记录.md`](../../02_docs/CI-CD故障排查记录.md)。
+
 云集群上 `food-master-nginx` 的 `LoadBalancer` 服务会由云平台分配外部地址。
 
 ## 回滚
@@ -59,9 +80,10 @@ curl http://127.0.0.1:8080/api/lifestyle/health/ready
 
 `.github/workflows/ci.yml` 在每次向 `main`/`master` push 后自动完成：
 
-1. 在 Ubuntu、Windows、macOS 上运行兼容层和三个微服务测试。
-2. 测试全部通过后，独立构建四个镜像并以提交 SHA 和分支名推送到 GHCR。
-3. 创建临时 Kind 集群，创建三个 schema，部署网关、BFF、三个服务和数据库。
-4. 通过网关调用页面及所有服务的就绪和版本接口，并上传 Kubernetes 证据。
+1. `01 Quality`：格式和静态检查。
+2. `02 Test`：在 Ubuntu、Windows、macOS 上运行兼容层、UC01-UC09 端到端回归和三个微服务的全部公开 API 契约测试。
+3. `03 Build`：独立构建四个镜像并以提交 SHA 和分支名推送到 GHCR。
+4. `04 Deploy`：创建临时 Kind 集群和三个 schema，部署网关、BFF、三个服务和数据库。
+5. `05 Verify`：检查存活、就绪、版本一致性，并上传 Kubernetes 日志与资源证据。
 
 任一步失败都会阻止后续阶段。Kind 集群是 GitHub Runner 内的可重复部署验收环境，不是长期公网环境；长期云集群使用同一份清单和部署脚本。

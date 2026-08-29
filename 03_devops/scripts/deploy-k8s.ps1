@@ -40,7 +40,21 @@ kubectl -n $Namespace rollout status deployment/food-master-user --timeout=240s
 kubectl -n $Namespace rollout status deployment/food-master-trade --timeout=240s
 kubectl -n $Namespace rollout status deployment/food-master-lifestyle --timeout=240s
 kubectl -n $Namespace rollout status deployment/food-master-nginx --timeout=180s
-kubectl -n $Namespace exec deployment/food-master-nginx -- wget -qO- http://127.0.0.1/health/ready/
-kubectl -n $Namespace exec deployment/food-master-nginx -- wget -qO- http://127.0.0.1/api/users/health/ready
-kubectl -n $Namespace exec deployment/food-master-nginx -- wget -qO- http://127.0.0.1/api/trade/health/ready
-kubectl -n $Namespace exec deployment/food-master-nginx -- wget -qO- http://127.0.0.1/api/lifestyle/health/ready
+$ProbePaths = @(
+    "/health/live/",
+    "/health/ready/",
+    "/health/version/",
+    "/api/users/health/live",
+    "/api/users/health/ready",
+    "/api/users/health/version",
+    "/api/trade/health/live",
+    "/api/trade/health/ready",
+    "/api/trade/health/version",
+    "/api/lifestyle/health/live",
+    "/api/lifestyle/health/ready",
+    "/api/lifestyle/health/version"
+)
+foreach ($Path in $ProbePaths) {
+    kubectl -n $Namespace exec deployment/food-master-nginx -- wget -qO- "http://127.0.0.1$Path"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
