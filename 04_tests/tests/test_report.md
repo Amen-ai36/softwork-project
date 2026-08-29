@@ -1,8 +1,8 @@
 # 自动化测试报告
 
-- 生成时间：2026-08-26 17:42:31
+- 生成时间：2026-08-29 11:09:55
 - 运行环境：Windows-11-10.0.26200-SP0
-- Python：3.13.2 / Django：3.2.11
+- Python：3.13.12 / Django：3.2.11
 - 数据库：SQLite（food_master.test_settings）
 
 ## 结果汇总
@@ -130,7 +130,7 @@ test_is_merchant_none_user_returns_false (tests.test_unit.UserHelperRuleTest.tes
 test_is_merchant_true_only_for_merchant (tests.test_unit.UserHelperRuleTest.test_is_merchant_true_only_for_merchant) ... ok
 test_is_rider_true_only_for_rider (tests.test_unit.UserHelperRuleTest.test_is_rider_true_only_for_rider) ... ok
 test_admin_blog_and_comment_actions (tests.test_integration_api.AdminApiTest.test_admin_blog_and_comment_actions)
-主流程：审核博客/评论（切换逻辑删除）；异常：不存在的内容 ... C:\Users\20674\Desktop\学业\大二\大二下\软件工程\soft_ware\.venv\Lib\site-packages\django\core\handlers\base.py:58: UserWarning: No directory at: C:\Users\20674\Desktop\学业\大二\大二下\软件工程\soft_ware\01_source\staticfiles\
+主流程：审核博客/评论（切换逻辑删除）；异常：不存在的内容 ... D:\miniconda\Lib\site-packages\django\core\handlers\base.py:58: UserWarning: No directory at: D:\rgproject\final_work\01_source\staticfiles\
   mw_instance = middleware(adapted_handler)
 ok
 test_admin_dashboard_access_control (tests.test_integration_api.AdminApiTest.test_admin_dashboard_access_control)
@@ -267,7 +267,7 @@ test_settings_match_sql_dump_database (tests.test_database_config.DatabaseConfig
 配置一致性：settings 数据库名应与 03_devops/data/seed.sql 一致 ... ok
 
 ----------------------------------------------------------------------
-Ran 109 tests in 0.753s
+Ran 109 tests in 1.419s
 
 OK (skipped=1)
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
