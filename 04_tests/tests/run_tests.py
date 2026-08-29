@@ -175,11 +175,14 @@ def parse_output(output):
 
 
 def extract_test_status(output, test_id):
-    marker = f"({test_id})"
-    start = output.find(marker)
-    if start < 0:
+    test_class, method = test_id.rsplit(".", 1)
+    markers = (f"{method} ({test_id})", f"{method} ({test_class})")
+    starts = [output.find(marker) for marker in markers]
+    starts = [start for start in starts if start >= 0]
+    if not starts:
         return "MISSING"
-    remaining = output[start + len(marker) :]
+    start = min(starts)
+    remaining = output[start + len(method) :]
     next_test = re.search(r"\r?\ntest_[A-Za-z0-9_]+ \(", remaining)
     block = remaining[: next_test.start()] if next_test else remaining
     if re.search(r"\.\.\. ok\s*$", block, re.MULTILINE):
