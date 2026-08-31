@@ -1,7 +1,7 @@
 x-service-environment: &service-environment
   DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
   DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-this-django-secret-key}
-  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,user-service,trade-service,lifestyle-service}
   SERVICE_DB_HOST: db
   SERVICE_DB_PORT: 3306
   SERVICE_DB_USER: ${FOOD_DELIVER_DB_USER:-foodapp}
@@ -12,6 +12,9 @@ x-service-environment: &service-environment
   JWT_SECRET: ${JWT_SECRET:-change-this-jwt-secret}
   INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-this-internal-token}
   APP_VERSION: ${APP_VERSION:-compose-dev}
+  USER_SERVICE_URL: http://user-service:8001
+  TRADE_SERVICE_URL: http://trade-service:8002
+  LIFESTYLE_SERVICE_URL: http://lifestyle-service:8003
 
 services:
   db:
@@ -79,6 +82,9 @@ services:
       ALIYUN_API_KEY: ${ALIYUN_API_KEY:-}
       ALIYUN_BASE_URL: ${ALIYUN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       APP_VERSION: ${APP_VERSION:-compose-dev}
+      USER_SERVICE_URL: http://user-service:8001
+      TRADE_SERVICE_URL: http://trade-service:8002
+      LIFESTYLE_SERVICE_URL: http://lifestyle-service:8003
     volumes:
       - staticfiles:/app/staticfiles
       - ../01_source/static:/app/static

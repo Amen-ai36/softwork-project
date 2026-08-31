@@ -16,13 +16,16 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from myapp import admin_views, health, service_views, views
+from myapp import admin_views, bff, health, service_views, views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/live/", health.live, name="health_live"),
     path("health/ready/", health.ready, name="health_ready"),
     path("health/version/", health.version, name="health_version"),
+    path("api/bff/health", bff.health_aggregate, name="bff_health"),
+    path("api/bff/catalog", bff.catalog_aggregate, name="bff_catalog"),
+    path("api/bff/space", bff.space_aggregate, name="bff_space"),
     # ********** Begin **********#
     path("", views.index),
     path("index/", views.index),

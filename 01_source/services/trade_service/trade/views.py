@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from services.common.auth import require_auth
+from services.common.client import resolve_usernames
 from services.common.http import body, error, method_not_allowed
 from services.trade_service.trade.models import CartItem, Food, GroupBuyCoupon, Order
 
@@ -182,7 +183,15 @@ def order_detail(request, order_id):
     )
     if not allowed:
         return error("forbidden", 403)
-    return JsonResponse({"order": serialize(order, ORDER_FIELDS)})
+    data = serialize(order, ORDER_FIELDS)
+    user_ids = {order.user_id}
+    if order.rider_id:
+        user_ids.add(order.rider_id)
+    usernames = resolve_usernames(user_ids)
+    data["user_name"] = usernames.get(order.user_id, "匿名用户")
+    if order.rider_id:
+        data["rider_name"] = usernames.get(order.rider_id, "匿名用户")
+    return JsonResponse({"order": data})
 
 
 @require_auth(0)
@@ -379,9 +388,11 @@ def rider_orders(request):
         return method_not_allowed("GET")
     rider_id = int(request.claims["user_id"])
     queryset = Order.objects.filter(Q(pos=0) | Q(rider_id=rider_id)).order_by("time")
-    return JsonResponse(
-        {"orders": [serialize(order, ORDER_FIELDS) for order in queryset]}
-    )
+    orders = [serialize(order, ORDER_FIELDS) for order in queryset]
+    usernames = resolve_usernames({order["user_id"] for order in orders})
+    for order in orders:
+        order["user_name"] = usernames.get(order["user_id"], "匿名用户")
+    return JsonResponse({"orders": orders})
 
 
 def transition_order(request, order_id, roles, expected, target, owner_check=None):

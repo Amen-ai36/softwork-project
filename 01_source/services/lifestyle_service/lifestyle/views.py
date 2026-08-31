@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.utils.dateparse import parse_datetime
 
 from services.common.auth import require_auth
+from services.common.client import resolve_usernames
 from services.common.http import body, error, method_not_allowed
 from services.lifestyle_service.lifestyle.models import (
     Blog,
@@ -365,20 +366,20 @@ def play_order_comment(request, order_id):
 def blogs(request):
     if request.method == "GET":
         queryset = Blog.objects.filter(is_deleted=False).order_by("-created_at")
-        return JsonResponse(
+        blogs = [
             {
-                "blogs": [
-                    {
-                        "id": blog.id,
-                        "title": blog.title,
-                        "content": blog.content,
-                        "author_id": blog.author_id,
-                        "created_at": blog.created_at,
-                    }
-                    for blog in queryset
-                ]
+                "id": blog.id,
+                "title": blog.title,
+                "content": blog.content,
+                "author_id": blog.author_id,
+                "created_at": blog.created_at,
             }
-        )
+            for blog in queryset
+        ]
+        usernames = resolve_usernames({blog["author_id"] for blog in blogs})
+        for blog in blogs:
+            blog["author_name"] = usernames.get(blog["author_id"], "匿名用户")
+        return JsonResponse({"blogs": blogs})
     if request.method != "POST":
         return method_not_allowed("GET", "POST")
     return create_blog(request)
@@ -406,26 +407,28 @@ def blog_detail(request, blog_id):
         return error("blog not found", 404)
     if request.method == "GET":
         comments = blog.comments.filter(is_deleted=False).order_by("created_at")
-        return JsonResponse(
+        blog_data = {
+            "id": blog.id,
+            "title": blog.title,
+            "content": blog.content,
+            "author_id": blog.author_id,
+            "created_at": blog.created_at,
+        }
+        comment_data = [
             {
-                "blog": {
-                    "id": blog.id,
-                    "title": blog.title,
-                    "content": blog.content,
-                    "author_id": blog.author_id,
-                    "created_at": blog.created_at,
-                },
-                "comments": [
-                    {
-                        "id": comment.id,
-                        "user_id": comment.user_id,
-                        "content": comment.content,
-                        "created_at": comment.created_at,
-                    }
-                    for comment in comments
-                ],
+                "id": comment.id,
+                "user_id": comment.user_id,
+                "content": comment.content,
+                "created_at": comment.created_at,
             }
-        )
+            for comment in comments
+        ]
+        user_ids = {blog_data["author_id"]} | {item["user_id"] for item in comment_data}
+        usernames = resolve_usernames(user_ids)
+        blog_data["author_name"] = usernames.get(blog_data["author_id"], "匿名用户")
+        for comment in comment_data:
+            comment["user_name"] = usernames.get(comment["user_id"], "匿名用户")
+        return JsonResponse({"blog": blog_data, "comments": comment_data})
     if request.method != "DELETE":
         return method_not_allowed("GET", "DELETE")
     return delete_blog(request, blog)
