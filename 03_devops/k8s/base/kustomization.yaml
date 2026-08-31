@@ -9,6 +9,7 @@ resources:
   - web.yaml
   - services.yaml
   - nginx.yaml
+  - autoscaling.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: food-master

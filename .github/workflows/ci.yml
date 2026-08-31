@@ -35,7 +35,7 @@ jobs:
         run: >-
           python -m black --check --config 01_source/pyproject.toml
           01_source/manage.py 01_source/food_master 01_source/myapp
-          01_source/services 04_tests/tests
+          01_source/services 04_tests/tests 04_tests/performance
           03_devops/scripts/package_submission.py
 
   legacy-test:

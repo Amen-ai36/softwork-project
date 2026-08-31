@@ -27,19 +27,26 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 kubectl apply -k (Join-Path $ProjectRoot "k8s\base")
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 kubectl -n $Namespace set image deployment/food-master-web "web=$ImageBase-bff`:$Version"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 kubectl -n $Namespace set image deployment/food-master-user "user-service=$ImageBase-user`:$Version"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 kubectl -n $Namespace set image deployment/food-master-trade "trade-service=$ImageBase-trade`:$Version"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 kubectl -n $Namespace set image deployment/food-master-lifestyle "lifestyle-service=$ImageBase-lifestyle`:$Version"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 foreach ($Deployment in @("food-master-web", "food-master-user", "food-master-trade", "food-master-lifestyle")) {
     kubectl -n $Namespace set env "deployment/$Deployment" "APP_VERSION=$Version"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 kubectl -n $Namespace rollout status deployment/food-master-db --timeout=240s
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 kubectl -n $Namespace wait --for=condition=complete job/food-master-schema-init --timeout=240s
-kubectl -n $Namespace rollout status deployment/food-master-web --timeout=360s
-kubectl -n $Namespace rollout status deployment/food-master-user --timeout=240s
-kubectl -n $Namespace rollout status deployment/food-master-trade --timeout=240s
-kubectl -n $Namespace rollout status deployment/food-master-lifestyle --timeout=240s
-kubectl -n $Namespace rollout status deployment/food-master-nginx --timeout=180s
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+foreach ($Deployment in @("food-master-web", "food-master-user", "food-master-trade", "food-master-lifestyle", "food-master-nginx")) {
+    $Timeout = if ($Deployment -eq "food-master-web") { "360s" } elseif ($Deployment -eq "food-master-nginx") { "180s" } else { "240s" }
+    kubectl -n $Namespace rollout status "deployment/$Deployment" "--timeout=$Timeout"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
 $ProbePaths = @(
     "/health/live/",
     "/health/ready/",

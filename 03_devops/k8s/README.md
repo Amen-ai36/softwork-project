@@ -8,6 +8,15 @@
 - `kubectl` 可访问目标集群。
 - 已构建并推送 `bff`、`user`、`trade`、`lifestyle` 四个版本化镜像。
 
+Windows Docker Desktop 在部署、启用或重置 Kubernetes 前必须先通过代理、Registry
+TLS 和集群预检；已验证配置与证书排查步骤见
+[`docker/proxy-and-certificate.md`](../docker/proxy-and-certificate.md)：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  .\03_devops\scripts\check-docker-environment.ps1 -RequireKubernetes
+```
+
 ## 部署
 
 Linux/macOS：
@@ -63,6 +72,19 @@ kubectl -n food-master get pods -o wide
 实际发生过的部署失败、日志证据、根因和修复过程见 [`02_docs/CI-CD故障排查记录.md`](../../02_docs/CI-CD故障排查记录.md)。
 
 云集群上 `food-master-nginx` 的 `LoadBalancer` 服务会由云平台分配外部地址。
+
+## 自动扩缩容
+
+`base/autoscaling.yaml` 为 user、trade、lifestyle 三个业务 Deployment 配置 CPU HPA（1-3 个副本，目标 60%）。集群需要先安装 metrics-server；实验步骤、压力参数和原始数据要求见 `04_tests/performance/README.md`。
+
+```bash
+kubectl -n food-master get hpa
+kubectl -n food-master get pods -l app.kubernetes.io/component=business-service -w
+```
+
+## 故障兜底
+
+网关把 upstream 502/504 转为 HTTP 503 和 `fallback:true` JSON，避免单个业务服务故障扩散。Compose 和 Kubernetes 的停止服务演练见 `04_tests/performance/fault-injection.md`。
 
 ## 回滚
 

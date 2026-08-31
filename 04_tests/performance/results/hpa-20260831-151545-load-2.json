@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-08-31T07:16:19+00:00",
+  "label": "hpa-load-2",
+  "target": "http://127.0.0.1:18080/api/trade/foods",
+  "workload": {
+    "requests_per_run": 2000,
+    "concurrency": 100,
+    "runs": 1,
+    "timeout_seconds": 3.0
+  },
+  "runs": [
+    {
+      "requests": 2000,
+      "successful": 2000,
+      "failed": 0,
+      "error_rate": 0.0,
+      "throughput_rps": 136.776,
+      "elapsed_seconds": 14.622,
+      "average_ms": 628.688,
+      "p95_ms": 694.771,
+      "status_codes": {
+        "200": 2000
+      },
+      "run": 1,
+      "resource_sample": null
+    }
+  ]
+}

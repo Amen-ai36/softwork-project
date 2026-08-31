@@ -1,6 +1,6 @@
 # 自动化测试说明
 
-本项目按课程要求将自动化测试分为三层，对应三个独立测试文件，分别覆盖：
+本项目按课程要求将自动化测试分为三层，另有一组交付物静态校验；三层测试分别覆盖：
 **单元测试**（关键类、方法、业务规则、异常分支）、
 **集成 / API 测试**（模块调用、数据库访问、对外接口，含主/备选/异常流程）、
 **端到端测试**（从页面/接口入口走完整业务流程，覆盖全部业务场景）。
@@ -13,6 +13,7 @@
 | `test_integration_api.py` | 集成 / API 测试 | 注册/登录（主、备选、异常）、美食列表/搜索/详情/下单/购物车 API、团购下单与核销、酒店预订/评价/权限、娱乐购票/评价/权限、博客发布/评论/删除、AI 接口（成功/空输入/未登录/服务失败）、后台管理（用户/订单/内容操作）、跨端订单状态流转与可见性 |
 | `test_e2e.py` | 端到端测试 | 覆盖用例清单全部 9 个用例（UC01-UC09）：账号注册与角色工作台、美食外卖全链路、购物车备选流程、到店团购、酒店预订+评价、娱乐购票+评价、商家服务供给发布与维护（含图片上传/状态维护/用户侧限制）、博客发布+互动、后台管理、AI 助手；每个用例均含主流程与备选/异常流程 |
 | `test_database_config.py` | 数据库环境检查 | settings 与 `03_devops/data/seed.sql` 一致性；MySQL 可达时检查核心表是否存在（不可达则跳过，不阻塞流水线） |
+| `test_devops_artifacts.py` | 交付物静态校验 | HPA 清单、网关超时/降级配置、性能与故障演练材料是否已提交 |
 | `run_tests.py` | 测试运行器 | 统一运行以上全部测试，生成报告，失败时返回非 0 退出码 |
 | `acceptance_cases.py` | 用例验收清单 | 将 UC01-UC09 映射到端到端测试证据，并标记 3 个代表性用例 |
 | `run_service_tests.py` | 微服务测试运行器 | 分别启动三个服务的 SQLite 隔离测试，校验 54 个公开 API 方法并生成独立报告 |
@@ -39,7 +40,7 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File .\04_tests\run.ps1
 ```
 
-该命令先运行 109 项兼容层测试和 UC01-UC09 端到端验收，再运行三个微服务的 24 项 API、状态机、数据边界与公开接口契约测试。
+该命令先运行当前 112 项兼容层测试和 UC01-UC09 端到端验收，再运行三个微服务的 24 项 API、状态机、数据边界与公开接口契约测试。
 
 - 不指定 `--settings` 时默认使用生产数据库配置（MySQL），需要先配置 `FOOD_DELIVER_DB_PASSWORD` 等环境变量；
 - 指定 `food_master.test_settings` 时使用 SQLite 内存测试库，无需任何数据库配置，适合 CI / 本机快速验证。
@@ -60,6 +61,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\04_tests\run.ps1
 - `04_tests/tests/test_report.json`：机器可读报告（`environment` + `summary` + `acceptance`），便于 CI 解析。
 - `04_tests/tests/acceptance_report.md/.json`：UC01-UC09 全部业务场景结果，重点列出 UC02、UC04、UC07 三个代表性用例。
 - `04_tests/tests/microservice_test_report.md/.json`：三个微服务的测试数、54 个公开 API 方法清单、契约覆盖状态和完整输出。
+- `04_tests/performance/benchmark.py`：单体/微服务共用的性能基准脚本；使用方法和故障演练见 `04_tests/performance/README.md`、`fault-injection.md`。
 
 报告中的统计口径：
 

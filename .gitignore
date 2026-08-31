@@ -8,5 +8,6 @@ staticfiles/
 dist/
 tmp/
 *.log
+*.log.err
 test_*.sqlite3
 test_food_master.sqlite3

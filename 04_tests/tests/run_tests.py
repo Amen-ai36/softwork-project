@@ -47,6 +47,7 @@ TEST_LABELS = [
     "tests.test_integration_api",
     "tests.test_e2e",
     "tests.test_database_config",
+    "tests.test_devops_artifacts",
 ]
 
 DETAIL_RE = re.compile(r"^(FAIL|ERROR):\s+(.+)$")

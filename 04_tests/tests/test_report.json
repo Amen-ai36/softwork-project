@@ -1,6 +1,6 @@
 {
   "environment": {
-    "timestamp": "2026-08-29 16:04:19",
+    "timestamp": "2026-08-31 15:43:20",
     "os": "Windows-11-10.0.26200-SP0",
     "python": "3.13.2",
     "django": "3.2.11",
@@ -8,8 +8,8 @@
     "project_root": "C:\\Users\\20674\\Desktop\\学业\\大二\\大二下\\软件工程\\soft_ware\\01_source"
   },
   "summary": {
-    "total": 109,
-    "passed": 108,
+    "total": 114,
+    "passed": 113,
     "failed": 0,
     "errors": 0,
     "skipped": 1,

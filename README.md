@@ -15,6 +15,14 @@
 
 推荐使用 Docker Desktop 4.x 或 Docker Engine 24+ 与 Compose v2：
 
+本机在执行 Docker/Kubernetes 操作前先运行代理与 Registry TLS 预检，详细配置和
+证书故障处理见 `03_devops/docker/proxy-and-certificate.md`：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  .\03_devops\scripts\check-docker-environment.ps1
+```
+
 ```powershell
 Copy-Item 03_devops\.env.example 03_devops\.env
 docker compose --env-file 03_devops\.env -f 03_devops\docker-compose.yml up -d --build
@@ -30,6 +38,8 @@ Linux/macOS 将路径分隔符改为 `/`。首次启动会创建兼容层数据�
 - 用户服务：<http://localhost/api/users/health/ready>
 - 交易服务：<http://localhost/api/trade/health/ready>
 - 本地生活服务：<http://localhost/api/lifestyle/health/ready>
+
+测试账号和初始数据说明见 `02_docs/project-reference.md` 的“测试账号和初始数据”章节；真实口令不要写入仓库。
 
 ## 微服务架构
 

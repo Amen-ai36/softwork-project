@@ -1,6 +1,6 @@
 # 自动化测试报告
 
-- 生成时间：2026-08-29 16:04:19
+- 生成时间：2026-08-31 15:43:20
 - 运行环境：Windows-11-10.0.26200-SP0
 - Python：3.13.2 / Django：3.2.11
 - 数据库：SQLite（food_master.test_settings）
@@ -9,8 +9,8 @@
 
 | 项目 | 数量 |
 | --- | --- |
-| 测试总数 | 109 |
-| 通过数 | 108 |
+| 测试总数 | 114 |
+| 通过数 | 113 |
 | 失败数 | 0 |
 | 跳过数（环境原因） | 1 |
 | 结果 | OK |
@@ -260,6 +260,11 @@ test_success_returns_content_and_builds_payload (tests.test_unit.LlmClientTest.t
 test_invalid_passwords_rejected (tests.test_unit.PasswordBusinessRuleTest.test_invalid_passwords_rejected)
 异常分支：无字母 / 无数字 / 长度越界均不匹配 ... ok
 test_valid_passwords_match (tests.test_unit.PasswordBusinessRuleTest.test_valid_passwords_match) ... ok
+test_docker_preflight_prevents_proxy_and_tls_bypasses (tests.test_devops_artifacts.DevOpsArtifactTest.test_docker_preflight_prevents_proxy_and_tls_bypasses) ... ok
+test_gateway_has_timeout_and_fallback_configuration (tests.test_devops_artifacts.DevOpsArtifactTest.test_gateway_has_timeout_and_fallback_configuration) ... ok
+test_hpa_is_declared_for_all_business_services (tests.test_devops_artifacts.DevOpsArtifactTest.test_hpa_is_declared_for_all_business_services) ... ok
+test_kubernetes_deploy_stops_when_kubectl_fails (tests.test_devops_artifacts.DevOpsArtifactTest.test_kubernetes_deploy_stops_when_kubectl_fails) ... ok
+test_performance_and_fault_runbooks_are_committed (tests.test_devops_artifacts.DevOpsArtifactTest.test_performance_and_fault_runbooks_are_committed) ... ok
 test_imported_mysql_database_has_required_tables (tests.test_database_config.DatabaseConfigTest.test_imported_mysql_database_has_required_tables)
 真实环境检查：MySQL 中存在项目核心表（无法连接时跳过） ... skipped "无法连接 MySQL（ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)）。如需检查真实库，请设置 FOOD_DELIVER_DB_PASSWORD 后重试"
 test_settings_defaults_missing_password_are_allowed_in_tests (tests.test_database_config.DatabaseConfigTest.test_settings_defaults_missing_password_are_allowed_in_tests)
@@ -268,7 +273,7 @@ test_settings_match_sql_dump_database (tests.test_database_config.DatabaseConfig
 配置一致性：settings 数据库名应与 03_devops/data/seed.sql 一致 ... ok
 
 ----------------------------------------------------------------------
-Ran 109 tests in 0.709s
+Ran 114 tests in 1.335s
 
 OK (skipped=1)
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
