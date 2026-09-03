@@ -298,8 +298,10 @@ def main():
 
     target = User.objects.filter(username=args.session_user).first() or users[0]
     key = make_session(target)
-    print(f"Seeded: {FOODS} foods, {HOTELS} hotels, {PLAYS} plays, "
-          f"{BLOGS} blogs, {ORDERS} orders.")
+    print(
+        f"Seeded: {FOODS} foods, {HOTELS} hotels, {PLAYS} plays, "
+        f"{BLOGS} blogs, {ORDERS} orders."
+    )
     print(f"Session cookie for {target.username}: sessionid={key}")
 
 

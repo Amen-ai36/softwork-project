@@ -22,7 +22,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SOURCE_ROOT = REPO_ROOT / "01_source"
 sys.path.insert(0, str(SOURCE_ROOT))
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "services.trade_service.config.settings")
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE", "services.trade_service.config.settings"
+)
 
 import django  # noqa: E402
 
