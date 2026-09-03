@@ -235,7 +235,7 @@ Get-Content "$dir\load-1.json"
 ```
 
 PPT 或视频中展示以下字段：
-
+ss
 ```text
 throughput_rps       吞吐量
 average_ms           平均响应时间
