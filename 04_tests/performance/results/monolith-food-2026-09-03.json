@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-09-03T02:59:38+00:00",
+  "label": "monolith-food",
+  "target": "http://127.0.0.1/food/",
+  "workload": {
+    "requests_per_run": 120,
+    "concurrency": 12,
+    "runs": 3,
+    "timeout_seconds": 5.0
+  },
+  "runs": [
+    {
+      "requests": 120,
+      "successful": 120,
+      "failed": 0,
+      "error_rate": 0.0,
+      "throughput_rps": 34.901,
+      "elapsed_seconds": 3.438,
+      "average_ms": 328.838,
+      "p95_ms": 419.332,
+      "status_codes": {
+        "200": 120
+      },
+      "run": 1,
+      "resource_sample": {
+        "cpu_percent": 0.01,
+        "memory_mb": 129.8
+      }
+    },
+    {
+      "requests": 120,
+      "successful": 120,
+      "failed": 0,
+      "error_rate": 0.0,
+      "throughput_rps": 40.811,
+      "elapsed_seconds": 2.94,
+      "average_ms": 282.746,
+      "p95_ms": 383.038,
+      "status_codes": {
+        "200": 120
+      },
+      "run": 2,
+      "resource_sample": {
+        "cpu_percent": 32.67,
+        "memory_mb": 141.9
+      }
+    },
+    {
+      "requests": 120,
+      "successful": 120,
+      "failed": 0,
+      "error_rate": 0.0,
+      "throughput_rps": 28.14,
+      "elapsed_seconds": 4.264,
+      "average_ms": 406.674,
+      "p95_ms": 442.444,
+      "status_codes": {
+        "200": 120
+      },
+      "run": 3,
+      "resource_sample": {
+        "cpu_percent": 0.02,
+        "memory_mb": 132.3
+      }
+    }
+  ]
+}

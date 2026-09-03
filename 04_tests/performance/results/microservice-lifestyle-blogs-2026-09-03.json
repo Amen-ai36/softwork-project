@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-09-03T02:57:55+00:00",
+  "label": "microservice-lifestyle-blogs",
+  "target": "http://127.0.0.1/api/lifestyle/blogs",
+  "workload": {
+    "requests_per_run": 120,
+    "concurrency": 12,
+    "runs": 3,
+    "timeout_seconds": 5.0
+  },
+  "runs": [
+    {
+      "requests": 120,
+      "successful": 120,
+      "failed": 0,
+      "error_rate": 0.0,
+      "throughput_rps": 106.621,
+      "elapsed_seconds": 1.125,
+      "average_ms": 105.35,
+      "p95_ms": 124.26,
+      "status_codes": {
+        "200": 120
+      },
+      "run": 1,
+      "resource_sample": {
+        "cpu_percent": 0.02,
+        "memory_mb": 76.75
+      }
+    },
+    {
+      "requests": 120,
+      "successful": 120,
+      "failed": 0,
+      "error_rate": 0.0,
+      "throughput_rps": 112.33,
+      "elapsed_seconds": 1.068,
+      "average_ms": 100.3,
+      "p95_ms": 116.605,
+      "status_codes": {
+        "200": 120
+      },
+      "run": 2,
+      "resource_sample": {
+        "cpu_percent": 0.03,
+        "memory_mb": 76.86
+      }
+    },
+    {
+      "requests": 120,
+      "successful": 120,
+      "failed": 0,
+      "error_rate": 0.0,
+      "throughput_rps": 115.082,
+      "elapsed_seconds": 1.043,
+      "average_ms": 98.5,
+      "p95_ms": 119.594,
+      "status_codes": {
+        "200": 120
+      },
+      "run": 3,
+      "resource_sample": {
+        "cpu_percent": 36.57,
+        "memory_mb": 76.85
+      }
+    }
+  ]
+}

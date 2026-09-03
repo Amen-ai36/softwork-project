@@ -1,2 +1,4 @@
 -r requirements.txt
 black==26.5.1
+# Used by 04_tests/performance/benchmark.py --host-pid (local process CPU/memory)
+psutil==7.2.2

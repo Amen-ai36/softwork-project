@@ -19,10 +19,13 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
-def fetch(url, timeout):
+def fetch(url, timeout, headers=None):
     started = time.perf_counter()
+    request_headers = {"User-Agent": "food-master-benchmark/1.0"}
+    if headers:
+        request_headers.update(headers)
     try:
-        request = Request(url, headers={"User-Agent": "food-master-benchmark/1.0"})
+        request = Request(url, headers=request_headers)
         with urlopen(request, timeout=timeout) as response:
             response.read(256)
             return response.status, (time.perf_counter() - started) * 1000, ""
@@ -40,11 +43,13 @@ def percentile(values, fraction):
     return round(ordered[index], 3)
 
 
-def run_once(url, requests, concurrency, timeout):
+def run_once(url, requests, concurrency, timeout, headers=None):
     started = time.perf_counter()
     results = []
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        futures = [pool.submit(fetch, url, timeout) for _ in range(requests)]
+        futures = [
+            pool.submit(fetch, url, timeout, headers) for _ in range(requests)
+        ]
         for future in as_completed(futures):
             results.append(future.result())
     elapsed = time.perf_counter() - started
@@ -112,6 +117,29 @@ def docker_stats(service):
     }
 
 
+def host_process_stats(pid):
+    """Sample CPU% and RSS (MB) of a local host process via psutil.
+
+    Used when the benchmarked service runs directly on the host (e.g. a
+    locally-launched monolith dev server) and Docker is not available.
+    Returns None when psutil is missing or the process cannot be sampled.
+    """
+    try:
+        import psutil  # type: ignore[import-not-found]  # optional, dev-only
+    except ImportError:
+        return None
+    try:
+        proc = psutil.Process(pid)
+        # Prime the CPU counter so the next call returns a real delta.
+        proc.cpu_percent(interval=None)
+        memory_mb = proc.memory_info().rss / (1024 ** 2)
+        time.sleep(0.5)
+        cpu_percent = proc.cpu_percent(interval=None)
+        return {"cpu_percent": cpu_percent, "memory_mb": round(memory_mb, 3)}
+    except Exception:
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -128,16 +156,35 @@ def main():
     parser.add_argument(
         "--docker-service", help="Optional container name for CPU/memory sampling"
     )
+    parser.add_argument(
+        "--host-pid",
+        type=int,
+        default=0,
+        help="Optional PID of a host process for CPU/memory sampling",
+    )
+    parser.add_argument(
+        "--cookie",
+        default="",
+        help="Optional Cookie header value, e.g. 'sessionid=...'",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if min(args.requests, args.concurrency, args.runs) <= 0:
         parser.error("requests, concurrency, and runs must be positive")
 
     url = args.target.rstrip("/") + "/" + args.path.lstrip("/")
+    headers = {"Cookie": args.cookie} if args.cookie else None
     runs = []
     for number in range(1, args.runs + 1):
-        resources = docker_stats(args.docker_service) if args.docker_service else None
-        result = run_once(url, args.requests, args.concurrency, args.timeout)
+        if args.docker_service:
+            resources = docker_stats(args.docker_service)
+        elif args.host_pid:
+            resources = host_process_stats(args.host_pid)
+        else:
+            resources = None
+        result = run_once(
+            url, args.requests, args.concurrency, args.timeout, headers
+        )
         result["run"] = number
         result["resource_sample"] = resources
         runs.append(result)
