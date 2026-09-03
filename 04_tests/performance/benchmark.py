@@ -47,9 +47,7 @@ def run_once(url, requests, concurrency, timeout, headers=None):
     started = time.perf_counter()
     results = []
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        futures = [
-            pool.submit(fetch, url, timeout, headers) for _ in range(requests)
-        ]
+        futures = [pool.submit(fetch, url, timeout, headers) for _ in range(requests)]
         for future in as_completed(futures):
             results.append(future.result())
     elapsed = time.perf_counter() - started
@@ -132,7 +130,7 @@ def host_process_stats(pid):
         proc = psutil.Process(pid)
         # Prime the CPU counter so the next call returns a real delta.
         proc.cpu_percent(interval=None)
-        memory_mb = proc.memory_info().rss / (1024 ** 2)
+        memory_mb = proc.memory_info().rss / (1024**2)
         time.sleep(0.5)
         cpu_percent = proc.cpu_percent(interval=None)
         return {"cpu_percent": cpu_percent, "memory_mb": round(memory_mb, 3)}
@@ -182,9 +180,7 @@ def main():
             resources = host_process_stats(args.host_pid)
         else:
             resources = None
-        result = run_once(
-            url, args.requests, args.concurrency, args.timeout, headers
-        )
+        result = run_once(url, args.requests, args.concurrency, args.timeout, headers)
         result["run"] = number
         result["resource_sample"] = resources
         runs.append(result)
