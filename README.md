@@ -32,14 +32,28 @@ docker compose --env-file 03_devops\.env -f 03_devops\docker-compose.yml ps
 Linux/macOS 将路径分隔符改为 `/`。首次启动会创建兼容层数据库和三个独立 schema，导入 `03_devops/data/seed.sql`、执行各服务迁移并收集静态文件。
 
 - 应用入口：<http://localhost/>
-- 存活检查：<http://localhost/health/live/>
-- 就绪检查：<http://localhost/health/ready/>
-- 版本信息：<http://localhost/health/version/>
-- 用户服务：<http://localhost/api/users/health/ready>
-- 交易服务：<http://localhost/api/trade/health/ready>
-- 本地生活服务：<http://localhost/api/lifestyle/health/ready>
 
-测试账号和初始数据说明见 `02_docs/project-reference.md` 的“测试账号和初始数据”章节；真实口令不要写入仓库。
+### 健康检查地址
+
+| 组件 | 存活检查 | 就绪检查 | 版本信息 |
+| --- | --- | --- | --- |
+| BFF 网关 | <http://localhost/health/live/> | <http://localhost/health/ready/> | <http://localhost/health/version/> |
+| 用户服务 | <http://localhost/api/users/health/live> | <http://localhost/api/users/health/ready> | <http://localhost/api/users/health/version> |
+| 交易服务 | <http://localhost/api/trade/health/live> | <http://localhost/api/trade/health/ready> | <http://localhost/api/trade/health/version> |
+| 本地生活服务 | <http://localhost/api/lifestyle/health/live> | <http://localhost/api/lifestyle/health/ready> | <http://localhost/api/lifestyle/health/version> |
+
+### 测试账号和初始数据
+
+`03_devops/data/seed.sql` 仅包含课程演示数据，以下账号不是生产凭据：
+
+| 角色 | 用户名 | 密码 |
+| --- | --- | --- |
+| 普通用户 | `user` | `zwj1234567` |
+| 骑手 | `rider001` | `hahaha233` |
+| 商家 | `testShop` | `test114514` |
+| 管理员 | `admin` | `quanju123` |
+
+初始数据（演示菜品、酒店、演出、博客等）随 `seed.sql` 在首次启动时自动导入。真实口令不要写入仓库，应放在未提交的 `03_devops/.env` 或环境变量中。
 
 ## 微服务架构
 
